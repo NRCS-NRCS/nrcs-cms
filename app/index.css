@@ -30,7 +30,7 @@
     --color-background-gradient: linear-gradient(
         180deg,
         var(--color-background-gradient-primary) 0%,
-        var(--color-secondary-light) 50%,
+        var(--color-primary-light) 50%,
         var(--color-background-gradient-secondary) 100%
     );
 
@@ -53,8 +53,6 @@
     --width-page-max: 80rem;
     --width-page-min: 60rem;
     --width-separator-thin: 1px;
-
-    --color-separator: #e8e8e8;
 
     --border-radius-circle: 50%;
     --border-radius-large: 16px;
@@ -157,9 +155,9 @@ body {
 }
 
 body {
+    background: var(--color-background);
     color: var(--color-text);
-    background: var(--background);
-    font-family: var(--font-text), sans-serif;
+    font-family:  sans-serif;
     font-weight: var(--font-weight-medium);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -172,13 +170,13 @@ h4,
 h5,
 h6 {
     line-height: 1.5;
-    font-family: var(--font-heading), sans-serif;
+    font-family:sans-serif;
 }
 
 * {
     box-sizing: border-box;
-    padding: 0;
     margin: 0;
+    padding: 0;
 }
 
 p {
@@ -186,8 +184,8 @@ p {
 }
 
 a {
-    color: inherit;
     text-decoration: none;
+    color: inherit;
 }
 
 /* NOTE: Disabling Dark mode */

@@ -1,21 +1,21 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
         "paths": {
             "#generated/*": ["./generated/*"],
-            "#views/*": ["./src/views/*"],
-            "#utils/*": ["./src/utils/*"],
-            "#configs/*": ["./src/configs/*"],
-            "#contexts/*": ["./src/contexts/*"],
-            "#components/*": ["./src/components/*"],
-            "#hooks/*": ["./src/hooks/*"],
-            "#assets/*": ["./src/assets/*"]
+            "#views/*": ["app/views/*"],
+            "#utils/*": ["app/utils/*"],
+            "#configs/*": ["app/configs/*"],
+            "#contexts/*": ["app/contexts/*"],
+            "#components/*": ["app/components/*"],
+            "#hooks/*": ["app/hooks/*"],
+            "#assets/*": ["app/assets/*"]
         },
         "target": "ESNext",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "module": "ESNext",
         "skipLibCheck": true,
 
-        /* Bundler mode */
         "moduleResolution": "bundler",
         "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
@@ -23,10 +23,8 @@
         "noEmit": true,
         "jsx": "react-jsx",
 
-        /* Linting */
         "strict": true,
-        /* "types": ["vite-plugin-svgr/client"], */
-        "noUnusedLocals": false,
+        "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true
     },

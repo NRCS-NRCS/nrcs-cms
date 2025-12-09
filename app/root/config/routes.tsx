@@ -6,33 +6,22 @@ export interface RouteConfig {
     load: () => Promise<{ default: () => React.JSX.Element | null }>;
     visibility: Visibility;
 }
-
-const login: RouteConfig = {
-    path: '/login/',
-    load: () => import('../views/Login'),
-    visibility: 'is-not-authenticated',
-};
-
 const home: RouteConfig = {
     index: true,
     // path: '/',
-    load: () => import('../views/Home'),
+    load: () => import('#views/Home'),
     visibility: 'is-authenticated',
 };
 
-const guest: RouteConfig = {
-    index: true,
-    // path: '/',
-    load: () => import('../views/Home'),
+const login: RouteConfig = {
+    path: '/login/',
+    load: () => import('#views/Login'),
     visibility: 'is-not-authenticated',
 };
-
-
 
 const routes = {
     login,
     home,
-    guest
 };
 
 export type RouteKeys = keyof typeof routes;

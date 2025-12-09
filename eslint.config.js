@@ -1,5 +1,7 @@
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
+import json from "@eslint/json";
+
 import process from 'process';
 
 const dirname = process.cwd();
@@ -122,22 +124,38 @@ const appConfigs = compat.config({
     ],
 }).map((conf) => ({
     ...conf,
-    files: ['app/**/*.tsx', 'app/**/*.jsx', 'app/**/*.ts', 'app/**/*.js', 'generated/**/*.ts'],
+    files: ['app/**/*.tsx', 'app/**/*.jsx', 'app/**/*.ts', 'app/**/*.js'],
     ignores: [
         "node_modules/",
         "build/",
         "coverage/",
-        'src/generated/types.ts'
+        "codegen.ts",
+        'generated/types/'
     ],
 
 }));
 
 const otherConfig = {
     files: ['*.js', '*.cjs'],
-    ...js.configs.recommended,
+    ...js.configs.recommended
 };
 
+const jsonConfig = {
+    files: ['**/*.json'],
+    language: 'json/json',
+    rules: {
+        'json/no-duplicate-keys': 'error',
+    },
+};
+
+
 export default [
+    {
+        plugins: {
+            json,
+        },
+    },
     ...appConfigs,
     otherConfig,
+    jsonConfig,
 ];

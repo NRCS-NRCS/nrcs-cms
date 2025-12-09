@@ -1,5 +1,5 @@
 {
-    "entry": ["./src/index.tsx"],
+    "entry": ["./app/index.tsx"],
     "ignorePatterns": ["**/node_modules/**", "build/**", "jest/**", "generated/**"],
     "ignoreUnimported": [
         "postcss.config.js",
@@ -14,11 +14,11 @@
     "extensions": [".ts", ".js", ".tsx", ".jsx"],
     "aliases": {
         "#generated/*": ["./generated/*"],
-        "#components/*": ["./src/components/*"],
-        "#views/*": ["./src/views/*"],
-        "#hooks/*": ["./src/hooks/*"],
-        "#utils/*": ["./src/utils/*"],
-        "#resources/*": ["./src/resources/*"],
-        "#base/*": ["./src/Base/*"]
+        "#components/*": ["./app/components/*"],
+        "#views/*": ["./app/views/*"],
+        "#hooks/*": ["./app/hooks/*"],
+        "#utils/*": ["./app/utils/*"],
+        "#resources/*": ["./app/resources/*"],
+        "#base/*": ["./app/Base/*"]
     }
 }

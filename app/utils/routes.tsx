@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import type {
     IndexRouteObject,
     NonIndexRouteObject,
@@ -10,7 +11,6 @@ import {
     mapToList,
     randomString,
 } from '@togglecorp/fujs';
-import type { JSX } from 'react';
 
 export function trimChar(str: string, char: string) {
     let op = str;

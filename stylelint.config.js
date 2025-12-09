@@ -1,10 +1,11 @@
 import path from 'path';
 
+// eslint-disable-next-line no-undef
 const __filename = new URL(import.meta.url).pathname;
 const __dirname = path.dirname(__filename);
 
 const cssPaths = [
-    path.resolve(__dirname, './src/index.css'),
+    path.resolve(__dirname, './app/index.css'),
 ];
 
 /** @type {import('stylelint').Config} */

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  },
+      "ignoreDependencies": [
+        "eslint-config-airbnb",
+        "eslint-import-resolver-typescript",
+        "eslint-plugin-import",
+        "eslint-plugin-import-exports-imports-resolver",
+        "eslint-plugin-import-newlines",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-react",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "eslint-plugin-simple-import-sort",
+        "openapi-typescript",
+        "@typescript-eslint/parser",
+        "@typescript-eslint/eslint-plugin"
+    ],
+    "entry": [
+        "generated/**/*.ts",
+        "app/**/*.test.ts",
+        "app/**/*.test.tsx",
+        "app/index.tsx!"
+    ],
+    "project": [
+        "scripts/**/*.test.ts",
+        "scripts/**/*.ts",
+        "app/**/*.d.ts",
+        "generated/**/*.ts",
+        "app/**/*.test.ts",
+        "app/**/*.test.tsx",
+        "app/**/*.tsx!",
+        "app/**/*.ts!"
+    ],
+  
+  "tags": [
+    "-lintignore"
+  ]
+}

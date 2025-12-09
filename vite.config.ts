@@ -1,6 +1,6 @@
 import { ValidateEnv as validateEnv } from '@julr/vite-plugin-validate-env';
 import reactSwc from '@vitejs/plugin-react-swc';
-import { execSync } from 'child_process';
+// import { execSync } from 'child_process';
 import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
 import { compression } from 'vite-plugin-compression2';
@@ -40,10 +40,10 @@ export default defineConfig(({ mode }) => {
             isProd ? checker({
                 typescript: true,
                 eslint: {
-                    lintCommand: 'eslint ./src',
+                    lintCommand: 'eslint ./app',
                 },
                 stylelint: {
-                    lintCommand: 'stylelint "./src/**/*.css"',
+                    lintCommand: 'stylelint "./app/**/*.css"',
                 },
             }) : undefined,
             svgr(),
