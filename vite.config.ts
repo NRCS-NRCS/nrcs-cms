@@ -9,33 +9,34 @@ import webfontDownload from 'vite-plugin-webfont-dl';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import envConfig from './env';
+import { execSync } from 'child_process';
 
 
-// /* Get commit hash */
-// function getCommitHash(): string {
-//   if (process.env.APP_COMMIT_HASH) {
-//     return process.env.APP_COMMIT_HASH;
-//   }
+/* Get commit hash */
+function getCommitHash(): string {
+    if (process.env.APP_COMMIT_HASH) {
+        return process.env.APP_COMMIT_HASH;
+    }
 
-//   try {
-//     return execSync('git rev-parse --short HEAD').toString().trim();
-//   } catch (error) {
-//     throw new Error(
-//       'Unable to determine commit hash. You must either provide a commit hash using the APP_COMMIT_HASH environment variable,' +
-//       ' or provide a valid Git repository (submodule doesn\'t work with docker).'
-//     );
-//   }
-// }
+    try {
+        return execSync('git rev-parse --short HEAD').toString().trim();
+    } catch (error) {
+        throw new Error(
+            'Unable to determine commit hash. You must either provide a commit hash using the APP_COMMIT_HASH environment variable,' +
+            ' or provide a valid Git repository (submodule doesn\'t work with docker).'
+        );
+    }
+}
 
-// const commitHash = getCommitHash();
+const commitHash = getCommitHash();
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
     const isProd = mode === 'production';
     return {
-        // define: {
-        //     APP_COMMIT_HASH: JSON.stringify(commitHash),
-        // },
+        define: {
+            APP_COMMIT_HASH: JSON.stringify(commitHash),
+        },
         plugins: [
             isProd ? checker({
                 typescript: true,
@@ -62,7 +63,7 @@ export default defineConfig(({ mode }) => {
         },
         envPrefix: 'APP_',
         server: {
-            port: 3000,
+            port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
             strictPort: true,
         },
         build: {
