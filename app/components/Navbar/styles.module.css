@@ -1,0 +1,42 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--go-ui-spacing-md) var(--go-ui-spacing-lg);
+    border-bottom: var(--go-ui-width-separator-thin) solid
+        var(--go-ui-color-primary-red);
+    background-color: var(--go-ui-color-white);
+    flex-shrink: 0;
+    animation: slide-down var(--go-ui-duration-animation-medium) ease-in
+        forwards;
+    .title {
+        font-size: var(--go-ui-font-size-3xl);
+        color: var(--go-ui-color-red);
+    }
+    .userInfo {
+        display: flex;
+        align-items: start;
+        flex-direction: column;
+    }
+}
+.dropdown-option {
+    padding: var(--go-ui-spacing-xs);
+    margin-left: var(--go-ui-spacing-md);
+    cursor: pointer;
+    &:hover {
+        color: var(--go-ui-color-primary-red);
+    }
+}
+.test {
+    width: 150px;
+}
+
+@keyframes slide-down {
+    0% {
+        transform: translateY(-0.25rem);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

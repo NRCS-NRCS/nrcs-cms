@@ -1,0 +1,42 @@
+.nav {
+    height: 100%;
+    .nav {
+        border: none;
+    }
+    border-right: 2px solid var(--go-ui-color-gray-20);
+    .navHeaderContainer {
+        background-color: var(--go-ui-color-gray-10);
+        padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
+        width: 100%;
+        border-bottom: 2px solid var(--go-ui-color-gray-20);
+        .navHeader {
+            display: flex;
+            justify-content: space-between;
+        }
+    }
+    .navContent {
+        display: flex;
+        flex-direction: column;
+        .routeLink {
+            border-bottom: 2px solid var(--go-ui-color-gray-20);
+            &:hover {
+                color: var(--go-ui-color-primary-red);
+            }
+            padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
+        }
+
+        .activeRoute {
+            color: var(--go-ui-color-primary-red);
+            text-decoration: underline;
+        }
+    }
+    .group {
+        .navHeaderContainer {
+            background: none;
+            font-weight: var(--go-ui-font-weight-normal);
+        }
+        .leaf {
+            padding-left: var(--go-ui-spacing-3xl);
+        }
+    }
+}
