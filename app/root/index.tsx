@@ -6,8 +6,8 @@ import { Cookies } from 'react-cookie';
 import { Outlet } from 'react-router';
 import { AlertContainer } from '@ifrc-go/ui';
 import { AlertContext } from '@ifrc-go/ui/contexts';
+import { cacheExchange } from '@urql/exchange-graphcache';
 import {
-    cacheExchange,
     Client,
     fetchExchange,
     Provider as UrqlProvider,
@@ -25,7 +25,7 @@ const cookies = new Cookies();
 const gqlClient = new Client({
     url: GRAPHQL_ENDPOINT,
     exchanges: [
-        cacheExchange,
+        cacheExchange({}),
         fetchExchange,
     ],
     fetchOptions: () => ({

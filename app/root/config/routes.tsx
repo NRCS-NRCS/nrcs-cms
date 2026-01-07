@@ -13,6 +13,26 @@ const home: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const blog: RouteConfig = {
+    index: true,
+    path: 'blog',
+    load: () => import('#views/Blog/BlogList'),
+    visibility: 'is-authenticated',
+};
+const editBlog: RouteConfig = {
+    index: true,
+    path: 'blog/:id/edit',
+    load: () => import('#views/Blog/BlogForm'),
+    visibility: 'is-authenticated',
+};
+
+const addBlog: RouteConfig = {
+    index: true,
+    path: 'blog/add',
+    load: () => import('#views/Blog/BlogForm'),
+    visibility: 'is-authenticated',
+};
+
 const login: RouteConfig = {
     path: '/login/',
     load: () => import('#views/Login'),
@@ -22,6 +42,9 @@ const login: RouteConfig = {
 const routes = {
     login,
     home,
+    blog,
+    addBlog,
+    editBlog,
 };
 
 export type RouteKeys = keyof typeof routes;

@@ -1,8 +1,12 @@
 .nav {
     border-right: 2px solid var(--go-ui-color-gray-20);
     height: 100%;
+    min-width: 320px;
+    overflow-x: hidden;
+    padding-right: 2px;
     .nav {
         border: none;
+        padding-right: 0;
     }
     .navHeaderContainer {
         border-bottom: 2px solid var(--go-ui-color-gray-20);
@@ -18,6 +22,7 @@
         display: flex;
         flex-direction: column;
         .routeLink {
+            border-right: 2px solid var(--go-ui-color-gray-20);
             border-bottom: 2px solid var(--go-ui-color-gray-20);
             &:hover {
                 color: var(--go-ui-color-primary-red);
