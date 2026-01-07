@@ -4,8 +4,8 @@
     flex-direction: column;
     flex-grow: 1;
     justify-content: center;
-    background-color: var(--color-background);
+    background-color: var(--go-ui-color-background);
     height: 100vh;
     text-align: center;
-    font-size: var(--font-size-lg);
+    font-size: var(--go-ui-font-size-lg);
 }

@@ -1,5 +1,6 @@
 import {
     ReactNode,
+    useCallback,
     useState,
 } from 'react';
 import {
@@ -20,21 +21,24 @@ export interface NavigationItem {
     children?: NavigationItem[];
 
 }
-function Navigation({ navigationItem }: { navigationItem: NavigationItem[] }) {
-    const [openIndexes, setOpenIndexes] = useState(
+interface NavigationProps {
+    navigationItem: NavigationItem[];
+}
+function Navigation({ navigationItem }: NavigationProps) {
+    const [openAccordion, setOpenAccordion] = useState(
         navigationItem.map((_, i) => i),
     );
 
-    const toggleAccordion = (index: number) => {
-        setOpenIndexes((prev) => (prev.includes(index)
+    const toggleAccordion = useCallback((index: number) => {
+        setOpenAccordion((prev) => (prev.includes(index)
             ? prev.filter((i) => i !== index)
             : [...prev, index]));
-    };
+    }, []);
 
     return (
         <nav className={styles.nav}>
             {navigationItem.map((item, index) => {
-                const isOpen = openIndexes.includes(index);
+                const isOpen = openAccordion.includes(index);
                 return (
                     <div
                         key={item.title}
@@ -43,11 +47,11 @@ function Navigation({ navigationItem }: { navigationItem: NavigationItem[] }) {
                         )}
                     >
                         <Button
-                            name={item.title}
+                            name={index}
                             type="button"
                             className={styles.navHeaderContainer}
                             childrenContainerClassName={styles.navHeader}
-                            onClick={() => toggleAccordion(index)}
+                            onClick={toggleAccordion}
                             variant="tertiary"
                             icons={item.icon}
                         >

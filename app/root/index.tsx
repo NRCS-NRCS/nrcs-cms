@@ -4,6 +4,8 @@ import {
 } from 'react';
 import { Cookies } from 'react-cookie';
 import { Outlet } from 'react-router';
+import { AlertContainer } from '@ifrc-go/ui';
+import { AlertContext } from '@ifrc-go/ui/contexts';
 import {
     cacheExchange,
     Client,
@@ -12,6 +14,7 @@ import {
 } from 'urql';
 
 import UserContext, { type UserContextInterface } from '#contexts/UserContext';
+import useAlertContextProviderValue from '#hooks/useAlertContextProviderValue';
 
 import type { User } from './types/user';
 
@@ -32,6 +35,7 @@ const gqlClient = new Client({
         credentials: 'include',
     }),
     requestPolicy: 'cache-and-network',
+    suspense: false,
 });
 
 function Root() {
@@ -50,10 +54,15 @@ function Root() {
             setUser,
         ],
     );
+    const alertContextValue = useAlertContextProviderValue();
+
     return (
         <UrqlProvider value={gqlClient}>
             <UserContext.Provider value={userContext}>
-                <Outlet />
+                <AlertContext.Provider value={alertContextValue}>
+                    <AlertContainer />
+                    <Outlet />
+                </AlertContext.Provider>
             </UserContext.Provider>
         </UrqlProvider>
     );

@@ -21,8 +21,8 @@ import { gql } from 'urql';
 import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 import { useLoginMutation } from '#generated/types/graphql';
-
-import banner from '../../resources/image/redCrossBanner.png';
+import useAlert from '#hooks/useAlert';
+import banner from '#resources/image/redCrossBanner.png';
 
 import styles from './styles.module.css';
 
@@ -64,6 +64,7 @@ const defaultLoginFormValue: LoginFormFields = {};
 function Login() {
     const { setUser } = use(UserContext);
     const navigate = useNavigate();
+    const alert = useAlert();
 
     const {
         setFieldValue,
@@ -75,35 +76,55 @@ function Login() {
 
     const error = getErrorObject(formError);
 
-    const [{ fetching }, triggerLogin] = useLoginMutation();
+    const [{ fetching: loginPending }, triggerLogin] = useLoginMutation();
 
-    const handleFormSubmit = useCallback(() => {
+    const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
         const handler = createSubmitHandler(
             validate,
             setError,
-            (val) => {
-                triggerLogin({
-                    username: val.email ?? '',
-                    password: val.password ?? '',
-                }).then((response) => {
-                    const loginResponse = response.data?.login;
-                    if (!loginResponse) return;
-                    if (loginResponse) {
-                        setUser({
-                            id: loginResponse.id,
-                            firstName: loginResponse.firstName,
-                            lastName: loginResponse.lastName,
-                            email: loginResponse.email,
+            async (val) => {
+                try {
+                    const { data, error: apiError } = await triggerLogin({
+                        username: val.email ?? '',
+                        password: val.password ?? '',
+                    });
+
+                    if (apiError) {
+                        alert.show('Incorrect username/password', {
+                            variant: 'danger',
                         });
-                        navigate('/');
-                    } else {
-                        setError({ email: 'Failed to login!' });
+                        return;
                     }
-                });
+
+                    const loginResponse = data?.login;
+
+                    if (!loginResponse) {
+                        alert.show('Something went wrong. Please try again.', {
+                            variant: 'danger',
+                        });
+                        return;
+                    }
+
+                    setUser({
+                        id: loginResponse.id,
+                        firstName: loginResponse.firstName,
+                        lastName: loginResponse.lastName,
+                        email: loginResponse.email,
+                    });
+
+                    alert.show('Login successful!', { variant: 'success' });
+                    navigate('/');
+                } catch {
+                    alert.show('Something went wrong. Please try again.', {
+                        variant: 'danger',
+                    });
+                }
             },
         );
+
         handler();
-    }, [navigate, setError, setUser, triggerLogin, validate]);
+    }, [validate, setError, triggerLogin, setUser, navigate, alert]);
 
     return (
         <Page>
@@ -111,7 +132,7 @@ function Login() {
                 <Image src={banner} />
                 <form
                     className={styles.loginForm}
-                    onSubmit={(e) => { e.preventDefault(); handleFormSubmit(); }}
+                    onSubmit={handleFormSubmit}
                 >
                     <div className={styles.field}>
                         <TextInput
@@ -130,23 +151,14 @@ function Login() {
                             onChange={setFieldValue}
                         />
                     </div>
-                    <div className={styles.utilityLinks}>
-                        {/* <Radio
-                            name="keepme"
-                            description="Keep me logged in"
-                            onClick={() => { }}
-                            value={false}
-                        />
-                        <Heading level={5}>Forgot your password/username?</Heading> */}
-                    </div>
                     <div className={styles.loginBtn}>
                         <Button
                             name={undefined}
                             spacing="relaxed"
-                            disabled={fetching}
+                            disabled={loginPending}
                             type="submit"
                         >
-                            {fetching ? 'Logging in...' : 'Login'}
+                            {loginPending ? 'Logging in...' : 'Login'}
                         </Button>
                     </div>
                 </form>

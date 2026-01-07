@@ -1,14 +1,14 @@
 .nav {
+    border-right: 2px solid var(--go-ui-color-gray-20);
     height: 100%;
     .nav {
         border: none;
     }
-    border-right: 2px solid var(--go-ui-color-gray-20);
     .navHeaderContainer {
+        border-bottom: 2px solid var(--go-ui-color-gray-20);
         background-color: var(--go-ui-color-gray-10);
         padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
         width: 100%;
-        border-bottom: 2px solid var(--go-ui-color-gray-20);
         .navHeader {
             display: flex;
             justify-content: space-between;
@@ -26,8 +26,8 @@
         }
 
         .activeRoute {
-            color: var(--go-ui-color-primary-red);
             text-decoration: underline;
+            color: var(--go-ui-color-primary-red);
         }
     }
     .group {

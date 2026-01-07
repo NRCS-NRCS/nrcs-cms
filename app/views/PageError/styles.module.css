@@ -4,7 +4,7 @@
     flex-direction: column;
     flex-grow: 1;
     justify-content: center;
-    background-color: var(--color-background);
+    background-color: var(--go-ui-color-background);
     height: 100vh;
     text-align: center;
 }

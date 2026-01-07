@@ -12,6 +12,7 @@ import { gql } from 'urql';
 
 import UserContext from '#contexts/UserContext';
 import { useLogoutMutation } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 
 import styles from './styles.module.css';
 
@@ -24,9 +25,10 @@ const LOGOUT = gql`
 
 function Navbar() {
     const { user, setUser } = use(UserContext);
+    const alert = useAlert();
     const navigate = useNavigate();
 
-    const [{ fetching }, triggerLogout] = useLogoutMutation();
+    const [{ fetching: pendingLogout }, triggerLogout] = useLogoutMutation();
 
     const handleLogout = useCallback(async () => {
         const res = await triggerLogout({});
@@ -34,8 +36,9 @@ function Navbar() {
         if (logoutResponse) {
             setUser(undefined);
             navigate('/login');
+            alert.show('Logout Successful', { variant: 'success' });
         }
-    }, [navigate, triggerLogout, setUser]);
+    }, [navigate, triggerLogout, setUser, alert]);
 
     return (
         <nav className={styles.navbar}>
@@ -61,8 +64,9 @@ function Navbar() {
                         variant="tertiary"
                         className={styles.dropdownOption}
                         onClick={handleLogout}
+                        disabled={pendingLogout}
                     >
-                        {fetching ? 'Logging out' : 'Logout'}
+                        {pendingLogout ? 'Logging out' : 'Logout'}
                     </Button>
                 </React.Fragment>
             </DropdownMenu>

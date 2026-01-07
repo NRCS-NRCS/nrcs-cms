@@ -1,5 +1,4 @@
 import {
-    Suspense,
     use,
     useEffect,
     useState,
@@ -22,14 +21,14 @@ const fetchHealth = fetch(`${import.meta.env.APP_GRAPHQL_ENDPOINT}/health-check/
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ME_QUERY = gql`
-query Me {
-    me {
-         email
-        firstName
-        id
-        lastName
+    query Me {
+        me {
+            email
+            firstName
+            id
+            lastName
+        }
     }
-}
 `;
 
 function RootLayout() {
@@ -64,11 +63,9 @@ function RootLayout() {
         );
     }
     return (
-        <Suspense>
-            <div className={styles.root}>
-                <Outlet />
-            </div>
-        </Suspense>
+        <div className={styles.root}>
+            <Outlet />
+        </div>
     );
 }
 
