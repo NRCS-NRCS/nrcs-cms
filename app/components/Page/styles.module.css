@@ -2,8 +2,8 @@
     display: flex;
     flex-direction: row;
     flex-grow: 1;
+    height: 100%;
     overflow: hidden;
-
     .leftPane {
         display: flex;
         flex-direction: column;

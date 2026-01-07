@@ -1,0 +1,15 @@
+.section {
+    display: flex;
+    flex-direction: row;
+    padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-xl);
+    gap: var(--go-ui-spacing-xl);
+    .label {
+        p {
+            font-size: var(--go-ui-font-size-xs);
+            margin-top: var(--go-ui-spacing-2xs);
+        }
+    }
+}
+.section > * {
+    flex: 1;
+}
