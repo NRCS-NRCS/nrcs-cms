@@ -1,9 +1,8 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router';
 import {
-    DeleteBinLineIcon,
-    EditTwoLineIcon,
-} from '@ifrc-go/icons';
+    useCallback,
+    useMemo,
+} from 'react';
+import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -16,78 +15,35 @@ import {
     createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
-import { gql } from 'urql';
 
+import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     BlogQueryQuery,
     useBlogQueryQuery,
+    useDeleteBlogMutation,
 } from '#generated/types/graphql';
 
 import styles from './styles.module.css';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const BLOG_QUERY = gql`
-  query BlogQuery {
-    blogs {
-      title
-      status
-      slug
-      publishedDate
-      modifiedAt
-      id
-      featured
-      directiveId
-      author
-      content
-      coverImage {
-        name
-        size
-        url
-      }
-      createdAt
-      createdBy {
-        firstName
-        id
-        lastName
-      }
-      modifiedBy {
-        firstName
-        id
-        lastName
-      }
-    }
-  }
-`;
-type EventListItem = NonNullable<BlogQueryQuery['blogs']>[number];
-
-function Actions({ id }: { id: string }) {
-    const navigate = useNavigate();
-
-    return (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button
-                name={undefined}
-                variant="tertiary"
-                onClick={() => navigate(`${id}/edit`)}
-            >
-                <EditTwoLineIcon />
-            </Button>
-            <Button
-                name={undefined}
-                variant="tertiary"
-                onClick={() => console.log('Delete', id)}
-            >
-                <DeleteBinLineIcon />
-            </Button>
-        </div>
-    );
-}
+type EventListItem = NonNullable<BlogQueryQuery['blogs']>['results'][number];
 
 function BlogList() {
-    const [{ fetching, data }] = useBlogQueryQuery();
     const navigate = useNavigate();
-    const tableData = data?.blogs?.map((blog, i) => ({ ...blog, sn: i + 1 }));
+    const [{ fetching, data }, reexecuteQuery] = useBlogQueryQuery();
+    const [{ fetching: deletePending }, deleteBlog] = useDeleteBlogMutation();
+    const tableData = data?.blogs?.results.map((blog, i) => ({ ...blog, sn: i + 1 }));
 
+    const handleDelete = useCallback(
+        (id: string, closeModal: () => void) => {
+            deleteBlog({ id }).then((resp) => {
+                if (resp.data?.deleteBlog) {
+                    reexecuteQuery();
+                    closeModal();
+                }
+            });
+        },
+        [deleteBlog, reexecuteQuery],
+    );
     const columns = useMemo(
         () => ([
             // Serial Number
@@ -104,7 +60,6 @@ function BlogList() {
                 (blog) => blog.title,
                 {
                     sortable: true,
-                    // columnStretch: true,
                 },
             ),
 
@@ -115,7 +70,6 @@ function BlogList() {
                 (blog) => blog.publishedDate,
                 {
                     sortable: true,
-                    // columnWidth: 140,
                 },
             ),
 
@@ -126,7 +80,6 @@ function BlogList() {
                 (blog) => blog.author,
                 {
                     sortable: true,
-                    // columnWidth: 160,
                 },
             ),
 
@@ -137,7 +90,6 @@ function BlogList() {
                 (blog) => blog.featured,
                 {
                     sortable: true,
-                    // columnWidth: 100,
                 },
             ),
 
@@ -148,16 +100,17 @@ function BlogList() {
                 (blog) => blog.status,
                 {
                     sortable: true,
-                    // columnWidth: 120,
                 },
             ),
 
-            createElementColumn<EventListItem, string | number, { id: string }>(
+            createElementColumn<EventListItem, string | number, TableActionsProps>(
                 'actions',
                 'Actions',
-                Actions,
+                TableActions,
                 (_, datum) => ({
                     id: datum.id,
+                    handleConfirmButtonChange: handleDelete,
+                    confirmPending: deletePending,
                 }),
                 {
                     columnWidth: 150,
@@ -165,7 +118,7 @@ function BlogList() {
             ),
 
         ]),
-        [],
+        [handleDelete, deletePending],
     );
 
     return (

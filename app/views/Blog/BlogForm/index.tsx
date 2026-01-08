@@ -24,7 +24,6 @@ import {
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
-import { gql } from 'urql';
 
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
@@ -104,73 +103,6 @@ const defaultEditFormValue: PartialFormType = {
     slug: '',
 };
 
-const BLOG_DETAIL_QUERY = gql`
-  query BlogDetailQuery($id: ID!) {
-    blog(id: $id) {
-      author
-      content
-      coverImage {
-        name
-        size
-        url
-      }
-      departmentId
-      directiveId
-      featured
-      id
-      modifiedBy {
-        firstName
-        lastName
-      }
-      publishedDate
-      slug
-      status
-      title
-      createdBy {
-        firstName
-        lastName
-      }
-    }
-  }
-`;
-
-const DEPARTMENT_AND_DIRECTIVE = gql`
-  query DepartmentAndDirective {
-    departments {
-      id
-      description
-      title
-      strategicDirectiveId
-    }
-    strategicDirectives {
-      id
-      title
-    }
-  }
-`;
-
-const CREATE_BLOG_MUTATION = gql`
-  mutation CreateBlog($data: BlogCreateInput!) {
-    createBlog(data: $data) {
-      ... on BlogTypeMutationResponseType {
-        errors
-        ok
-      }
-    }
-  }
-`;
-
-export const UPDATE_BLOG_MUTATION = gql`
-  mutation UpdateBlog($pk: ID!, $data: BlogUpdateInput!) {
-    updateBlog(pk: $pk, data: $data) {
-      ... on BlogTypeMutationResponseType {
-        errors
-        ok
-      }
-    }
-  }
-`;
-
 function BlogForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -233,14 +165,14 @@ function BlogForm() {
         handler();
     }, [setError, validate, id, updateBlogMutate, createBlogMutate, navigate]);
 
-    const departmentOptions = departmentAndDirective?.departments.map(
+    const departmentOptions = departmentAndDirective?.departments.results.map(
         (dept) => ({
             id: dept.id,
             name: dept.title,
         }),
     ) ?? [];
 
-    const directiveOptions = departmentAndDirective?.strategicDirectives.map(
+    const directiveOptions = departmentAndDirective?.strategicDirectives.results.map(
         (directive) => ({
             id: directive.id,
             name: directive.title,

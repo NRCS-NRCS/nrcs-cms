@@ -15,20 +15,20 @@ const home: RouteConfig = {
 
 const blog: RouteConfig = {
     index: true,
-    path: 'cm/blog',
+    path: 'blog',
     load: () => import('#views/Blog/BlogList'),
     visibility: 'is-authenticated',
 };
 const editBlog: RouteConfig = {
     index: true,
-    path: 'cm/blog/:id/edit',
+    path: 'blog/:id/edit',
     load: () => import('#views/Blog/BlogForm'),
     visibility: 'is-authenticated',
 };
 
 const addBlog: RouteConfig = {
     index: true,
-    path: 'cm/blog/add',
+    path: 'blog/add',
     load: () => import('#views/Blog/BlogForm'),
     visibility: 'is-authenticated',
 };
