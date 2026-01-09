@@ -59,6 +59,27 @@ const login: RouteConfig = {
     visibility: 'is-not-authenticated',
 };
 
+const faqs: RouteConfig = {
+    index: true,
+    path: 'faqs',
+    load: () => import('#views/FAQs/FAQsList'),
+    visibility: 'is-authenticated',
+};
+
+const editFaq: RouteConfig = {
+    index: true,
+    path: 'faqs/:id/edit',
+    load: () => import('#views/FAQs/FAQsForm'),
+    visibility: 'is-authenticated',
+};
+
+const addFaq: RouteConfig = {
+    index: true,
+    path: 'faqs/add',
+    load: () => import('#views/FAQs/FAQsForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -68,6 +89,9 @@ const routes = {
     department,
     addDepartment,
     editDepartment,
+    faqs,
+    addFaq,
+    editFaq,
 };
 
 export type RouteKeys = keyof typeof routes;

@@ -24,8 +24,8 @@ function ConfirmationModal(props: Props) {
     } = props;
 
     const confirmationModalDescription = type === 'delete'
-        ? `Are you sure you want to delete ${itemTitle || 'this item'}? This action cannot be undone.`
-        : `Are you sure you want to save changes to ${itemTitle || 'this item'}?`;
+        ? `Are you sure you want to delete ${`"${itemTitle}"` || 'this item'}? This action cannot be undone.`
+        : `Are you sure you want to save changes to ${`"${itemTitle}"` || 'this item'}?`;
 
     return (
         <Modal

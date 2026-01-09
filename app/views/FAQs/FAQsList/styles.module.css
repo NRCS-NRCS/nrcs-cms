@@ -1,0 +1,17 @@
+.faq {
+    flex: 1;
+    padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-xl);
+    .header {
+        display: flex;
+        justify-content: space-between;
+    }
+    .content {
+        overflow: auto;
+    }
+
+    .headerRow {
+        th {
+            background: var(--go-ui-color-gray-20);
+        }
+    }
+}

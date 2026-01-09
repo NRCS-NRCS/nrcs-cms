@@ -156,6 +156,8 @@ function DepartmentForm() {
             setFieldValue(department.description, 'description');
             setFieldValue(department.strategicDirectiveId ?? '', 'strategicDirective');
             setFieldValue(department.slug ?? '', 'slug');
+            setFieldValue(`${department.modifiedBy.firstName} ${department.modifiedBy.lastName}`, 'modifiedBy');
+            setFieldValue(`${department.createdBy.firstName} ${department.createdBy.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
     return (
