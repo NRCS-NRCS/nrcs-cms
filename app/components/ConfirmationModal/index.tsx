@@ -10,6 +10,8 @@ interface Props {
     handleConfirmButtonChange: () => void;
     confirmPending?: boolean;
     type: 'save' | 'delete';
+    itemTitle?: string;
+
 }
 
 function ConfirmationModal(props: Props) {
@@ -18,16 +20,18 @@ function ConfirmationModal(props: Props) {
         handleConfirmButtonChange,
         confirmPending = false,
         type,
+        itemTitle,
     } = props;
 
     const confirmationModalDescription = type === 'delete'
-        ? 'Are you sure you want to delete this item? This action cannot be undone.'
-        : 'Are you sure you want to save the changes?';
+        ? `Are you sure you want to delete ${itemTitle || 'this item'}? This action cannot be undone.`
+        : `Are you sure you want to save changes to ${itemTitle || 'this item'}?`;
 
     return (
         <Modal
             onClose={onClose}
             heading="Confirmation"
+            className={styles.confirmation}
             headerDescription={confirmationModalDescription}
             size="sm"
             footerActions={(

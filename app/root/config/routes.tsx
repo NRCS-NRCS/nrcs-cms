@@ -33,6 +33,26 @@ const addBlog: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const department: RouteConfig = {
+    index: true,
+    path: 'departments',
+    load: () => import('#views/Department/DepartmentList'),
+    visibility: 'is-authenticated',
+};
+const editDepartment: RouteConfig = {
+    index: true,
+    path: 'departments/:id/edit',
+    load: () => import('#views/Department/DepartmentForm'),
+    visibility: 'is-authenticated',
+};
+
+const addDepartment: RouteConfig = {
+    index: true,
+    path: 'departments/add',
+    load: () => import('#views/Department/DepartmentForm'),
+    visibility: 'is-authenticated',
+};
+
 const login: RouteConfig = {
     path: '/login/',
     load: () => import('#views/Login'),
@@ -45,6 +65,9 @@ const routes = {
     blog,
     addBlog,
     editBlog,
+    department,
+    addDepartment,
+    editDepartment,
 };
 
 export type RouteKeys = keyof typeof routes;

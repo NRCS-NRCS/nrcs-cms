@@ -143,9 +143,8 @@ function BlogForm() {
                         pk: id,
                         data: mutateData,
                     });
-
                     if (res.data?.updateBlog?.ok) {
-                        navigate('/cm/blog');
+                        navigate('/blog');
                     } else if (res.data?.updateBlog?.errors) {
                         setError(res.data.updateBlog.errors);
                     }
@@ -153,9 +152,8 @@ function BlogForm() {
                     const res = await createBlogMutate({
                         data: mutateData,
                     });
-
-                    if (!res.data?.createBlog.ok) {
-                        navigate('/cm/blog');
+                    if (res.data?.createBlog.ok) {
+                        navigate('/blog');
                     } else if (res.data?.createBlog?.errors) {
                         setError(res.data.createBlog.errors);
                     }

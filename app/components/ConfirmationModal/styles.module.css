@@ -1,4 +1,9 @@
-.confirmationBtn {
-    display: flex;
-    gap: var(--go-ui-spacing-md);
+.confirmation {
+    justify-content: space-between;
+    .confirmationBtn {
+        display: flex;
+        gap: var(--go-ui-spacing-md);
+        align-items: center;
+        justify-content: center;
+    }
 }

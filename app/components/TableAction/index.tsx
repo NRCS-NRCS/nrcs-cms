@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, {
+    useCallback,
+    useState,
+} from 'react';
 import { useNavigate } from 'react-router';
 import {
     DeleteBinLineIcon,
@@ -14,20 +17,23 @@ export interface TableActionsProps {
     id: string;
     handleConfirmButtonChange: (id: string, closeModal: () => void) => void
     confirmPending?: boolean
+    itemTitle: string
 }
 
 function TableActions(props: TableActionsProps) {
     const navigate = useNavigate();
-    const { id, handleConfirmButtonChange, confirmPending } = props;
+    const {
+        id, handleConfirmButtonChange, confirmPending, itemTitle,
+    } = props;
     const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         setOpenDeleteModal(false);
-    };
+    }, []);
 
-    const handleConfirmButton = () => {
+    const handleConfirmButton = useCallback(() => {
         handleConfirmButtonChange(id, handleClose);
-    };
+    }, [id, handleClose, handleConfirmButtonChange]);
 
     return (
         <div className={styles.tableAction}>
@@ -37,6 +43,7 @@ function TableActions(props: TableActionsProps) {
                     type="delete"
                     handleConfirmButtonChange={handleConfirmButton}
                     confirmPending={confirmPending}
+                    itemTitle={itemTitle}
                 />
             )}
             <Button

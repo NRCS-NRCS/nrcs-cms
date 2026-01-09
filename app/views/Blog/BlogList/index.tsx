@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
+    Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
@@ -22,39 +23,50 @@ import {
     useBlogQueryQuery,
     useDeleteBlogMutation,
 } from '#generated/types/graphql';
+import usePagination from '#hooks/usePagination';
 
 import styles from './styles.module.css';
 
-type EventListItem = NonNullable<BlogQueryQuery['blogs']>['results'][number];
+type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number];
 
 function BlogList() {
     const navigate = useNavigate();
-    const [{ fetching, data }, reexecuteQuery] = useBlogQueryQuery();
+    const {
+        page,
+        setPage,
+        pageSize,
+        variables,
+        getFormattedData,
+    } = usePagination();
+    const [{ fetching, data }, reExecuteQuery] = useBlogQueryQuery({ variables });
     const [{ fetching: deletePending }, deleteBlog] = useDeleteBlogMutation();
-    const tableData = data?.blogs?.results.map((blog, i) => ({ ...blog, sn: i + 1 }));
 
+    const tableData = useMemo(
+        () => getFormattedData<BlogListType>(data?.blogs.results),
+        [data, getFormattedData],
+    );
     const handleDelete = useCallback(
         (id: string, closeModal: () => void) => {
             deleteBlog({ id }).then((resp) => {
                 if (resp.data?.deleteBlog) {
-                    reexecuteQuery();
+                    reExecuteQuery();
                     closeModal();
                 }
             });
         },
-        [deleteBlog, reexecuteQuery],
+        [deleteBlog, reExecuteQuery],
     );
     const columns = useMemo(
         () => ([
             // Serial Number
-            createNumberColumn<EventListItem & { sn: number }, string | number>(
+            createNumberColumn<BlogListType & { sn: number }, string | number>(
                 'sn',
                 'S.N.',
                 (item) => item.sn,
                 { columnWidth: 60 },
             ),
             // Title
-            createStringColumn<EventListItem, string | number>(
+            createStringColumn<BlogListType, string | number>(
                 'title',
                 'Title',
                 (blog) => blog.title,
@@ -64,7 +76,7 @@ function BlogList() {
             ),
 
             // Published Date
-            createDateColumn<EventListItem, string | number>(
+            createDateColumn<BlogListType, string | number>(
                 'publishedDate',
                 'Published Date',
                 (blog) => blog.publishedDate,
@@ -74,7 +86,7 @@ function BlogList() {
             ),
 
             // Author
-            createStringColumn<EventListItem, string | number>(
+            createStringColumn<BlogListType, string | number>(
                 'author',
                 'Author',
                 (blog) => blog.author,
@@ -84,7 +96,7 @@ function BlogList() {
             ),
 
             // Featured
-            createBooleanColumn<EventListItem, string | number>(
+            createBooleanColumn<BlogListType, string | number>(
                 'featured',
                 'Featured',
                 (blog) => blog.featured,
@@ -94,7 +106,7 @@ function BlogList() {
             ),
 
             // Status
-            createStringColumn<EventListItem, string | number>(
+            createStringColumn<BlogListType, string | number>(
                 'status',
                 'Status',
                 (blog) => blog.status,
@@ -103,7 +115,7 @@ function BlogList() {
                 },
             ),
 
-            createElementColumn<EventListItem, string | number, TableActionsProps>(
+            createElementColumn<BlogListType, string | number, TableActionsProps>(
                 'actions',
                 'Actions',
                 TableActions,
@@ -111,6 +123,7 @@ function BlogList() {
                     id: datum.id,
                     handleConfirmButtonChange: handleDelete,
                     confirmPending: deletePending,
+                    itemTitle: datum.title,
                 }),
                 {
                     columnWidth: 150,
@@ -129,6 +142,14 @@ function BlogList() {
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
                     Add blogs
                 </Button>
+            )}
+            footerActions={(
+                <Pager
+                    activePage={page}
+                    itemsCount={data?.blogs.totalCount ?? 0}
+                    maxItemsPerPage={pageSize}
+                    onActivePageChange={setPage}
+                />
             )}
         >
             <Table

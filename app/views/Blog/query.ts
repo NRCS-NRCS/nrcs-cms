@@ -2,8 +2,12 @@
 import { gql } from 'urql';
 
 const BLOG_QUERY = gql`
-    query BlogQuery {
-        blogs {
+    query BlogQuery($pagination: OffsetPaginationInput) {
+        blogs(pagination: $pagination) {
+            pageInfo {
+                limit
+                offset
+            }
             totalCount
             results {
                 author
