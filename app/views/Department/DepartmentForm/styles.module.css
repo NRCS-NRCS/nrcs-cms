@@ -34,4 +34,6 @@
 
 .inputClassName > * {
     flex: 1;
+    display: flex;
+    gap: var(--go-ui-spacing-sm);
 }

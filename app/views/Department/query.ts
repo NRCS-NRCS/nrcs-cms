@@ -32,6 +32,14 @@ const DEPARTMENT_DETAIL = gql`
             slug
             title
             strategicDirectiveId
+            createdBy {
+                firstName
+                lastName
+            }
+            modifiedBy {
+                firstName
+                lastName
+            }
         }
     }
 `;
