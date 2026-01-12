@@ -72,11 +72,31 @@ const editFaq: RouteConfig = {
     load: () => import('#views/FAQs/FAQsForm'),
     visibility: 'is-authenticated',
 };
-
 const addFaq: RouteConfig = {
     index: true,
     path: 'faqs/add',
     load: () => import('#views/FAQs/FAQsForm'),
+    visibility: 'is-authenticated',
+};
+
+const highlight: RouteConfig = {
+    index: true,
+    path: 'highlights',
+    load: () => import('#views/Highlight/HighlightList'),
+    visibility: 'is-authenticated',
+};
+
+const addHighlight: RouteConfig = {
+    index: true,
+    path: 'highlights/:id/edit',
+    load: () => import('#views/Highlight/HighlightForm'),
+    visibility: 'is-authenticated',
+};
+
+const editHighlight: RouteConfig = {
+    index: true,
+    path: 'highlights/add',
+    load: () => import('#views/Highlight/HighlightForm'),
     visibility: 'is-authenticated',
 };
 
@@ -92,6 +112,9 @@ const routes = {
     faqs,
     addFaq,
     editFaq,
+    highlight,
+    addHighlight,
+    editHighlight,
 };
 
 export type RouteKeys = keyof typeof routes;

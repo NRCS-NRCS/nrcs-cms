@@ -35,8 +35,8 @@ const navigation = [
                 variant: 'leaf' as const,
             },
             {
-                to: '/home',
-                title: 'Home',
+                to: '/highlights',
+                title: 'Highlight',
                 variant: 'leaf' as const,
 
             },

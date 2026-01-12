@@ -81,14 +81,8 @@ const EditBlogSchema: FormSchema = {
             required: false,
             requiredValidation: requiredStringCondition,
         },
-        createdBy: {
-            required: false,
-            requiredValidation: requiredStringCondition,
-        },
-        modifiedBy: {
-            required: false,
-            requiredValidation: requiredStringCondition,
-        },
+        createdBy: {},
+        modifiedBy: {},
         slug: {
             required: true,
             requiredValidation: requiredStringCondition,
