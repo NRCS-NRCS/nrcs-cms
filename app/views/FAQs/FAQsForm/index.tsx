@@ -12,7 +12,6 @@ import {
     Heading,
     NumberInput,
     TextArea,
-    TextInput,
 } from '@ifrc-go/ui';
 import {
     createSubmitHandler,
@@ -55,14 +54,8 @@ const EditBlogSchema: FormSchema = {
             required: true,
             requiredValidation: integerCondition,
         },
-        createdBy: {
-            required: false,
-            requiredValidation: requiredStringCondition,
-        },
-        modifiedBy: {
-            required: false,
-            requiredValidation: requiredStringCondition,
-        },
+        createdBy: {},
+        modifiedBy: {},
 
     }),
 };
