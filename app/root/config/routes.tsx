@@ -99,7 +99,25 @@ const editHighlight: RouteConfig = {
     load: () => import('#views/Highlight/HighlightForm'),
     visibility: 'is-authenticated',
 };
+const partner: RouteConfig = {
+    index: true,
+    path: 'partners',
+    load: () => import('#views/Partner/PartnerList'),
+    visibility: 'is-authenticated',
+};
+const editPartner: RouteConfig = {
+    index: true,
+    path: 'partners/:id/edit',
+    load: () => import('#views/Partner/PartnerForm'),
+    visibility: 'is-authenticated',
+};
 
+const addPartner: RouteConfig = {
+    index: true,
+    path: 'partners/add',
+    load: () => import('#views/Partner/PartnerForm'),
+    visibility: 'is-authenticated',
+};
 const routes = {
     login,
     home,
@@ -115,6 +133,9 @@ const routes = {
     highlight,
     addHighlight,
     editHighlight,
+    partner,
+    editPartner,
+    addPartner,
 };
 
 export type RouteKeys = keyof typeof routes;
