@@ -181,6 +181,27 @@ const addRadioProgram: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const vacancy: RouteConfig = {
+    index: true,
+    path: 'vacancy',
+    load: () => import('#views/Vacancy/VacancyList'),
+    visibility: 'is-authenticated',
+};
+
+const editVacancy: RouteConfig = {
+    index: true,
+    path: 'vacancy/:id/edit',
+    load: () => import('#views/Vacancy/VacancyForm'),
+    visibility: 'is-authenticated',
+};
+
+const addVacancy: RouteConfig = {
+    index: true,
+    path: 'vacancy/add',
+    load: () => import('#views/Vacancy/VacancyForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -208,6 +229,9 @@ const routes = {
     radioProgram,
     editRadioProgram,
     addRadioProgram,
+    vacancy,
+    addVacancy,
+    editVacancy,
 };
 
 export type RouteKeys = keyof typeof routes;
