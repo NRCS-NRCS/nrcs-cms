@@ -17,17 +17,17 @@ import {
 
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
-    ProcurementQuery,
-    useDeleteProcurementMutation,
-    useProcurementQuery,
+    RadioProgramQuery,
+    useDeleteRadioProgramMutation,
+    useRadioProgramQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
 
 import styles from './styles.module.css';
 
-type ProcurementListItem = NonNullable<ProcurementQuery['procurements']>['results'][number];
+type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
 
-function ProcurementList() {
+function RadioProgramList() {
     const navigate = useNavigate();
     const {
         page,
@@ -37,32 +37,32 @@ function ProcurementList() {
         getFormattedData,
     } = usePagination();
 
-    const [{ fetching, data }, reExecuteQuery] = useProcurementQuery({ variables });
-    const [{ fetching: deletePending }, deleteProcurement] = useDeleteProcurementMutation();
+    const [{ fetching, data }, reExecuteQuery] = useRadioProgramQuery({ variables });
+    const [{ fetching: deletePending }, deleteRadioProgram] = useDeleteRadioProgramMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<ProcurementListItem>(data?.procurements.results),
+        () => getFormattedData<RadioProgramListItem>(data?.radioProgram.results),
         [data, getFormattedData],
     );
 
     const handleDelete = useCallback(
         (id: string, closeModal: () => void) => {
-            deleteProcurement({ id }).then((resp) => {
-                if (resp.data?.deleteProcurement) {
+            deleteRadioProgram({ id }).then((resp) => {
+                if (resp.data?.deleteRadioProgram) {
                     reExecuteQuery();
                     closeModal();
                 }
             });
         },
-        [deleteProcurement, reExecuteQuery],
+        [deleteRadioProgram, reExecuteQuery],
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<ProcurementListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<ProcurementListItem, string | number>('title', 'Tile', (dept) => dept.title),
-        createStringColumn<ProcurementListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
-        createStringColumn<ProcurementListItem, string | number>('expireDate', 'Expire Date', (dept) => dept?.expiryDate),
-        createElementColumn<ProcurementListItem, string | number, TableActionsProps>(
+        createNumberColumn<RadioProgramListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
+        createStringColumn<RadioProgramListItem, string | number>('title', 'Tile', (dept) => dept.title),
+        createStringColumn<RadioProgramListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
+        createStringColumn<RadioProgramListItem, string | number>('type', 'Type', (dept) => dept?.type),
+        createElementColumn<RadioProgramListItem, string | number, TableActionsProps>(
             'actions',
             'Actions',
             TableActions,
@@ -77,18 +77,18 @@ function ProcurementList() {
     ], [handleDelete, deletePending]);
     return (
         <Container
-            className={styles.procurement}
+            className={styles.radioProgram}
             childrenContainerClassName={styles.content}
-            heading="Procurement"
+            heading="RadioProgram"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
-                    Add Procurement
+                    Add RadioProgram
                 </Button>
             )}
             footerActions={(
                 <Pager
                     activePage={page}
-                    itemsCount={data?.procurements.totalCount ?? 0}
+                    itemsCount={data?.radioProgram.totalCount ?? 0}
                     maxItemsPerPage={pageSize}
                     onActivePageChange={setPage}
                 />
@@ -107,4 +107,4 @@ function ProcurementList() {
     );
 }
 
-export default ProcurementList;
+export default RadioProgramList;

@@ -160,6 +160,27 @@ const addProcurements: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const radioProgram: RouteConfig = {
+    index: true,
+    path: 'radio-programs',
+    load: () => import('#views/RadioProgram/RadioProgramList'),
+    visibility: 'is-authenticated',
+};
+
+const editRadioProgram: RouteConfig = {
+    index: true,
+    path: 'radio-programs/:id/edit',
+    load: () => import('#views/RadioProgram/RadioProgramForm'),
+    visibility: 'is-authenticated',
+};
+
+const addRadioProgram: RouteConfig = {
+    index: true,
+    path: 'radio-programs/add',
+    load: () => import('#views/RadioProgram/RadioProgramForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -184,6 +205,9 @@ const routes = {
     procurements,
     editProcurements,
     addProcurements,
+    radioProgram,
+    editRadioProgram,
+    addRadioProgram,
 };
 
 export type RouteKeys = keyof typeof routes;
