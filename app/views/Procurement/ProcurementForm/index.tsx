@@ -8,10 +8,8 @@ import {
 } from 'react-router';
 import {
     Button,
-    Container,
     DateInput,
     Heading,
-    RawFileInput,
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
@@ -24,6 +22,8 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
+import FileUpload from '#components/FileUpload';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import {
@@ -33,8 +33,6 @@ import {
     useUpdateProcurementMutation,
 } from '#generated/types/graphql';
 import urlToFile from '#utils/urlToFile';
-
-import styles from './styles.module.css';
 
 type PartialFormType = PartialForm<ProcurementCreateInput> &
 { createdBy: string, modifiedBy: string }
@@ -150,24 +148,23 @@ function ProcurementForm() {
 
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
-                <FormSection headingLevel={3} label="Procurement Detail" />
+            <ContainerWrapper>
+                <FormSection headingLevel={3} label="PROCUREMENT DETAILS" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Title*" description="Enter the Title">
+                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
@@ -175,7 +172,7 @@ function ProcurementForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <FormSection label="Description*" description="Describe how the EAP is aligned with the Disaster Risk Management strategy of the National Society (e.g. in the existing contingency plan, DRR plan etc.).">
+                <FormSection label="Description" description="Describe how the EAP is aligned with the Disaster Risk Management strategy of the National Society (e.g. in the existing contingency plan, DRR plan etc.)." withAsteriskOnTitle>
                     <TextArea
                         name="description"
                         value={value.description}
@@ -183,17 +180,14 @@ function ProcurementForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <FormSection label="Procurement File*" description="Add a cover photo, which will be attached and displayed on top of your application">
-                    <RawFileInput
-                        name="image"
+                <FormSection label="Procurement File" description="Add a cover photo, which will be attached and displayed on top of your application" withAsteriskOnTitle>
+                    <FileUpload
+                        name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
-                        variant="secondary"
-                    >
-                        Upload
-                    </RawFileInput>
-                    {value.file?.name && <p>{value.file.name}</p>}
+                        value={value.file}
+                    />
                 </FormSection>
-                <FormSection label="Published Date*" description="This date should be the Published Date of the Procurement">
+                <FormSection label="Published Date" description="This date should be the Published Date of the Procurement" withAsteriskOnTitle>
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -202,7 +196,7 @@ function ProcurementForm() {
                         error={error?.publishedDate as string}
                     />
                 </FormSection>
-                <FormSection label="Expire Date*" description="This date should be the Expire Date of the Procurement">
+                <FormSection label="Expire Date" description="This date should be the Expire Date of the Procurement" withAsteriskOnTitle>
                     <DateInput
                         name="expiryDate"
                         value={value.expiryDate}
@@ -211,12 +205,12 @@ function ProcurementForm() {
                         error={error?.expiryDate as string}
                     />
                 </FormSection>
-                <div className={styles.submitBtn}>
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+            </ContainerWrapper>
         </Page>
     );
 }

@@ -10,9 +10,7 @@ import {
 import {
     Button,
     Checkbox,
-    Container,
     Heading,
-    RawFileInput,
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
@@ -32,6 +30,8 @@ import {
     useFormObject,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
+import FileUpload from '#components/FileUpload';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import {
@@ -285,24 +285,23 @@ function HighlightForm() {
 
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
-                <FormSection headingLevel={3} label="FAQs DETAIL" />
+            <ContainerWrapper>
+                <FormSection headingLevel={3} label="FAQS DETAIL" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Heading*" description="Enter the question">
+                <FormSection label="Heading" description="Enter the Heading name of the highlight" withAsteriskOnTitle>
                     <TextInput
                         name="heading"
                         value={value.heading}
@@ -310,7 +309,7 @@ function HighlightForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <FormSection label="Description*" description="Enter the question">
+                <FormSection label="Description" description="Enter the description" withAsteriskOnTitle>
                     <TextArea
                         name="description"
                         value={value.description}
@@ -318,7 +317,7 @@ function HighlightForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <FormSection label="isActive*" description="Click on the checkbox if the blog is to be featured">
+                <FormSection label="isActive" description="Click on the checkbox if the blog is to be featured">
                     <Checkbox
                         name="isActive"
                         label="isActive"
@@ -327,17 +326,14 @@ function HighlightForm() {
                         error={error?.isActive}
                     />
                 </FormSection>
-                <FormSection label="Image*" description="Add a cover photo, which will be displayed on top">
-                    <RawFileInput
-                        name="image"
+                <FormSection label="Image" description="Add a cover photo, which will be displayed on top" withAsteriskOnTitle>
+                    <FileUpload
+                        name="audioFile"
                         onChange={(files) => setFieldValue(files, 'image')}
-                        variant="secondary"
-                    >
-                        Upload
-                    </RawFileInput>
-                    {value.image?.name && <p>{value.image.name}</p>}
+                        value={value.image}
+                    />
                 </FormSection>
-                <FormSection label="Action Link*" description="Add link to the highlight and the name to be displayed for the URL">
+                <FormSection label="Action Link" description="Add link to the highlight and the name to be displayed for the URL">
                     {(value.actionLinks || []).map((link, index) => (
                         <ActionLinkInputComponent
                             key={link.clientId}
@@ -352,12 +348,12 @@ function HighlightForm() {
                         Add Link
                     </Button>
                 </FormSection>
-                <div className={styles.submitBtn}>
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+            </ContainerWrapper>
         </Page>
     );
 }

@@ -5,7 +5,6 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
-    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -17,6 +16,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     BlogQueryQuery,
@@ -24,8 +24,6 @@ import {
     useDeleteBlogMutation,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number];
 
@@ -135,8 +133,8 @@ function BlogList() {
     );
 
     return (
-        <Container
-            className={styles.blog}
+        <ContainerWrapper
+            withPadding
             heading="Blog"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
@@ -154,15 +152,12 @@ function BlogList() {
         >
             <Table
                 keySelector={(item) => item.id}
-                className={styles.table}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
-                headerRowClassName={styles.headerRow}
-
             />
-        </Container>
+        </ContainerWrapper>
     );
 }
 

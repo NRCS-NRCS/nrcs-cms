@@ -9,10 +9,8 @@ import {
 import {
     Button,
     Checkbox,
-    Container,
     DateInput,
     Heading,
-    RawFileInput,
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -25,6 +23,8 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
+import FileUpload from '#components/FileUpload';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import RichTextEditor from '#components/RichTextEditor';
@@ -36,8 +36,6 @@ import {
     useDepartmentAndDirectiveQuery,
     useUpdateBlogMutation,
 } from '#generated/types/graphql';
-
-import styles from './styles.module.css';
 
 type PartialFormType = PartialForm<BlogCreateInput> &
 { createdBy: string, modifiedBy: string, slug: string | null };
@@ -195,24 +193,23 @@ function BlogForm() {
     }, [data, setFieldValue]);
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
+            <ContainerWrapper>
                 <FormSection headingLevel={3} label="BLOG DETAIL" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Title*" description="Enter the title name of the Blog">
+                <FormSection label="Title*" description="Enter the title name of the Blog" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
@@ -220,7 +217,7 @@ function BlogForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <FormSection label="Published Date*" description="This date should be the Published Date of the blog">
+                <FormSection label="Published Date" description="This date should be the Published Date of the blog" withAsteriskOnTitle>
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -229,7 +226,7 @@ function BlogForm() {
                         error={error?.publishedDate as string}
                     />
                 </FormSection>
-                <FormSection label="Author*" description="Author name should be the person who wrote the blog">
+                <FormSection label="Author" description="Author name should be the person who wrote the blog" withAsteriskOnTitle>
                     <TextInput
                         name="author"
                         value={value.author}
@@ -237,17 +234,15 @@ function BlogForm() {
                         error={error?.author as string}
                     />
                 </FormSection>
-                <FormSection label="Cover photo*" description="Add a cover photo, which will be displayed on top">
-                    <RawFileInput
+                <FormSection label="Cover photo" description="Add a cover photo, which will be displayed on top" withAsteriskOnTitle>
+                    <FileUpload
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
-                        variant="secondary"
-                    >
-                        Upload
-                    </RawFileInput>
-                    {value.coverImage?.name && <p>{value.coverImage.name}</p>}
+                        accept="audio/*"
+                        value={value.coverImage}
+                    />
                 </FormSection>
-                <FormSection label="Featured*" description="Click on the checkbox if the blog is to be featured">
+                <FormSection label="Featured" description="Click on the checkbox if the blog is to be featured" withAsteriskOnTitle>
                     <Checkbox
                         name="featured"
                         label="Feature"
@@ -256,7 +251,7 @@ function BlogForm() {
                         error={error?.featured}
                     />
                 </FormSection>
-                <FormSection label="Status*" description="Add status to either draft, publish or archived">
+                <FormSection label="Status" description="Add status to either draft, publish or archived" withAsteriskOnTitle>
                     <SelectInput
                         name="status"
                         options={statusOptions}
@@ -268,14 +263,16 @@ function BlogForm() {
                         error={error?.status}
                     />
                 </FormSection>
-                <FormSection label="Slug*" description="Unique URL identifier for the blog">
-                    <TextInput
-                        name="slug"
-                        value={value.slug ?? ''}
-                        onChange={(val) => setFieldValue(val || null, 'slug')}
-                        error={error?.slug}
-                    />
-                </FormSection>
+                {value.slug && (
+                    <FormSection label="Slug" description="Unique URL identifier for the blog">
+                        <TextInput
+                            name="slug"
+                            value={value.slug ?? ''}
+                            onChange={(val) => setFieldValue(val || null, 'slug')}
+                            error={error?.slug}
+                        />
+                    </FormSection>
+                )}
                 <FormSection label="Strategic Directive (NS)" description="Select under which strategic directive it belongs">
                     <SelectInput
                         name="directive"
@@ -301,18 +298,18 @@ function BlogForm() {
                     />
                 </FormSection>
                 <FormSection label="Write blog" />
-                <div>
+                <FormSection>
                     <RichTextEditor
                         value={value.content}
                         onChange={(val) => setFieldValue(val, 'content')}
                     />
-                </div>
-                <div className={styles.submitBtn}>
+                </FormSection>
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+            </ContainerWrapper>
         </Page>
     );
 }
