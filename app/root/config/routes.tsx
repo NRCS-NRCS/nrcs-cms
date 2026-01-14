@@ -139,6 +139,27 @@ const addNews: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const procurements: RouteConfig = {
+    index: true,
+    path: 'procurements',
+    load: () => import('#views/Procurement/ProcurementList'),
+    visibility: 'is-authenticated',
+};
+
+const editProcurements: RouteConfig = {
+    index: true,
+    path: 'procurements/:id/edit',
+    load: () => import('#views/Procurement/ProcurementForm'),
+    visibility: 'is-authenticated',
+};
+
+const addProcurements: RouteConfig = {
+    index: true,
+    path: 'procurements/add',
+    load: () => import('#views/Procurement/ProcurementForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -160,6 +181,9 @@ const routes = {
     news,
     addNews,
     editNews,
+    procurements,
+    editProcurements,
+    addProcurements,
 };
 
 export type RouteKeys = keyof typeof routes;
