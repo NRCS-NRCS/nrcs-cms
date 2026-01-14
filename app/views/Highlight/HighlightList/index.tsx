@@ -5,7 +5,6 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
-    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -16,6 +15,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     HighlightQuery,
@@ -23,8 +23,6 @@ import {
     useHighlightQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type HighlightListItem = NonNullable<HighlightQuery['highlights']>['results'][number];
 
@@ -79,9 +77,8 @@ function HighlightList() {
     ], [handleDelete, deletePending]);
 
     return (
-        <Container
-            className={styles.highlight}
-            childrenContainerClassName={styles.content}
+        <ContainerWrapper
+            withPadding
             heading="Highlight"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
@@ -99,14 +96,12 @@ function HighlightList() {
         >
             <Table
                 keySelector={(item) => item.id}
-                className={styles.table}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
-                headerRowClassName={styles.headerRow}
             />
-        </Container>
+        </ContainerWrapper>
     );
 }
 

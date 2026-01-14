@@ -8,12 +8,9 @@ import {
 } from 'react-router';
 import {
     Button,
-    Container,
     DateInput,
     Heading,
-    RawFileInput,
     SelectInput,
-    TextArea,
     TextInput,
 } from '@ifrc-go/ui';
 import {
@@ -25,6 +22,8 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
+import FileUpload from '#components/FileUpload';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import {
@@ -36,8 +35,6 @@ import {
     useUpdateRadioProgramMutation,
 } from '#generated/types/graphql';
 import urlToFile from '#utils/urlToFile';
-
-import styles from './styles.module.css';
 
 type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
 
@@ -155,24 +152,23 @@ function RadioProgramForm() {
     }));
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
-                <FormSection headingLevel={3} label="RadioProgram Detail" />
+            <ContainerWrapper>
+                <FormSection headingLevel={3} label="RADIO PROGRAM DETAILS" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Title*" description="Enter the Title">
+                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
@@ -180,18 +176,15 @@ function RadioProgramForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <FormSection label="Audio File*" description="Add a Audio, which will be attached and shown on Radio Page">
-                    <RawFileInput
+                <FormSection label="Audio File" description="Add a Audio, which will be attached and shown on Radio Page" withAsteriskOnTitle>
+                    <FileUpload
                         name="audioFile"
                         onChange={(files) => setFieldValue(files, 'audioFile')}
-                        variant="secondary"
                         accept="audio/*"
-                    >
-                        Upload
-                    </RawFileInput>
-                    {value.audioFile?.name && <p>{value.audioFile.name}</p>}
+                        value={value.audioFile}
+                    />
                 </FormSection>
-                <FormSection label="Published Date*" description="This date should be the Published Date of the RadioProgram">
+                <FormSection label="Published Date" description="This date should be the Published Date of the RadioProgram" withAsteriskOnTitle>
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -200,7 +193,7 @@ function RadioProgramForm() {
                         error={error?.publishedDate as string}
                     />
                 </FormSection>
-                <FormSection label="Type*" description="Add type to either Tuesday Program or Radio Red Cross">
+                <FormSection label="Type" description="Add type to either Tuesday Program or Radio Red Cross" withAsteriskOnTitle>
                     <SelectInput
                         name="type"
                         options={radioType}
@@ -212,12 +205,13 @@ function RadioProgramForm() {
                         error={error?.type}
                     />
                 </FormSection>
-                <div className={styles.submitBtn}>
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+
+            </ContainerWrapper>
         </Page>
     );
 }

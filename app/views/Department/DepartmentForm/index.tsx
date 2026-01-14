@@ -8,9 +8,9 @@ import {
 } from 'react-router';
 import {
     Button,
-    Container,
     Heading,
     SelectInput,
+    TextArea,
     TextInput,
 } from '@ifrc-go/ui';
 import {
@@ -22,6 +22,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import RichTextEditor from '#components/RichTextEditor';
@@ -32,8 +33,6 @@ import {
     useDirectiveQuery,
     useUpdateDepartmentMutation,
 } from '#generated/types/graphql';
-
-import styles from './styles.module.css';
 
 type PartialFormType = PartialForm<DepartmentCreateInput> &
 { createdBy: string, modifiedBy: string, slug: string | null }
@@ -156,24 +155,23 @@ function DepartmentForm() {
     }, [data, setFieldValue]);
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
+            <ContainerWrapper>
                 <FormSection headingLevel={3} label="DEPARTMENT DETAIL" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Title*" description="Enter the title name of the Department">
+                <FormSection label="Title*" description="Enter the title name of the Department" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
@@ -181,13 +179,15 @@ function DepartmentForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-                <div>
-                    <RichTextEditor
+                <FormSection label="Department" description="Write a short description about the roles and responsibilities of the department" withAsteriskOnTitle>
+                    <TextArea
+                        name="department"
                         value={value.description}
+                        error={error?.description as string}
                         onChange={(val) => setFieldValue(val, 'description')}
                     />
-                </div>
-                <FormSection label="Contact Person Name*" description="Author name should be the person who wrote the blog">
+                </FormSection>
+                <FormSection label="Contact Person Name" description="Add contact number of the person for the department" withAsteriskOnTitle>
                     <TextInput
                         name="contactPersonName"
                         value={value.contactPersonName}
@@ -195,7 +195,7 @@ function DepartmentForm() {
                         error={error?.contactPersonName as string}
                     />
                 </FormSection>
-                <FormSection label="Contact Person Email*" description="Unique URL identifier for the blog">
+                <FormSection label="Contact Person Email" description="Add Email of the person for the department" withAsteriskOnTitle>
                     <TextInput
                         name="contactPersonEmail"
                         value={value.contactPersonEmail ?? ''}
@@ -215,21 +215,23 @@ function DepartmentForm() {
                         error={error?.strategicDirective}
                     />
                 </FormSection>
-                <FormSection label="Slug*" description="Unique URL identifier for the blog">
-                    <TextInput
-                        name="slug"
-                        value={value.slug ?? ''}
-                        onChange={(val) => setFieldValue(val || null, 'slug')}
-                        error={error?.slug}
-                        disabled
-                    />
-                </FormSection>
-                <div className={styles.submitBtn}>
+                {value.slug && (
+                    <FormSection label="Slug" description="Unique URL identifier for the blog">
+                        <TextInput
+                            name="slug"
+                            value={value.slug ?? ''}
+                            onChange={(val) => setFieldValue(val || null, 'slug')}
+                            error={error?.slug}
+                            disabled
+                        />
+                    </FormSection>
+                )}
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+            </ContainerWrapper>
         </Page>
     );
 }

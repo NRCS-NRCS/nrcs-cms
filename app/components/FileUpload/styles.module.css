@@ -1,0 +1,9 @@
+.fileInput {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    gap: var(--go-ui-spacing-sm);
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
+}

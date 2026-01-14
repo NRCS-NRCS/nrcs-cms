@@ -14,15 +14,21 @@ interface FormSectionProps {
     headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
     className?: string;
     inputClassName?: string
+    withAsteriskOnTitle?: boolean
 }
 function FormSection({
-    label, description, headingLevel = 6, children, className, inputClassName,
+    label, description, headingLevel = 6, children, className, inputClassName, withAsteriskOnTitle,
 }: FormSectionProps) {
     return (
         <div className={_cs(styles.section, className)}>
             {isDefined(label) && (
                 <div className={styles.label}>
-                    <Heading level={headingLevel}>{label}</Heading>
+                    <Heading level={headingLevel}>
+                        {label}
+                        {withAsteriskOnTitle && (
+                            <span aria-hidden className={styles.asterisk}>*</span>
+                        )}
+                    </Heading>
                     {description && <p>{description}</p>}
                 </div>
             )}

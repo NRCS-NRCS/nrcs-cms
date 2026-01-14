@@ -8,7 +8,6 @@ import {
 } from 'react-router';
 import {
     Button,
-    Container,
     Heading,
     NumberInput,
     TextArea,
@@ -23,6 +22,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import {
@@ -31,8 +31,6 @@ import {
     useFaqDetailQuery,
     useUpdateFaqMutation,
 } from '#generated/types/graphql';
-
-import styles from './styles.module.css';
 
 type PartialFormType = PartialForm<FaqCreateInput> &
 { createdBy: string, modifiedBy: string }
@@ -130,21 +128,20 @@ function FAQsForm() {
     }, [data, setFieldValue]);
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
+            <ContainerWrapper>
                 <FormSection headingLevel={3} label="FAQs DETAIL" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
                 <FormSection label="Question*" description="Enter the question">
@@ -171,12 +168,12 @@ function FAQsForm() {
                         error={error?.orderIndex}
                     />
                 </FormSection>
-                <div className={styles.submitBtn}>
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+            </ContainerWrapper>
         </Page>
     );
 }

@@ -5,7 +5,6 @@ import React, {
 import { useNavigate } from 'react-router';
 import {
     Button,
-    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -15,6 +14,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     FaqQuery,
@@ -22,8 +22,6 @@ import {
     useFaqQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number];
 
@@ -76,9 +74,8 @@ function FAQsList() {
         ),
     ], [handleDelete, deletePending]);
     return (
-        <Container
-            className={styles.faq}
-            childrenContainerClassName={styles.content}
+        <ContainerWrapper
+            withPadding
             heading="FAQs"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
@@ -96,14 +93,12 @@ function FAQsList() {
         >
             <Table
                 keySelector={(item) => item.id}
-                className={styles.table}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
-                headerRowClassName={styles.headerRow}
             />
-        </Container>
+        </ContainerWrapper>
     );
 }
 

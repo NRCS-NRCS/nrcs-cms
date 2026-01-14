@@ -5,7 +5,6 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
-    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -15,6 +14,8 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
+import Page from '#components/Page';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     RadioProgramQuery,
@@ -22,8 +23,6 @@ import {
     useRadioProgramQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
 
@@ -76,34 +75,33 @@ function RadioProgramList() {
         ),
     ], [handleDelete, deletePending]);
     return (
-        <Container
-            className={styles.radioProgram}
-            childrenContainerClassName={styles.content}
-            heading="RadioProgram"
-            actions={(
-                <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
-                    Add RadioProgram
-                </Button>
-            )}
-            footerActions={(
-                <Pager
-                    activePage={page}
-                    itemsCount={data?.radioProgram.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
-                    onActivePageChange={setPage}
+        <Page>
+            <ContainerWrapper
+                withPadding
+                heading="Radio Program"
+                actions={(
+                    <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
+                        Add Radio Program
+                    </Button>
+                )}
+                footerActions={(
+                    <Pager
+                        activePage={page}
+                        itemsCount={data?.radioProgram.totalCount ?? 0}
+                        maxItemsPerPage={pageSize}
+                        onActivePageChange={setPage}
+                    />
+                )}
+            >
+                <Table
+                    keySelector={(item) => item.id}
+                    columns={columns}
+                    data={tableData}
+                    filtered={false}
+                    pending={fetching}
                 />
-            )}
-        >
-            <Table
-                keySelector={(item) => item.id}
-                className={styles.table}
-                columns={columns}
-                data={tableData}
-                filtered={false}
-                pending={fetching}
-                headerRowClassName={styles.headerRow}
-            />
-        </Container>
+            </ContainerWrapper>
+        </Page>
     );
 }
 

@@ -5,7 +5,6 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
-    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -15,6 +14,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     DepartmentsQuery,
@@ -22,8 +22,6 @@ import {
     useDepartmentsQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type EventListItem = NonNullable<DepartmentsQuery['departments']>['results'][number];
 
@@ -77,9 +75,8 @@ function DepartmentList() {
     ], [handleDelete, deletePending]);
 
     return (
-        <Container
-            className={styles.department}
-            childrenContainerClassName={styles.content}
+        <ContainerWrapper
+            withPadding
             heading="Department"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
@@ -97,15 +94,12 @@ function DepartmentList() {
         >
             <Table
                 keySelector={(item) => item.id}
-                className={styles.table}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
-                headerRowClassName={styles.headerRow}
-
             />
-        </Container>
+        </ContainerWrapper>
     );
 }
 

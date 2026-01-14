@@ -8,24 +8,21 @@ import {
 } from 'react-router';
 import {
     Button,
-    Container,
     Heading,
-    NumberInput,
-    RawFileInput,
     SelectInput,
-    TextArea,
     TextInput,
 } from '@ifrc-go/ui';
 import {
     createSubmitHandler,
     getErrorObject,
-    integerCondition,
     ObjectSchema,
     PartialForm,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
 
+import ContainerWrapper from '#components/ContainerWrapper';
+import FileUpload from '#components/FileUpload';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
 import {
@@ -36,8 +33,6 @@ import {
     useUpdatePartnerMutation,
 } from '#generated/types/graphql';
 import urlToFile from '#utils/urlToFile';
-
-import styles from './styles.module.css';
 
 type PartialFormType = PartialForm<PartnerCreateInput> &
 { createdBy: string, modifiedBy: string }
@@ -145,24 +140,23 @@ function PartnerForm() {
     }));
     return (
         <Page>
-            <Container
-                className={styles.container}
-                childrenContainerClassName={styles.containerChild}
-            >
-                <FormSection headingLevel={3} label="Partner DETAIL" />
+            <ContainerWrapper>
+                <FormSection headingLevel={3} label="PARTNER DETAILS" />
                 {(value.createdBy && value.modifiedBy) && (
-                    <FormSection inputClassName={styles.inputClassName}>
-                        <div>
-                            <Heading level={6}>Created by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
-                        <div>
-                            <Heading level={6}>Modified by:</Heading>
-                            <Heading level={6}>{value.createdBy}</Heading>
-                        </div>
+                    <FormSection>
+                        <Heading level={6}>
+                            Created by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {value.createdBy}
+                        </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Title*" description="Enter the question">
+                <FormSection label="Title" description="Enter the title name of the Partner" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
@@ -170,8 +164,7 @@ function PartnerForm() {
                         onChange={setFieldValue}
                     />
                 </FormSection>
-
-                <FormSection label="Status*" description="Add status to either draft, publish or archived">
+                <FormSection label="Status" description="Add status to either global or local" withAsteriskOnTitle>
                     <SelectInput
                         name="scope"
                         options={scopeOptions}
@@ -184,23 +177,19 @@ function PartnerForm() {
                     />
                 </FormSection>
 
-                <FormSection label="Partner Logo*" description="Add a cover photo, which will be displayed on top">
-                    <RawFileInput
+                <FormSection label="Partner Logo*" description="Add a Partner Logo, which will be displayed in Partner Section" withAsteriskOnTitle>
+                    <FileUpload
                         name="image"
                         onChange={(files) => setFieldValue(files, 'image')}
-                        variant="secondary"
-                    >
-                        Upload
-                    </RawFileInput>
-                    {value.image?.name && <p>{value.image.name}</p>}
+                        value={value.image}
+                    />
                 </FormSection>
-
-                <div className={styles.submitBtn}>
+                <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </div>
-            </Container>
+                </FormSection>
+            </ContainerWrapper>
         </Page>
     );
 }

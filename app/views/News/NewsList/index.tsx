@@ -5,7 +5,6 @@ import React, {
 import { useNavigate } from 'react-router';
 import {
     Button,
-    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -15,6 +14,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     NewsQuery,
@@ -22,8 +22,6 @@ import {
     useNewsQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type NewsListItem = NonNullable<NewsQuery['news']>['results'][number];
 
@@ -76,9 +74,8 @@ function NewsList() {
         ),
     ], [handleDelete, deletePending]);
     return (
-        <Container
-            className={styles.news}
-            childrenContainerClassName={styles.content}
+        <ContainerWrapper
+            withPadding
             heading="News"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
@@ -96,14 +93,12 @@ function NewsList() {
         >
             <Table
                 keySelector={(item) => item.id}
-                className={styles.table}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
-                headerRowClassName={styles.headerRow}
             />
-        </Container>
+        </ContainerWrapper>
     );
 }
 

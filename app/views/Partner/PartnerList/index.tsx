@@ -15,6 +15,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
+import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     PartnerQuery,
@@ -22,8 +23,6 @@ import {
     usePartnerQuery,
 } from '#generated/types/graphql';
 import usePagination from '#hooks/usePagination';
-
-import styles from './styles.module.css';
 
 type PartnerListItem = NonNullable<PartnerQuery['partners']>['results'][number];
 
@@ -75,9 +74,8 @@ function PartnerList() {
         ),
     ], [handleDelete, deletePending]);
     return (
-        <Container
-            className={styles.partner}
-            childrenContainerClassName={styles.content}
+        <ContainerWrapper
+            withPadding
             heading="Partner"
             actions={(
                 <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
@@ -95,14 +93,12 @@ function PartnerList() {
         >
             <Table
                 keySelector={(item) => item.id}
-                className={styles.table}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
-                headerRowClassName={styles.headerRow}
             />
-        </Container>
+        </ContainerWrapper>
     );
 }
 
