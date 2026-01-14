@@ -118,6 +118,27 @@ const addPartner: RouteConfig = {
     load: () => import('#views/Partner/PartnerForm'),
     visibility: 'is-authenticated',
 };
+
+const news: RouteConfig = {
+    index: true,
+    path: 'news',
+    load: () => import('#views/News/NewsList'),
+    visibility: 'is-authenticated',
+};
+const editNews: RouteConfig = {
+    index: true,
+    path: 'news/:id/edit',
+    load: () => import('#views/News/NewsForm'),
+    visibility: 'is-authenticated',
+};
+
+const addNews: RouteConfig = {
+    index: true,
+    path: 'news/add',
+    load: () => import('#views/News/NewsForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -136,6 +157,9 @@ const routes = {
     partner,
     editPartner,
     addPartner,
+    news,
+    addNews,
+    editNews,
 };
 
 export type RouteKeys = keyof typeof routes;
