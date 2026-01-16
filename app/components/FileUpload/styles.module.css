@@ -6,4 +6,7 @@
     @media (max-width: 768px) {
         flex-direction: column;
     }
+    p {
+        word-break: break-all;
+    }
 }
