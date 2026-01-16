@@ -202,6 +202,27 @@ const addVacancy: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const project: RouteConfig = {
+    index: true,
+    path: 'projects',
+    load: () => import('#views/Project/ProjectList'),
+    visibility: 'is-authenticated',
+};
+
+const editProject: RouteConfig = {
+    index: true,
+    path: 'projects/:id/edit',
+    load: () => import('#views/Project/ProjectForm'),
+    visibility: 'is-authenticated',
+};
+
+const addProject: RouteConfig = {
+    index: true,
+    path: 'projects/add',
+    load: () => import('#views/Project/ProjectForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -232,6 +253,9 @@ const routes = {
     vacancy,
     addVacancy,
     editVacancy,
+    project,
+    addProject,
+    editProject,
 };
 
 export type RouteKeys = keyof typeof routes;

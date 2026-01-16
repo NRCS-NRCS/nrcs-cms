@@ -59,6 +59,12 @@ const navigation = [
 
             },
             {
+                to: '/projects',
+                title: 'Projects',
+                variant: 'leaf' as const,
+
+            },
+            {
                 to: '/radio-programs',
                 title: 'Radio Programs',
                 variant: 'leaf' as const,
@@ -73,7 +79,11 @@ const navigation = [
                         variant: 'leaf' as const,
                         title: 'Major Responsibilities',
                     },
-                    { to: '/about/strategic/goal', title: 'Goal', variant: 'leaf' as const },
+                    {
+                        to: '/strategic/strategic-directive',
+                        title: 'Strategic Directives',
+                        variant: 'leaf' as const,
+                    },
                 ],
             },
             {
