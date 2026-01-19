@@ -71,20 +71,9 @@ const navigation = [
 
             },
             {
-                title: 'Strategic',
-                variant: 'group' as const,
-                children: [
-                    {
-                        to: '/strategic/major-responsibilities',
-                        variant: 'leaf' as const,
-                        title: 'Major Responsibilities',
-                    },
-                    {
-                        to: '/strategic/strategic-directive',
-                        title: 'Strategic Directives',
-                        variant: 'leaf' as const,
-                    },
-                ],
+                to: '/strategic-directive',
+                title: 'Directives',
+                variant: 'leaf' as const,
             },
             {
                 to: '/vacancy',

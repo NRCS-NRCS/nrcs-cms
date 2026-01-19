@@ -223,6 +223,34 @@ const addProject: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const strategicDirectives: RouteConfig = {
+    index: true,
+    path: 'strategic-directive',
+    load: () => import('#views/StrategicDirective/StrategicDirectiveList'),
+    visibility: 'is-authenticated',
+};
+
+const editStrategicDirectives: RouteConfig = {
+    index: true,
+    path: 'strategic-directive/:id/edit',
+    load: () => import('#views/StrategicDirective/StrategicDirectiveForm'),
+    visibility: 'is-authenticated',
+};
+
+const addStrategicDirectives: RouteConfig = {
+    index: true,
+    path: 'strategic-directive/add',
+    load: () => import('#views/StrategicDirective/StrategicDirectiveForm'),
+    visibility: 'is-authenticated',
+};
+
+const users: RouteConfig = {
+    index: true,
+    path: 'users',
+    load: () => import('#views/UserManagement/UserList'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -256,6 +284,10 @@ const routes = {
     project,
     addProject,
     editProject,
+    addStrategicDirectives,
+    editStrategicDirectives,
+    strategicDirectives,
+    users,
 };
 
 export type RouteKeys = keyof typeof routes;
