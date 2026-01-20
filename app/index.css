@@ -41,13 +41,13 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
     border-radius: 10px;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--go-ui-color-gray-20);
     border-radius: 10px;
+    background-color: var(--go-ui-color-gray-20);
 }
 
 ::-webkit-scrollbar-thumb:hover {

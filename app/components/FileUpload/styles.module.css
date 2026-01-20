@@ -1,7 +1,7 @@
 .fileInput {
     display: flex;
-    width: 100%;
     flex-direction: row;
+    width: 100%;
     gap: var(--go-ui-spacing-sm);
     @media (max-width: 768px) {
         flex-direction: column;
