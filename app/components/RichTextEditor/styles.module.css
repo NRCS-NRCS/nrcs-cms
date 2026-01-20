@@ -1,35 +1,19 @@
-.editorContainer {
+.editor {
     display: flex;
     flex-direction: row;
     background-color: var(--color-background);
     font-size: var(--font-size-lg);
     gap: var(--go-ui-spacing-md);
-    overflow: hidden;
-    padding: var(--go-ui-spacing-md) var(--go-ui-spacing-lg);
-    .preview {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.5;
-        border: 1px solid var(--go-ui-color-gray-30);
-        border-radius: var(--go-ui-spacing-sm);
-        .previewHeader {
-            padding: var(--go-ui-spacing-sm);
-            box-shadow: 0 2px 2px -2px rgba(34, 47, 62, 0.1),
-                0 8px 8px -4px rgba(34, 47, 62, 0.07);
-        }
+    border: 1px solid var(--go-ui-color-gray-20);
+    position: relative;
+    border-radius: var(--go-ui-spacing-sm);
+    min-height: var(--go-ui-width-min-modal);
+    > * {
+        flex: 1;
     }
 }
-.editorContainer > * {
-    flex: 1;
-    overflow: hidden;
-}
-.previewContent {
-    max-height: 33rem;
-    overflow: auto;
-    padding: 0 var(--go-ui-spacing-lg);
-}
 
-.previewContent p,
+.editor p,
 h1,
 h2,
 h3,
@@ -39,21 +23,18 @@ h6 {
     margin: var(--go-ui-spacing-md) 0;
 }
 
-.previewContent ul,
-.previewContent ol {
+.editor ul,
+.editor ol {
     padding-left: var(--go-ui-spacing-xl);
 }
-.previewContent li {
+.editor li {
     margin: 4px 0;
 }
 
-.previewContent a {
+.editor a {
     text-decoration: underline;
     color: var(--go-ui-color-dark-blue-20);
     &:hover {
         color: var(--go-ui-color-dark-blue-30);
     }
-}
-.tox-statusbar__branding {
-    display: none !important;
 }
