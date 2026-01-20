@@ -1,3 +1,63 @@
-/* .home-page {
-    background: red;
-} */
+.page {
+    padding: var(--go-ui-spacing-2xl);
+    width: 100%;
+    overflow: auto;
+
+    .header {
+        color: var(--go-ui-color-primary-red);
+    }
+
+    .container {
+        width: 100%;
+
+        .childContainer {
+            display: flex;
+            flex-direction: column;
+            gap: var(--go-ui-spacing-lg);
+
+        }
+    }
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    width: 100%;
+    gap: var(--go-ui-spacing-xl);
+}
+
+@media (max-width: 1068px) {
+    .content {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    border-radius: var(--go-ui-border-radius-sm);
+    box-shadow: var(--go-ui-box-shadow-sm);
+    background-color: var(--go-ui-color-white);
+    padding: var(--go-ui-spacing-md);
+    gap: var(--go-ui-spacing-sm);
+
+    &:hover {
+        box-shadow: var(--go-ui-box-shadow-lg);
+        color: var(--go-ui-color-primary-red);
+
+    }
+
+    .cardCount {
+        display: flex;
+        align-items: center;
+        gap: var(--go-ui-spacing-sm);
+    }
+
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--go-ui-spacing-lg);
+}

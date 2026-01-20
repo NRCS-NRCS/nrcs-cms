@@ -209,7 +209,7 @@ function BlogForm() {
                         </Heading>
                     </FormSection>
                 )}
-                <FormSection label="Title*" description="Enter the title name of the Blog" withAsteriskOnTitle>
+                <FormSection label="Title" description="Enter the title name of the Blog" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}

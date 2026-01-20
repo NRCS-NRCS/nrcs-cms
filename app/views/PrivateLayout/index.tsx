@@ -20,6 +20,11 @@ const navigation = [
         variant: 'root' as const,
         children: [
             {
+                title: 'Dashboard',
+                to: '/',
+                variant: 'leaf' as const,
+            },
+            {
                 to: '/blog',
                 title: 'Blog',
                 variant: 'leaf' as const,

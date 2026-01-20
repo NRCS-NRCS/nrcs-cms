@@ -1,14 +1,13 @@
 .editor {
     display: flex;
-    flex-direction: row;
-    background-color: var(--color-background);
-    font-size: var(--font-size-lg);
-    gap: var(--go-ui-spacing-md);
-    border: 1px solid var(--go-ui-color-gray-20);
     position: relative;
+    flex-direction: row;
+    border: 1px solid var(--go-ui-color-gray-20);
     border-radius: var(--go-ui-spacing-sm);
     min-height: var(--go-ui-width-min-modal);
-    > * {
+    gap: var(--go-ui-spacing-md);
+
+    >* {
         flex: 1;
     }
 }
@@ -27,6 +26,7 @@ h6 {
 .editor ol {
     padding-left: var(--go-ui-spacing-xl);
 }
+
 .editor li {
     margin: 4px 0;
 }
@@ -34,6 +34,7 @@ h6 {
 .editor a {
     text-decoration: underline;
     color: var(--go-ui-color-dark-blue-20);
+
     &:hover {
         color: var(--go-ui-color-dark-blue-30);
     }
