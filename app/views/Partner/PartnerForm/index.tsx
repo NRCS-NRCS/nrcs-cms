@@ -14,11 +14,13 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -82,6 +84,7 @@ function PartnerForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(PartnerSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -129,21 +132,31 @@ function PartnerForm() {
     }, [setError, alert, validate, id, createPartnerMutate, updatePartnerMutate, navigate]);
 
     useEffect(() => {
-        if (data?.partner) {
-            const { partner } = data;
-            if (partner.image) {
-                urlToFile(partner.image.url, partner.image.name)
-                    .then((file) => {
-                        setFieldValue(file, 'image');
-                    });
-            }
-            setFieldValue(partner.title, 'title');
-            setFieldValue(partner.scope, 'scope');
-            setFieldValue(partner.image, 'image');
-            setFieldValue(`${partner.modifiedBy.firstName} ${partner.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(`${partner.createdBy.firstName} ${partner.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.partner)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy,
+            createdBy,
+            image,
+            ...other
+        } = removeNull(data.partner);
+
+        setValue({
+            ...other,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+
+        if (image) {
+            urlToFile(image.url, image.name).then((file) => {
+                setValue((prev) => ({
+                    ...prev,
+                    image: file,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const scopeOptions = useMemo(() => Object.values(PartnerScopeEnum).map((scope) => ({
         value: scope,

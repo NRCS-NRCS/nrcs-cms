@@ -2,6 +2,7 @@ import {
     Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
 import { IoRemoveCircleOutline } from 'react-icons/io5';
 import {
@@ -15,7 +16,10 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
-import { randomString } from '@togglecorp/fujs';
+import {
+    isNotDefined,
+    randomString,
+} from '@togglecorp/fujs';
 import {
     ArraySchema,
     createSubmitHandler,
@@ -23,6 +27,7 @@ import {
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     SetValueArg,
     useForm,
@@ -180,6 +185,7 @@ function StrategicDirectiveForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(DirectiveSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -284,6 +290,32 @@ function StrategicDirectiveForm() {
         }
     }, [data, setFieldValue]);
 
+    useEffect(() => {
+        if (isNotDefined(data?.strategicDirective)) {
+            return;
+        }
+        const {
+            modifiedBy,
+            createdBy,
+            coverImage,
+            ...other
+        } = removeNull(data.strategicDirective);
+
+        setValue({
+            ...other,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+        if (coverImage) {
+            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    coverImage: coverImageData,
+                }));
+            });
+        }
+    }, [data, setValue]);
+
     const handleMRAdd = useCallback(
         () => {
             const clientId = randomString();
@@ -301,6 +333,14 @@ function StrategicDirectiveForm() {
         },
         [setFieldValue],
     );
+
+    const ContentEditor = useMemo(() => (
+        <RichTextEditor
+            value={value.description}
+            onChange={(val) => setFieldValue(val, 'description')}
+            error={error?.description}
+        />
+    ), [value.description, error?.description, setFieldValue]);
 
     return (
         <Page>
@@ -339,11 +379,7 @@ function StrategicDirectiveForm() {
                     />
                 </FormSection>
                 <FormSection label="Description" description="Provide a detailed description of the strategic directive. This should outline the purpose, goals, and significance of the directive within the broader organizational strategy." withAsteriskOnTitle>
-                    <RichTextEditor
-                        value={value.description}
-                        onChange={(val) => setFieldValue(val, 'description')}
-                        error={error?.description as string}
-                    />
+                    {ContentEditor}
                 </FormSection>
                 <FormSection label="Major Responsibilities" description="Define the key responsibilities required to implement this strategic directive. Focus on core actions, accountability, and expected outcomes.">
                     <div>

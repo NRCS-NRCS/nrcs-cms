@@ -13,12 +13,14 @@ import {
     NumberInput,
     TextArea,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     integerCondition,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -80,6 +82,7 @@ function FAQsForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(FAQSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -127,15 +130,17 @@ function FAQsForm() {
     }, [setError, validate, alert, id, createFaqMutate, updateFaqMutate, navigate]);
 
     useEffect(() => {
-        if (data?.faq) {
-            const { faq } = data;
-            setFieldValue(faq.answer, 'answer');
-            setFieldValue(faq.question, 'question');
-            setFieldValue(faq.orderIndex, 'orderIndex');
-            setFieldValue(`${faq.modifiedBy.firstName} ${faq.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(`${faq.createdBy.firstName} ${faq.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.faq)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const { modifiedBy, createdBy, ...other } = removeNull(data.faq);
+        setValue({
+            ...other,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+    }, [data, setValue]);
+
     return (
         <Page>
             <ContainerWrapper>
@@ -154,7 +159,7 @@ function FAQsForm() {
                         </Heading>
                     </FormSection>
                 </Activity>
-                <FormSection label="Question*" description="Enter the question">
+                <FormSection label="Question" description="Enter the question" withAsteriskOnTitle>
                     <TextArea
                         name="question"
                         value={value.question}
@@ -164,7 +169,7 @@ function FAQsForm() {
                         autoFocus
                     />
                 </FormSection>
-                <FormSection label="Answer*" description="Write the answer of the question">
+                <FormSection label="Answer" description="Write the answer of the question" withAsteriskOnTitle>
                     <TextArea
                         name="answer"
                         value={value.answer}
@@ -173,7 +178,7 @@ function FAQsForm() {
                         placeholder="answer"
                     />
                 </FormSection>
-                <FormSection label="Order Index*" description="Write the question number in numeric ">
+                <FormSection label="Order Index" description="Write the question number in numeric" withAsteriskOnTitle>
                     <NumberInput
                         name="orderIndex"
                         value={value.orderIndex ?? 0}

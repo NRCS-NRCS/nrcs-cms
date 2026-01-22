@@ -15,11 +15,13 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -93,6 +95,7 @@ function RadioProgramForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(RadioProgramSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -143,26 +146,36 @@ function RadioProgramForm() {
         validate, id, createRadioProgramMutate, updateRadioProgramMutate, navigate]);
 
     useEffect(() => {
-        if (data?.radioProgram) {
-            const radioProgram = data.radioProgram.results[0] as unknown as RadioProgramListItem;
-            if (radioProgram.audioFile) {
-                urlToFile(radioProgram?.audioFile?.url, radioProgram?.audioFile?.name)
-                    .then((file) => {
-                        setFieldValue(file, 'audioFile');
-                    });
-            }
-            setFieldValue(radioProgram?.title, 'title');
-            setFieldValue(radioProgram?.type, 'type');
-            setFieldValue(radioProgram?.publishedDate, 'publishedDate');
-            setFieldValue(`${radioProgram.modifiedBy?.firstName} ${radioProgram.modifiedBy?.lastName}`, 'modifiedBy');
-            setFieldValue(`${radioProgram.createdBy?.firstName} ${radioProgram.createdBy?.lastName}`, 'createdBy');
+        if (isNotDefined(data?.radioProgram.results[0])) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy,
+            createdBy,
+            audioFile,
+            ...other
+        } = removeNull(data.radioProgram.results[0]);
+
+        setValue({
+            ...other,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+        if (audioFile) {
+            urlToFile(audioFile.url, audioFile.name).then((audioFileData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    audioFile: audioFileData,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const radioType = useMemo(() => Object.values(RadioProgramTypeEnum).map((status) => ({
         value: status,
         label: status,
     })), []);
+
     return (
         <Page>
             <ContainerWrapper>

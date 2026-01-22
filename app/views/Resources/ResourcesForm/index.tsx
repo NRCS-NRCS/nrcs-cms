@@ -10,20 +10,18 @@ import {
 } from 'react-router';
 import {
     Button,
-    Checkbox,
     DateInput,
     Heading,
-    NumberInput,
     SelectInput,
-    TextArea,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
-    integerCondition,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -37,7 +35,6 @@ import {
     ResourceCreateInput,
     ResourceTypeEnum,
     useCreateResourceMutation,
-    useDepartmentsQuery,
     useDirectiveQuery,
     useResourceDetailQuery,
     useUpdateResourceMutation,
@@ -108,6 +105,7 @@ function ResourceForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(ResourceSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -160,29 +158,42 @@ function ResourceForm() {
     }, [setError, alert, validate, id, createResourceMutate, updateResourceMutate, navigate]);
 
     useEffect(() => {
-        if (data?.resource) {
-            const { resource } = data;
-            if (resource.file) {
-                urlToFile(resource?.file?.url, resource?.file?.name)
-                    .then((file) => {
-                        setFieldValue(file, 'file');
-                    });
-            }
-            if (resource.coverImage) {
-                urlToFile(resource?.coverImage?.url, resource?.coverImage?.name)
-                    .then((file) => {
-                        setFieldValue(file, 'coverImage');
-                    });
-            }
-            setFieldValue(resource?.title, 'title');
-            setFieldValue(resource?.content, 'content');
-            setFieldValue(resource?.publishedDate, 'publishedDate');
-            setFieldValue(resource?.directiveId, 'directive');
-            setFieldValue(resource?.type, 'type');
-            setFieldValue(`${resource.modifiedBy?.firstName} ${resource.modifiedBy?.lastName}`, 'modifiedBy');
-            setFieldValue(`${resource.createdBy?.firstName} ${resource.createdBy?.lastName}`, 'createdBy');
+        if (isNotDefined(data?.resource)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy,
+            createdBy,
+            file,
+            coverImage,
+            directiveId,
+            ...other
+        } = removeNull(data.resource);
+
+        setValue({
+            ...other,
+            directive: directiveId,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+        if (file) {
+            urlToFile(file.url, file.name).then((fileData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    file: fileData,
+                }));
+            });
+        }
+
+        if (coverImage) {
+            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    coverImage: coverImageData,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const directiveOptions = useMemo(() => directive?.strategicDirectives.results.map(
         (dept) => ({
@@ -195,6 +206,14 @@ function ResourceForm() {
         value: scope,
         label: scope,
     })), []);
+
+    const ContentEditor = useMemo(() => (
+        <RichTextEditor
+            value={value.content}
+            onChange={(val) => setFieldValue(val, 'content')}
+            error={error?.content}
+        />
+    ), [value.content, error?.content, setFieldValue]);
 
     return (
         <Page>
@@ -241,11 +260,7 @@ function ResourceForm() {
                     />
                 </FormSection>
                 <FormSection label="Content" description="Enter the Content" withAsteriskOnTitle>
-                    <RichTextEditor
-                        value={value.content}
-                        error={error?.content as string}
-                        onChange={(val) => setFieldValue(val, 'content')}
-                    />
+                    {ContentEditor}
                 </FormSection>
                 <FormSection label="Published Date" description="This date should be the Published Date of the Resource" withAsteriskOnTitle>
                     <DateInput

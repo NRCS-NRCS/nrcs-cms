@@ -1,4 +1,4 @@
-import {
+import React, {
     Activity,
     useCallback,
     useEffect,
@@ -16,11 +16,13 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -84,10 +86,7 @@ const EditBlogSchema: FormSchema = {
         },
         createdBy: {},
         modifiedBy: {},
-        slug: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
+        slug: {},
 
     }),
 };
@@ -115,6 +114,7 @@ function BlogForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(EditBlogSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -191,22 +191,29 @@ function BlogForm() {
     );
 
     useEffect(() => {
-        if (data?.blog) {
-            const { blog } = data;
-            setFieldValue(blog.author, 'author');
-            setFieldValue(blog.title, 'title');
-            setFieldValue(blog.content, 'content');
-            setFieldValue(blog.coverImage, 'coverImage');
-            setFieldValue(blog.status, 'status');
-            setFieldValue(blog.publishedDate, 'publishedDate');
-            setFieldValue(blog.departmentId, 'department');
-            setFieldValue(blog.directiveId, 'directive');
-            setFieldValue(blog.featured, 'featured');
-            setFieldValue(`${blog.modifiedBy.firstName} ${blog.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(blog.slug, 'slug');
-            setFieldValue(`${blog.createdBy.firstName} ${blog.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.blog)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy, createdBy, departmentId, directiveId, ...other
+        } = removeNull(data.blog);
+
+        setValue({
+            ...other,
+            department: departmentId,
+            directive: directiveId,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+    }, [data, setValue]);
+
+    const ContentEditor = useMemo(() => (
+        <RichTextEditor
+            value={value.content}
+            onChange={(val) => setFieldValue(val, 'content')}
+            error={error?.content}
+        />
+    ), [value.content, error?.content, setFieldValue]);
 
     return (
         <Page>
@@ -258,7 +265,6 @@ function BlogForm() {
                     <FileUpload
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
-                        accept="audio/*"
                         value={value.coverImage}
                         error={error?.coverImage as string}
                     />
@@ -320,13 +326,7 @@ function BlogForm() {
                     />
                 </FormSection>
                 <FormSection label="Write blog" />
-                <FormSection>
-                    <RichTextEditor
-                        value={value.content}
-                        onChange={(val) => setFieldValue(val, 'content')}
-                        error={error?.content}
-                    />
-                </FormSection>
+                <FormSection>{ContentEditor}</FormSection>
                 <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}

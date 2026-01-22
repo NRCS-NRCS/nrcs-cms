@@ -14,11 +14,13 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -94,6 +96,7 @@ function DepartmentForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(DepartmentSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -150,18 +153,19 @@ function DepartmentForm() {
     ) ?? [];
 
     useEffect(() => {
-        if (data?.department) {
-            const { department } = data;
-            setFieldValue(department.title, 'title');
-            setFieldValue(department.contactPersonEmail, 'contactPersonEmail');
-            setFieldValue(department.contactPersonName, 'contactPersonName');
-            setFieldValue(department.description, 'description');
-            setFieldValue(department.strategicDirectiveId ?? '', 'strategicDirective');
-            setFieldValue(department.slug ?? '', 'slug');
-            setFieldValue(`${department.modifiedBy.firstName} ${department.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(`${department.createdBy.firstName} ${department.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.department)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy, createdBy, strategicDirectiveId, ...other
+        } = removeNull(data.department);
+        setValue({
+            ...other,
+            strategicDirective: strategicDirectiveId,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+    }, [data, setValue]);
 
     return (
         <Page>

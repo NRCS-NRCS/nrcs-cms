@@ -14,11 +14,13 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -89,6 +91,7 @@ function ProcurementForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(ProcurementSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -139,22 +142,30 @@ function ProcurementForm() {
     }, [setError, alert, validate, id, createProcurementMutate, updateProcurementMutate, navigate]);
 
     useEffect(() => {
-        if (data?.procurement) {
-            const { procurement } = data;
-            if (procurement.file) {
-                urlToFile(procurement.file.url, procurement.file.name)
-                    .then((file) => {
-                        setFieldValue(file, 'file');
-                    });
-            }
-            setFieldValue(procurement.title, 'title');
-            setFieldValue(procurement.description, 'description');
-            setFieldValue(procurement.expiryDate, 'expiryDate');
-            setFieldValue(procurement.publishedDate, 'publishedDate');
-            setFieldValue(`${procurement.modifiedBy.firstName} ${procurement.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(`${procurement.createdBy.firstName} ${procurement.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.procurement)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy,
+            createdBy,
+            file,
+            ...other
+        } = removeNull(data.procurement);
+
+        setValue({
+            ...other,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+        if (file) {
+            urlToFile(file.url, file.name).then((fileData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    file: fileData,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     return (
         <Page>

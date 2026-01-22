@@ -15,7 +15,10 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
-import { randomString } from '@togglecorp/fujs';
+import {
+    isNotDefined,
+    randomString,
+} from '@togglecorp/fujs';
 import {
     ArraySchema,
     createSubmitHandler,
@@ -23,6 +26,7 @@ import {
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     type SetValueArg,
     urlCondition,
@@ -176,6 +180,7 @@ function HighlightForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(HighlightSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -263,27 +268,31 @@ function HighlightForm() {
         validate, setError, updateHighlightMutate, createHighlightMutate, navigate]);
 
     useEffect(() => {
-        if (data?.highlight) {
-            const { highlight } = data;
-            if (highlight.image) {
-                urlToFile(highlight.image.url, highlight.image.name)
-                    .then((file) => {
-                        setFieldValue(file, 'image');
-                    });
-            }
-            const formattedLinks = highlight.actionLinks?.map((link) => ({
-                id: link.id,
-                label: link.label,
-                url: link.url,
-            })) ?? [];
-            setFieldValue(formattedLinks, 'actionLinks');
-            setFieldValue(highlight.heading, 'heading');
-            setFieldValue(highlight.description, 'description');
-            setFieldValue(highlight.isActive, 'isActive');
-            setFieldValue(`${highlight.modifiedBy.firstName} ${highlight.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(`${highlight.createdBy.firstName} ${highlight.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.highlight)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy,
+            createdBy,
+            image,
+            ...other
+        } = removeNull(data.highlight);
+
+        setValue({
+            ...other,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+
+        if (image) {
+            urlToFile(image.url, image.name).then((file) => {
+                setValue((prev) => ({
+                    ...prev,
+                    image: file,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const handleCollectionAdd = useCallback(
         () => {
@@ -359,19 +368,21 @@ function HighlightForm() {
                     />
                 </FormSection>
                 <FormSection label="Action Link" description="Add link to the highlight and the name to be displayed for the URL">
-                    {(value.actionLinks || []).map((link, index) => (
-                        <ActionLinkInputComponent
-                            key={link.clientId}
-                            index={index}
-                            value={link}
-                            onChange={onActionLinkChange}
-                            onRemove={onActionLinkRemove}
-                            error={actionLinkErrors?.[link.clientId ?? 0]}
-                        />
-                    ))}
-                    <Button name="add-link" onClick={handleCollectionAdd} variant="primary">
-                        Add Link
-                    </Button>
+                    <div>
+                        {(value.actionLinks || []).map((link, index) => (
+                            <ActionLinkInputComponent
+                                key={link.clientId}
+                                index={index}
+                                value={link}
+                                onChange={onActionLinkChange}
+                                onRemove={onActionLinkRemove}
+                                error={actionLinkErrors?.[link.clientId ?? 0]}
+                            />
+                        ))}
+                        <Button name="add-link" onClick={handleCollectionAdd} variant="primary">
+                            Add Link
+                        </Button>
+                    </div>
                 </FormSection>
                 <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
