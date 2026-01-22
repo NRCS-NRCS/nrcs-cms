@@ -61,7 +61,7 @@ function ProcurementList() {
 
     const columns = useMemo(() => [
         createNumberColumn<ProcurementListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<ProcurementListItem, string | number>('title', 'Tile', (dept) => dept.title),
+        createStringColumn<ProcurementListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<ProcurementListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
         createStringColumn<ProcurementListItem, string | number>('expireDate', 'Expire Date', (dept) => dept?.expiryDate),
         createElementColumn<ProcurementListItem, string | number, TableActionsProps>(

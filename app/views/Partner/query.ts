@@ -16,14 +16,6 @@ const PARTNER_QUERY = gql`
                     size
                     url
                 }
-                modifiedBy {
-                    firstName
-                    lastName
-                }
-                createdBy {
-                    lastName
-                    firstName
-                }
                 scope
                 title
             }
@@ -42,11 +34,13 @@ const PARTNER_DETAIL = gql`
                 url
             }
             modifiedBy {
+                id
                 lastName
                 firstName
             }
             id
             createdBy {
+                id
                 firstName
                 lastName
             }

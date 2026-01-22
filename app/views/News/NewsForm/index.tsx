@@ -195,7 +195,7 @@ function NewsForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="NEWS DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'NEWS DETAILS' : 'CREATE NEWS'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>

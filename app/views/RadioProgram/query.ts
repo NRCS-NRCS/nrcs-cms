@@ -2,7 +2,10 @@
 import { gql } from 'urql';
 
 const RADIO_PROGRAM_QUERY = gql`
-    query RadioProgram($pagination: OffsetPaginationInput, $filter: RadioProgramFilter) {
+    query RadioProgram(
+        $pagination: OffsetPaginationInput
+        $filter: RadioProgramFilter
+    ) {
         radioProgram(pagination: $pagination, filters: $filter) {
             pageInfo {
                 limit
@@ -20,10 +23,12 @@ const RADIO_PROGRAM_QUERY = gql`
                     url
                 }
                 createdBy {
+                    id
                     lastName
                     firstName
                 }
                 modifiedBy {
+                    id
                     lastName
                     firstName
                 }

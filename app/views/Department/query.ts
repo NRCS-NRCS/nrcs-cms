@@ -15,6 +15,7 @@ const DEPARTMENT_QUERY = gql`
                 title
                 id
                 strategicDirective {
+                    id
                     title
                 }
             }
@@ -35,8 +36,10 @@ const DEPARTMENT_DETAIL = gql`
             createdBy {
                 firstName
                 lastName
+                id
             }
             modifiedBy {
+                id
                 firstName
                 lastName
             }

@@ -159,7 +159,7 @@ function ProcurementForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="PROCUREMENT DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'PROCUREMENT DETAILS' : 'CREATE PROCUREMENT'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>

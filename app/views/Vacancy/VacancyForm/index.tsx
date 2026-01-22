@@ -195,7 +195,7 @@ function VacancyForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="VACANCY DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'VACANCY DETAILS' : 'CREATE VACANCY'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
