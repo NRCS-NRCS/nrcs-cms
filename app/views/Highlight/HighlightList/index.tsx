@@ -22,12 +22,14 @@ import {
     useDeleteHighlightMutation,
     useHighlightQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type HighlightListItem = NonNullable<HighlightQuery['highlights']>['results'][number];
 
 function HighlightList() {
     const navigate = useNavigate();
+    const alert = useAlert();
 
     const {
         page,
@@ -51,10 +53,11 @@ function HighlightList() {
                 if (resp.data?.deleteHighlight) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Highlight deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteHighlight, reExecuteQuery],
+        [deleteHighlight, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

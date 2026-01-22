@@ -22,12 +22,15 @@ import {
     useDeleteRadioProgramMutation,
     useRadioProgramQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
 
 function RadioProgramList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -50,10 +53,11 @@ function RadioProgramList() {
                 if (resp.data?.deleteRadioProgram) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Radio Program deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteRadioProgram, reExecuteQuery],
+        [deleteRadioProgram, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

@@ -21,12 +21,15 @@ import {
     useDeleteProcurementMutation,
     useProcurementQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type ProcurementListItem = NonNullable<ProcurementQuery['procurements']>['results'][number];
 
 function ProcurementList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -49,10 +52,11 @@ function ProcurementList() {
                 if (resp.data?.deleteProcurement) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Procurement deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteProcurement, reExecuteQuery],
+        [deleteProcurement, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

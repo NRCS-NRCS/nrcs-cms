@@ -1,6 +1,8 @@
 import {
+    Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
 import {
     useNavigate,
@@ -32,6 +34,7 @@ import {
     usePartnerDetailQuery,
     useUpdatePartnerMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<PartnerCreateInput> &
@@ -40,7 +43,7 @@ type PartialFormType = PartialForm<PartnerCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const PartnerSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -66,6 +69,8 @@ const defaultEditFormValue: PartialFormType = {
 function PartnerForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = usePartnerDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -77,7 +82,7 @@ function PartnerForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(PartnerSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -98,8 +103,11 @@ function PartnerForm() {
                     });
                     if (res.data?.updatePartner?.ok) {
                         navigate('/partners');
+                        alert.show('Partner updated successfully', { variant: 'success' });
                     } else if (res.data?.updatePartner.errors) {
                         setError(res.data.updatePartner.errors);
+                        const errorMessages = res.data?.updatePartner?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 } else {
                     const res = await createPartnerMutate({
@@ -108,14 +116,17 @@ function PartnerForm() {
 
                     if (res.data?.createPartner.ok) {
                         navigate('/partners');
+                        alert.show('Partner created successfully', { variant: 'success' });
                     } else if (res.data?.createPartner?.errors) {
+                        const errorMessages = res.data?.createPartner?.errors;
                         setError(res.data.createPartner.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createPartnerMutate, updatePartnerMutate, navigate]);
+    }, [setError, alert, validate, id, createPartnerMutate, updatePartnerMutate, navigate]);
 
     useEffect(() => {
         if (data?.partner) {
@@ -134,15 +145,16 @@ function PartnerForm() {
         }
     }, [data, setFieldValue]);
 
-    const scopeOptions = Object.values(PartnerScopeEnum).map((scope) => ({
+    const scopeOptions = useMemo(() => Object.values(PartnerScopeEnum).map((scope) => ({
         value: scope,
         label: scope,
-    }));
+    })), []);
+
     return (
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="PARTNER DETAILS" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -155,13 +167,15 @@ function PartnerForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the title name of the Partner" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        placeholder="title"
+                        autoFocus
                     />
                 </FormSection>
                 <FormSection label="Status" description="Add status to either global or local" withAsteriskOnTitle>
@@ -176,12 +190,12 @@ function PartnerForm() {
                         error={error?.scope}
                     />
                 </FormSection>
-
                 <FormSection label="Partner Logo*" description="Add a Partner Logo, which will be displayed in Partner Section" withAsteriskOnTitle>
                     <FileUpload
                         name="image"
                         onChange={(files) => setFieldValue(files, 'image')}
                         value={value.image}
+                        error={error?.image as string}
                     />
                 </FormSection>
                 <FormSection>

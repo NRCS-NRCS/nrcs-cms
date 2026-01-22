@@ -21,12 +21,15 @@ import {
     useDeleteNewsMutation,
     useNewsQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type NewsListItem = NonNullable<NewsQuery['news']>['results'][number];
 
 function NewsList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -49,10 +52,11 @@ function NewsList() {
                 if (resp.data?.deleteNews) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('News deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteNews, reExecuteQuery],
+        [deleteNews, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

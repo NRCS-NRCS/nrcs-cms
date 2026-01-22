@@ -1,6 +1,8 @@
 import {
+    Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
 import {
     useNavigate,
@@ -34,6 +36,7 @@ import {
     useRadioProgramQuery,
     useUpdateRadioProgramMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
@@ -44,7 +47,7 @@ type PartialFormType = PartialForm<RadioProgramCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const RadioProgramSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -73,6 +76,8 @@ const defaultEditFormValue: PartialFormType = {
 function RadioProgramForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useRadioProgramQuery({
         variables: {
             filter: { id },
@@ -88,7 +93,7 @@ function RadioProgramForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(RadioProgramSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -111,8 +116,11 @@ function RadioProgramForm() {
                     });
                     if (res.data?.updateRadioProgram?.ok) {
                         navigate('/radio-programs');
+                        alert.show('Radio Program updated successfully', { variant: 'success' });
                     } else if (res.data?.updateRadioProgram.errors) {
-                        setError(res.data.updateRadioProgram.errors);
+                        const errorMessages = res.data?.updateRadioProgram?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 } else {
                     const res = await createRadioProgramMutate({
@@ -121,14 +129,18 @@ function RadioProgramForm() {
 
                     if (res.data?.createRadioProgram.ok) {
                         navigate('/radio-programs');
+                        alert.show('Radio Program created successfully', { variant: 'success' });
                     } else if (res.data?.createRadioProgram?.errors) {
-                        setError(res.data.createRadioProgram.errors);
+                        const errorMessages = res.data?.createRadioProgram?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createRadioProgramMutate, updateRadioProgramMutate, navigate]);
+    }, [setError, alert,
+        validate, id, createRadioProgramMutate, updateRadioProgramMutate, navigate]);
 
     useEffect(() => {
         if (data?.radioProgram) {
@@ -146,15 +158,16 @@ function RadioProgramForm() {
             setFieldValue(`${radioProgram.createdBy?.firstName} ${radioProgram.createdBy?.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
-    const radioType = Object.values(RadioProgramTypeEnum).map((status) => ({
+
+    const radioType = useMemo(() => Object.values(RadioProgramTypeEnum).map((status) => ({
         value: status,
         label: status,
-    }));
+    })), []);
     return (
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="RADIO PROGRAM DETAILS" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -167,13 +180,15 @@ function RadioProgramForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        placeholder="title"
+                        autoFocus
                     />
                 </FormSection>
                 <FormSection label="Audio File" description="Add a Audio, which will be attached and shown on Radio Page" withAsteriskOnTitle>
@@ -182,6 +197,7 @@ function RadioProgramForm() {
                         onChange={(files) => setFieldValue(files, 'audioFile')}
                         accept="audio/*"
                         value={value.audioFile}
+                        error={error?.audioFile as string}
                     />
                 </FormSection>
                 <FormSection label="Published Date" description="This date should be the Published Date of the RadioProgram" withAsteriskOnTitle>
@@ -210,7 +226,6 @@ function RadioProgramForm() {
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
                 </FormSection>
-
             </ContainerWrapper>
         </Page>
     );

@@ -22,12 +22,15 @@ import {
     useDeleteProjectMutation,
     useProjectQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type ProjectListItem = NonNullable<ProjectQuery['projects']>['results'][number];
 
 function ProjectList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -50,10 +53,11 @@ function ProjectList() {
                 if (resp.data?.deleteProject) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Project deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteProject, reExecuteQuery],
+        [deleteProject, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

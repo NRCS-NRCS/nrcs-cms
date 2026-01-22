@@ -21,12 +21,15 @@ import {
     useDeleteDepartmentMutation,
     useDepartmentsQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type EventListItem = NonNullable<DepartmentsQuery['departments']>['results'][number];
 
 function DepartmentList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -49,10 +52,11 @@ function DepartmentList() {
                 if (resp.data?.deleteDepartment) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Department deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteDepartment, reExecuteQuery],
+        [deleteDepartment, reExecuteQuery, alert],
     );
     const columns = useMemo(() => [
         createNumberColumn<EventListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),

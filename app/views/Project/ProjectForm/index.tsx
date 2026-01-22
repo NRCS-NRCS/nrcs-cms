@@ -1,4 +1,5 @@
 import {
+    Activity,
     useCallback,
     useEffect,
 } from 'react';
@@ -33,6 +34,7 @@ import {
     useProjectDetailQuery,
     useUpdateProjectMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<ProjectCreateInput> &
@@ -41,7 +43,7 @@ type PartialFormType = PartialForm<ProjectCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const ProjectSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -70,6 +72,8 @@ const defaultEditFormValue: PartialFormType = {
 function ProjectForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useProjectDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -83,7 +87,7 @@ function ProjectForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(ProjectSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -105,24 +109,29 @@ function ProjectForm() {
                     });
                     if (res.data?.updateProject?.ok) {
                         navigate('/projects');
+                        alert.show('Project updated successfully', { variant: 'success' });
                     } else if (res.data?.updateProject.errors) {
-                        setError(res.data.updateProject.errors);
+                        const errorMessages = res.data?.updateProject?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 } else {
                     const res = await createProjectMutate({
                         data: mutateData,
                     });
-
                     if (res.data?.createProject.ok) {
                         navigate('/projects');
+                        alert.show('Project created successfully', { variant: 'success' });
                     } else if (res.data?.createProject?.errors) {
-                        setError(res.data.createProject.errors);
+                        const errorMessages = res.data?.createProject?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createProjectMutate, updateProjectMutate, navigate]);
+    }, [setError, alert, validate, id, createProjectMutate, updateProjectMutate, navigate]);
 
     useEffect(() => {
         if (data?.project) {
@@ -152,7 +161,7 @@ function ProjectForm() {
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="VACANCY DETAILS" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -165,13 +174,15 @@ function ProjectForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        placeholder="title"
+                        autoFocus
                     />
                 </FormSection>
                 <FormSection label="Cover Image" description="Add a Cover Image, which will be attached and shown on Project" withAsteriskOnTitle>
@@ -179,6 +190,7 @@ function ProjectForm() {
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
+                        error={error?.coverImage as string}
                     />
                 </FormSection>
                 <FormSection label="Description" description="Enter the Description" withAsteriskOnTitle>
@@ -187,6 +199,7 @@ function ProjectForm() {
                         value={value.description}
                         error={error?.description as string}
                         onChange={setFieldValue}
+                        placeholder="description"
                     />
                 </FormSection>
                 <FormSection label="Type" description="Add type to either Tuesday Program or Radio Red Cross" withAsteriskOnTitle>

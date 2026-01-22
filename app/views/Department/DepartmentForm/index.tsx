@@ -1,4 +1,5 @@
 import {
+    Activity,
     useCallback,
     useEffect,
 } from 'react';
@@ -25,7 +26,6 @@ import {
 import ContainerWrapper from '#components/ContainerWrapper';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
-import RichTextEditor from '#components/RichTextEditor';
 import {
     DepartmentCreateInput,
     useCreateDepartmentMutation,
@@ -33,6 +33,7 @@ import {
     useDirectiveQuery,
     useUpdateDepartmentMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 
 type PartialFormType = PartialForm<DepartmentCreateInput> &
 { createdBy: string, modifiedBy: string, slug: string | null }
@@ -40,7 +41,7 @@ type PartialFormType = PartialForm<DepartmentCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const DepartmentSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -79,6 +80,8 @@ const defaultEditFormValue: PartialFormType = {
 function DepartmentForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useDepartmentDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -91,7 +94,7 @@ function DepartmentForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(DepartmentSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -114,8 +117,11 @@ function DepartmentForm() {
                     });
                     if (res.data?.updateDepartment?.ok) {
                         navigate('/departments');
+                        alert.show('Department updated successfully', { variant: 'success' });
                     } else if (res.data?.updateDepartment) {
+                        const errorMessages = res.data?.updateDepartment?.errors;
                         setError(res.data.updateDepartment.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 } else {
                     const res = await createDepartmentMutate({
@@ -124,14 +130,17 @@ function DepartmentForm() {
 
                     if (res.data?.createDepartment.ok) {
                         navigate('/departments');
+                        alert.show('Department created successfully', { variant: 'success' });
                     } else if (res.data?.createDepartment?.errors) {
+                        const errorMessages = res.data?.createDepartment?.errors;
                         setError(res.data.createDepartment.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createDepartmentMutate, updateDepartmentMutate, navigate]);
+    }, [setError, alert, validate, id, createDepartmentMutate, updateDepartmentMutate, navigate]);
 
     const directiveOptions = directive?.strategicDirectives.results.map(
         (dir) => ({
@@ -153,11 +162,12 @@ function DepartmentForm() {
             setFieldValue(`${department.createdBy.firstName} ${department.createdBy.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
+
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="DEPARTMENT DETAIL" />
-                {(value.createdBy && value.modifiedBy) && (
+                <FormSection headingLevel={3} label={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -170,19 +180,22 @@ function DepartmentForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
-                <FormSection label="Title*" description="Enter the title name of the Department" withAsteriskOnTitle>
+                </Activity>
+                <FormSection label="Title" description="Enter the title name of the Department" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
+                        autoFocus
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        placeholder="title"
                     />
                 </FormSection>
                 <FormSection label="Department" description="Write a short description about the roles and responsibilities of the department" withAsteriskOnTitle>
                     <TextArea
                         name="department"
                         value={value.description}
+                        placeholder="description"
                         error={error?.description as string}
                         onChange={(val) => setFieldValue(val, 'description')}
                     />
@@ -190,6 +203,7 @@ function DepartmentForm() {
                 <FormSection label="Contact Person Name" description="Add contact number of the person for the department" withAsteriskOnTitle>
                     <TextInput
                         name="contactPersonName"
+                        placeholder="contact person name"
                         value={value.contactPersonName}
                         onChange={setFieldValue}
                         error={error?.contactPersonName as string}
@@ -198,6 +212,7 @@ function DepartmentForm() {
                 <FormSection label="Contact Person Email" description="Add Email of the person for the department" withAsteriskOnTitle>
                     <TextInput
                         name="contactPersonEmail"
+                        placeholder="contact person email"
                         value={value.contactPersonEmail ?? ''}
                         onChange={setFieldValue}
                         error={error?.contactPersonEmail}
@@ -215,17 +230,17 @@ function DepartmentForm() {
                         error={error?.strategicDirective}
                     />
                 </FormSection>
-                {value.slug && (
-                    <FormSection label="Slug" description="Unique URL identifier for the blog">
+                <Activity mode={value.slug ? 'visible' : 'hidden'}>
+                    <FormSection label="Slug" description="Unique URL identifier for the department">
                         <TextInput
                             name="slug"
                             value={value.slug ?? ''}
                             onChange={(val) => setFieldValue(val || null, 'slug')}
                             error={error?.slug}
-                            disabled
+                            readOnly
                         />
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}

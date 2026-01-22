@@ -22,12 +22,15 @@ import {
     useDeletePartnerMutation,
     usePartnerQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type PartnerListItem = NonNullable<PartnerQuery['partners']>['results'][number];
 
 function PartnerList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -50,10 +53,11 @@ function PartnerList() {
                 if (resp.data?.deletePartner) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Partner deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deletePartner, reExecuteQuery],
+        [deletePartner, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

@@ -22,12 +22,15 @@ import {
     useDeleteStrategicDirectiveMutation,
     useStrategicDirectiveQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type StrategicDirectiveListItem = NonNullable<StrategicDirectiveQuery['strategicDirectives']>['results'][number];
 
 function StrategicDirectiveList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -51,10 +54,11 @@ function StrategicDirectiveList() {
                 if (resp.data?.deleteStrategicDirectives) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Strategic Directive deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteStrategicDirective, reExecuteQuery],
+        [deleteStrategicDirective, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

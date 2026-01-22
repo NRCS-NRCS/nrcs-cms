@@ -1,6 +1,8 @@
 import {
+    Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
 import {
     useNavigate,
@@ -37,6 +39,7 @@ import {
     useUpdateVacancyMutation,
     useVacancyDetailQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<JobVacancyCreateInput> &
@@ -45,7 +48,7 @@ type PartialFormType = PartialForm<JobVacancyCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const VacancySchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -92,6 +95,8 @@ const defaultEditFormValue: PartialFormType = {
 function VacancyForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useVacancyDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -105,7 +110,7 @@ function VacancyForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(VacancySchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -133,8 +138,11 @@ function VacancyForm() {
                     });
                     if (res.data?.updateJobVacancy?.ok) {
                         navigate('/vacancy');
+                        alert.show('Vacancy updated successfully', { variant: 'success' });
                     } else if (res.data?.updateJobVacancy.errors) {
-                        setError(res.data.updateJobVacancy.errors);
+                        const errorMessages = res.data?.updateJobVacancy?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 } else {
                     const res = await createVacancyMutate({
@@ -143,14 +151,17 @@ function VacancyForm() {
 
                     if (res.data?.createJobVacancy.ok) {
                         navigate('/vacancy');
+                        alert.show('Vacancy created successfully', { variant: 'success' });
                     } else if (res.data?.createJobVacancy?.errors) {
-                        setError(res.data.createJobVacancy.errors);
+                        const errorMessages = res.data?.createJobVacancy?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createVacancyMutate, updateVacancyMutate, navigate]);
+    }, [setError, alert, validate, id, createVacancyMutate, updateVacancyMutate, navigate]);
 
     useEffect(() => {
         if (data?.jobVacancy) {
@@ -174,18 +185,18 @@ function VacancyForm() {
         }
     }, [data, setFieldValue]);
 
-    const departmentOptions = departments?.departments.results.map(
+    const departmentOptions = useMemo(() => departments?.departments.results.map(
         (dept) => ({
             id: dept.id,
             name: dept.title,
         }),
-    ) ?? [];
+    ) ?? [], [departments]);
 
     return (
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="VACANCY DETAILS" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -198,13 +209,15 @@ function VacancyForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        placeholder="title"
+                        autoFocus
                     />
                 </FormSection>
                 <FormSection label="File" description="Add a File, which will be attached and shown on Radio Page" withAsteriskOnTitle>
@@ -212,6 +225,7 @@ function VacancyForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
+                        error={error?.file as string}
                     />
                 </FormSection>
                 <FormSection label="Vacancy Position" description="Enter the Vacancy Position" withAsteriskOnTitle>
@@ -220,6 +234,7 @@ function VacancyForm() {
                         value={value.position}
                         error={error?.position as string}
                         onChange={setFieldValue}
+                        placeholder="position"
                     />
                 </FormSection>
                 <FormSection label="Description" description="Enter the Description" withAsteriskOnTitle>
@@ -228,6 +243,7 @@ function VacancyForm() {
                         value={value.description}
                         error={error?.description as string}
                         onChange={setFieldValue}
+                        placeholder="description"
                     />
                 </FormSection>
                 <FormSection label="Number of Vacancies" description="Enter the Number of Vacancies" withAsteriskOnTitle>
@@ -236,6 +252,7 @@ function VacancyForm() {
                         value={value.numberOfVacancies}
                         error={error?.numberOfVacancies as string}
                         onChange={setFieldValue}
+                        placeholder="numberOfVacancies"
                     />
                 </FormSection>
                 <FormSection label="Published Date" description="This date should be the Published Date of the Vacancy" withAsteriskOnTitle>
@@ -256,7 +273,7 @@ function VacancyForm() {
                         error={error?.expiryDate as string}
                     />
                 </FormSection>
-                <FormSection label="Type" description="Add type to either Tuesday Program or Radio Red Cross" withAsteriskOnTitle>
+                <FormSection label="Department" description="Add which department this vacancy belongs to" withAsteriskOnTitle>
                     <SelectInput
                         name="department"
                         options={departmentOptions}
@@ -264,7 +281,7 @@ function VacancyForm() {
                         keySelector={(o) => o.id}
                         labelSelector={(o) => o.name}
                         onChange={setFieldValue}
-                        placeholder="Select Status"
+                        placeholder="Select Department"
                         error={error?.department}
                     />
                 </FormSection>
@@ -274,6 +291,7 @@ function VacancyForm() {
                         value={value.isArchived}
                         onChange={setFieldValue}
                         error={error?.isArchived as string}
+                        label="Is Archived"
                     />
                 </FormSection>
                 <FormSection>
@@ -281,7 +299,6 @@ function VacancyForm() {
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
                 </FormSection>
-
             </ContainerWrapper>
         </Page>
     );

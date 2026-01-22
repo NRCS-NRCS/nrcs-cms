@@ -1,6 +1,8 @@
 import {
+    Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
 import {
     useNavigate,
@@ -35,6 +37,7 @@ import {
     useNewsDetailQuery,
     useUpdateNewsMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<NewsCreateInput> &
@@ -43,7 +46,7 @@ type PartialFormType = PartialForm<NewsCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const EditNewsSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -85,6 +88,8 @@ const defaultEditFormValue: PartialFormType = {
 function NewsForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data: directives }] = useDirectiveQuery();
 
     const [{ data }] = useNewsDetailQuery({
@@ -98,7 +103,7 @@ function NewsForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(EditNewsSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -124,7 +129,10 @@ function NewsForm() {
                     });
                     if (res.data?.updateNews?.ok) {
                         navigate('/news');
+                        alert.show('News updated successfully', { variant: 'success' });
                     } else if (res.data?.updateNews.errors) {
+                        const errorMessages = res.data?.updateNews?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
                         setError(res.data.updateNews.errors);
                     }
                 } else {
@@ -134,14 +142,17 @@ function NewsForm() {
 
                     if (res.data?.createNews.ok) {
                         navigate('/news');
+                        alert.show('News created successfully', { variant: 'success' });
                     } else if (res.data?.createNews?.errors) {
+                        const errorMessages = res.data?.createNews?.errors;
                         setError(res.data.createNews.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createNewsMutate, updateNewsMutate, navigate]);
+    }, [setError, alert, validate, id, createNewsMutate, updateNewsMutate, navigate]);
 
     useEffect(() => {
         if (data?.newsItem) {
@@ -169,22 +180,23 @@ function NewsForm() {
         }
     }, [data, setFieldValue]);
 
-    const directiveOptions = directives?.strategicDirectives.results.map(
+    const directiveOptions = useMemo(() => directives?.strategicDirectives.results.map(
         (directive) => ({
             id: directive.id,
             name: directive.title,
         }),
-    ) ?? [];
+    ) ?? [], [directives]);
 
-    const statusOptions = Object.values(StatusEnum).map((status) => ({
+    const statusOptions = useMemo(() => Object.values(StatusEnum).map((status) => ({
         value: status,
         label: status,
-    }));
+    })), []);
+
     return (
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="NEWS DETAILS" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -197,13 +209,15 @@ function NewsForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the title name of the News" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        autoFocus
+                        placeholder="title"
                     />
                 </FormSection>
                 <FormSection label="Published Date" description="This date should be the Published Date of the news" withAsteriskOnTitle>
@@ -232,6 +246,7 @@ function NewsForm() {
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
+                        error={error?.coverImage as string}
                     />
                 </FormSection>
                 <FormSection label="File" description="Add a file, which will be displayed on the page" withAsteriskOnTitle>
@@ -239,19 +254,20 @@ function NewsForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
+                        error={error?.file as string}
                     />
                 </FormSection>
-                {value.slug && (
+                <Activity mode={value.slug ? 'visible' : 'hidden'}>
                     <FormSection label="Slug" description="Unique URL identifier for the news">
                         <TextInput
                             name="slug"
                             value={value.slug ?? ''}
                             onChange={(val) => setFieldValue(val || null, 'slug')}
                             error={error?.slug}
-                            disabled
+                            readOnly
                         />
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Status" description="Add status to either draft, publish or archived" withAsteriskOnTitle>
                     <SelectInput
                         name="status"
@@ -269,6 +285,7 @@ function NewsForm() {
                     <RichTextEditor
                         value={value.content}
                         onChange={(val) => setFieldValue(val, 'content')}
+                        error={error?.content}
                     />
                 </FormSection>
                 <FormSection>

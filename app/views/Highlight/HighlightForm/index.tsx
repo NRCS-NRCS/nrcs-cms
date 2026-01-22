@@ -1,4 +1,5 @@
 import {
+    Activity,
     useCallback,
     useEffect,
 } from 'react';
@@ -42,6 +43,7 @@ import {
     useHighlightDetailQuery,
     useUpdateHighlightMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 import styles from './styles.module.css';
@@ -161,6 +163,8 @@ function ActionLinkInputComponent(props: CollectionInputProps) {
 function HighlightForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useHighlightDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -212,7 +216,7 @@ function HighlightForm() {
                         }
                     });
 
-                    await updateHighlightMutate({
+                    const res = await updateHighlightMutate({
                         pk: id,
                         data: {
                             heading: val.heading ?? '',
@@ -222,8 +226,16 @@ function HighlightForm() {
                             actionLinks: actionLinksMutation,
                         },
                     });
+                    if (res.data?.updateHighlight?.ok) {
+                        navigate('/highlights');
+                        alert.show('Highlight updated successfully', { variant: 'success' });
+                    } else if (res.data?.updateHighlight?.errors) {
+                        const errorMessages = res.data?.updateHighlight?.errors;
+                        setError(res.data.updateHighlight.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
+                    }
                 } else {
-                    await createHighlightMutate({
+                    const res = await createHighlightMutate({
                         data: {
                             heading: val.heading ?? '',
                             description: val.description ?? '',
@@ -235,12 +247,20 @@ function HighlightForm() {
                             })),
                         },
                     });
+                    if (res.data?.createHighlight?.ok) {
+                        navigate('/highlights');
+                        alert.show('Highlight created successfully', { variant: 'success' });
+                    } else if (res.data?.createHighlight?.errors) {
+                        const errorMessages = res.data?.createHighlight?.errors;
+                        setError(res.data.createHighlight.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
+                    }
                 }
-                navigate('/highlights');
             },
         );
         handler();
-    }, [data, id, validate, setError, updateHighlightMutate, createHighlightMutate, navigate]);
+    }, [data, id, alert,
+        validate, setError, updateHighlightMutate, createHighlightMutate, navigate]);
 
     useEffect(() => {
         if (data?.highlight) {
@@ -287,7 +307,7 @@ function HighlightForm() {
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="FAQS DETAIL" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -300,13 +320,15 @@ function HighlightForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Heading" description="Enter the Heading name of the highlight" withAsteriskOnTitle>
                     <TextInput
                         name="heading"
+                        autoFocus
                         value={value.heading}
                         error={error?.heading as string}
                         onChange={setFieldValue}
+                        placeholder="heading"
                     />
                 </FormSection>
                 <FormSection label="Description" description="Enter the description" withAsteriskOnTitle>
@@ -315,6 +337,8 @@ function HighlightForm() {
                         value={value.description}
                         error={error?.description as string}
                         onChange={setFieldValue}
+                        placeholder="description"
+
                     />
                 </FormSection>
                 <FormSection label="isActive" description="Click on the checkbox if the blog is to be featured">
@@ -331,6 +355,7 @@ function HighlightForm() {
                         name="audioFile"
                         onChange={(files) => setFieldValue(files, 'image')}
                         value={value.image}
+                        error={error?.image as string}
                     />
                 </FormSection>
                 <FormSection label="Action Link" description="Add link to the highlight and the name to be displayed for the URL">
