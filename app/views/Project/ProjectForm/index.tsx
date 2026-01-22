@@ -14,11 +14,13 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -87,6 +89,7 @@ function ProjectForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(ProjectSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -149,6 +152,34 @@ function ProjectForm() {
             setFieldValue(`${project.createdBy?.firstName} ${project.createdBy?.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
+
+    useEffect(() => {
+        if (isNotDefined(data?.project)) {
+            return;
+        }
+        const {
+            modifiedBy,
+            createdBy,
+            coverImage,
+            department,
+            ...other
+        } = removeNull(data.project);
+
+        setValue({
+            ...other,
+            department: department?.id,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+        if (coverImage) {
+            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    file: coverImageData,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const departmentOptions = departments?.departments.results.map(
         (dept) => ({

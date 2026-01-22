@@ -18,12 +18,14 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     integerCondition,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -110,6 +112,7 @@ function VacancyForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(VacancySchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -184,6 +187,34 @@ function VacancyForm() {
             setFieldValue(`${jobVacancy.createdBy?.firstName} ${jobVacancy.createdBy?.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
+
+    useEffect(() => {
+        if (isNotDefined(data?.jobVacancy)) {
+            return;
+        }
+        const {
+            modifiedBy,
+            createdBy,
+            departmentId,
+            file,
+            ...other
+        } = removeNull(data.jobVacancy);
+
+        setValue({
+            ...other,
+            department: departmentId,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+        if (file) {
+            urlToFile(file.url, file.name).then((fileData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    file: fileData,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const departmentOptions = useMemo(() => departments?.departments.results.map(
         (dept) => ({

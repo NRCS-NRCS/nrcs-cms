@@ -15,11 +15,13 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
     ObjectSchema,
     PartialForm,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
@@ -103,6 +105,7 @@ function NewsForm() {
         value,
         validate,
         setError,
+        setValue,
     } = useForm(EditNewsSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
@@ -155,30 +158,42 @@ function NewsForm() {
     }, [setError, alert, validate, id, createNewsMutate, updateNewsMutate, navigate]);
 
     useEffect(() => {
-        if (data?.newsItem) {
-            const { newsItem } = data;
-            setFieldValue(newsItem.title, 'title');
-            setFieldValue(newsItem.content, 'content');
-            if (newsItem.file) {
-                urlToFile(newsItem.file.url, newsItem.file.name)
-                    .then((file) => {
-                        setFieldValue(file, 'file');
-                    });
-            }
-            if (newsItem.coverImage) {
-                urlToFile(newsItem.coverImage.url, newsItem.coverImage.name)
-                    .then((file) => {
-                        setFieldValue(file, 'coverImage');
-                    });
-            }
-            setFieldValue(newsItem.directiveId ?? '', 'directive');
-            setFieldValue(newsItem.publishedDate, 'publishedDate');
-            setFieldValue(newsItem.slug, 'slug');
-            setFieldValue(newsItem.status, 'status');
-            setFieldValue(`${newsItem.modifiedBy.firstName} ${newsItem.modifiedBy.lastName}`, 'modifiedBy');
-            setFieldValue(`${newsItem.createdBy.firstName} ${newsItem.createdBy.lastName}`, 'createdBy');
+        if (isNotDefined(data?.newsItem)) {
+            return;
         }
-    }, [data, setFieldValue]);
+        const {
+            modifiedBy,
+            createdBy,
+            coverImage,
+            file,
+            directiveId,
+            ...other
+        } = removeNull(data.newsItem);
+
+        setValue({
+            ...other,
+            directive: directiveId,
+            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
+            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
+        });
+
+        if (coverImage) {
+            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    coverImage: coverImageData,
+                }));
+            });
+        }
+        if (file) {
+            urlToFile(file.url, file.name).then((fileData) => {
+                setValue((prev) => ({
+                    ...prev,
+                    file: fileData,
+                }));
+            });
+        }
+    }, [data, setValue]);
 
     const directiveOptions = useMemo(() => directives?.strategicDirectives.results.map(
         (directive) => ({
@@ -191,6 +206,14 @@ function NewsForm() {
         value: status,
         label: status,
     })), []);
+
+    const ContentEditor = useMemo(() => (
+        <RichTextEditor
+            value={value.content}
+            onChange={(val) => setFieldValue(val, 'content')}
+            error={error?.content}
+        />
+    ), [value.content, error?.content, setFieldValue]);
 
     return (
         <Page>
@@ -281,13 +304,7 @@ function NewsForm() {
                     />
                 </FormSection>
                 <FormSection label="Write blog" />
-                <FormSection>
-                    <RichTextEditor
-                        value={value.content}
-                        onChange={(val) => setFieldValue(val, 'content')}
-                        error={error?.content}
-                    />
-                </FormSection>
+                <FormSection>{ContentEditor}</FormSection>
                 <FormSection>
                     <Button name="save" onClick={handleFormSubmit} variant="primary">
                         {createPending || updatePending ? 'Saving' : 'Save'}

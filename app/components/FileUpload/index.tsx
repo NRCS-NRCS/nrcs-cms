@@ -1,9 +1,5 @@
 import { Activity } from 'react';
-import {
-    AlarmWarningFillIcon,
-    AlertFillIcon,
-    UploadFillIcon,
-} from '@ifrc-go/icons';
+import { UploadFillIcon } from '@ifrc-go/icons';
 import {
     InputError,
     RawFileInput,
