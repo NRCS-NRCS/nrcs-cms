@@ -62,7 +62,7 @@ function ProjectList() {
 
     const columns = useMemo(() => [
         createNumberColumn<ProjectListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<ProjectListItem, string | number>('title', 'Tile', (dept) => dept.title),
+        createStringColumn<ProjectListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<ProjectListItem, string | number>('department', 'Department', (dept) => dept?.department?.title),
         createElementColumn<ProjectListItem, string | number, TableActionsProps>(
             'actions',

@@ -153,7 +153,7 @@ function PartnerForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="PARTNER DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'PARTNER DETAILS' : 'CREATE PARTNER'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
@@ -178,7 +178,7 @@ function PartnerForm() {
                         autoFocus
                     />
                 </FormSection>
-                <FormSection label="Status" description="Add status to either global or local" withAsteriskOnTitle>
+                <FormSection label="Scope" description="Add scope to either global or local" withAsteriskOnTitle>
                     <SelectInput
                         name="scope"
                         options={scopeOptions}

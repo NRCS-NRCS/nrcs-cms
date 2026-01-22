@@ -160,7 +160,7 @@ function ProjectForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="VACANCY DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'PROJECT DETAILS' : 'CREATE PROJECT'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>

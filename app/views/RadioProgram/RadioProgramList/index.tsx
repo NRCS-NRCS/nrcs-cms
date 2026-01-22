@@ -62,7 +62,7 @@ function RadioProgramList() {
 
     const columns = useMemo(() => [
         createNumberColumn<RadioProgramListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<RadioProgramListItem, string | number>('title', 'Tile', (dept) => dept.title),
+        createStringColumn<RadioProgramListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<RadioProgramListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
         createStringColumn<RadioProgramListItem, string | number>('type', 'Type', (dept) => dept?.type),
         createElementColumn<RadioProgramListItem, string | number, TableActionsProps>(

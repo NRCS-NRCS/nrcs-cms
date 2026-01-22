@@ -63,7 +63,7 @@ function StrategicDirectiveList() {
 
     const columns = useMemo(() => [
         createNumberColumn<StrategicDirectiveListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<StrategicDirectiveListItem, string | number>('title', 'Tile', (dept) => dept.title),
+        createStringColumn<StrategicDirectiveListItem, string | number>('title', 'Title', (dept) => dept.title),
         createElementColumn<StrategicDirectiveListItem, string | number, TableActionsProps>(
             'actions',
             'Actions',

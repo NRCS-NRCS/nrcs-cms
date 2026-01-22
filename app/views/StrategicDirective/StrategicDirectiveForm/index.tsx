@@ -305,7 +305,7 @@ function StrategicDirectiveForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="STRATEGIC DIRECTIVE DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'STRATEGIC DIRECTIVE DETAILS' : 'CREATE STRATEGIC DIRECTIVE'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'hidden' : 'visible'}>
                     <FormSection>
                         <Heading level={6}>

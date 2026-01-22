@@ -306,7 +306,7 @@ function HighlightForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="FAQS DETAIL" />
+                <FormSection headingLevel={3} label={id ? 'HIGHLIGHT DETAILS' : 'CREATE HIGHLIGHT'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>

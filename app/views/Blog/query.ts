@@ -17,15 +17,10 @@ const BLOG_QUERY = gql`
                 directiveId
                 featured
                 id
-                modifiedAt
                 coverImage {
                     name
                     size
                     url
-                }
-                createdBy {
-                    firstName
-                    lastName
                 }
                 publishedDate
                 slug
@@ -51,6 +46,7 @@ const BLOG_DETAIL_QUERY = gql`
             featured
             id
             modifiedBy {
+                id
                 firstName
                 lastName
             }
@@ -59,6 +55,7 @@ const BLOG_DETAIL_QUERY = gql`
             status
             title
             createdBy {
+                id
                 firstName
                 lastName
             }

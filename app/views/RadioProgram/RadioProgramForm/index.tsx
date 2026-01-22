@@ -166,7 +166,7 @@ function RadioProgramForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="RADIO PROGRAM DETAILS" />
+                <FormSection headingLevel={3} label={id ? 'RADIO PROGRAM DETAILS' : 'CREATE RADIO PROGRAM'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>

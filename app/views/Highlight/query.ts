@@ -16,6 +16,7 @@ const HIGHLIGHT_QUERY = gql`
                     url
                 }
                 createdBy {
+                    id
                     firstName
                     lastName
                 }
@@ -42,6 +43,7 @@ const HIGHLIGHT_DETAIL = gql`
                 url
             }
             createdBy {
+                id
                 firstName
                 lastName
             }
@@ -55,6 +57,7 @@ const HIGHLIGHT_DETAIL = gql`
             }
             isActive
             modifiedBy {
+                id
                 firstName
                 lastName
             }

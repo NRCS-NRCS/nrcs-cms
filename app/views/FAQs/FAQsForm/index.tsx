@@ -139,7 +139,7 @@ function FAQsForm() {
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="FAQs DETAIL" />
+                <FormSection headingLevel={3} label={id ? 'FAQs DETAIL' : 'CREATE FAQ'} />
                 <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>

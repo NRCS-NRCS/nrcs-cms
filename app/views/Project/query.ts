@@ -13,6 +13,7 @@ const PROJECT_QUERY = gql`
                 id
                 title
                 department {
+                    id
                     title
                 }
             }
@@ -31,6 +32,7 @@ const PROJECT_DETAIL_QUERY = gql`
             id
             description
             createdBy {
+                id
                 firstName
                 lastName
             }

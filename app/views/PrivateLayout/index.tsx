@@ -76,6 +76,12 @@ const navigation = [
 
             },
             {
+                to: '/resources',
+                title: 'Resources',
+                variant: 'leaf' as const,
+
+            },
+            {
                 to: '/strategic-directive',
                 title: 'Directives',
                 variant: 'leaf' as const,

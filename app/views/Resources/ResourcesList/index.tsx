@@ -9,7 +9,6 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import {
-    createBooleanColumn,
     createElementColumn,
     createNumberColumn,
     createStringColumn,
@@ -19,16 +18,16 @@ import ContainerWrapper from '#components/ContainerWrapper';
 import Page from '#components/Page';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
-    useDeleteVacancyMutation,
-    useVacancyQuery,
-    VacancyQuery,
+    ResourceQuery,
+    useDeleteResourceMutation,
+    useResourceQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
-type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number];
+type ResourceListItem = NonNullable<ResourceQuery['resources']>['results'][number];
 
-function VacancyList() {
+function ResourceList() {
     const navigate = useNavigate();
     const alert = useAlert();
 
@@ -40,37 +39,34 @@ function VacancyList() {
         getFormattedData,
     } = usePagination();
 
-    const [{ fetching, data }, reExecuteQuery] = useVacancyQuery({ variables });
-    const [{ fetching: deletePending }, deleteVacancy] = useDeleteVacancyMutation();
+    const [{ fetching, data }, reExecuteQuery] = useResourceQuery({ variables });
+    const [{ fetching: deletePending }, deleteResource] = useDeleteResourceMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<VacancyListItem>(data?.jobVacancies.results),
+        () => getFormattedData<ResourceListItem>(data?.resources.results),
         [data, getFormattedData],
     );
 
     const handleDelete = useCallback(
         (id: string, closeModal: () => void) => {
-            deleteVacancy({ id }).then((resp) => {
-                if (resp.data?.deleteJobVacancy) {
+            deleteResource({ id }).then((resp) => {
+                if (resp.data?.deleteResource) {
                     reExecuteQuery();
                     closeModal();
-                    alert.show('Vacancy deleted successfully', { variant: 'success' });
+                    alert.show('Resource deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteVacancy, reExecuteQuery, alert],
+        [deleteResource, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<VacancyListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<VacancyListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createStringColumn<VacancyListItem, string | number>('vacancyPosition', 'Vacancy Position', (dept) => dept?.position),
-        createNumberColumn<VacancyListItem, string | number>('numberOfVacancies', 'Number Of Vacancies', (dept) => dept?.numberOfVacancies),
-        createStringColumn<VacancyListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedAt),
-        createStringColumn<VacancyListItem, string | number>('expireDate', 'Expire Date', (dept) => dept?.publishedAt),
-        createBooleanColumn<VacancyListItem, string | number>('archive', 'Archived', (dept) => dept?.isArchived),
-        createStringColumn<VacancyListItem, string | number>('department', 'Department', (dept) => dept?.department?.title),
-        createElementColumn<VacancyListItem, string | number, TableActionsProps>(
+        createNumberColumn<ResourceListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
+        createStringColumn<ResourceListItem, string | number>('title', 'Title', (dept) => dept.title),
+        createStringColumn<ResourceListItem, string | number>('directive', 'Strategic Directive', (dept) => dept?.directive.title),
+        createStringColumn<ResourceListItem, string | number>('type', 'Type', (dept) => dept?.type),
+        createStringColumn<ResourceListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
+        createElementColumn<ResourceListItem, string | number, TableActionsProps>(
             'actions',
             'Actions',
             TableActions,
@@ -87,16 +83,16 @@ function VacancyList() {
         <Page>
             <ContainerWrapper
                 withPadding
-                heading="Vacancy"
+                heading="Resource"
                 actions={(
                     <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
-                        Add Vacancy
+                        Add Resource
                     </Button>
                 )}
                 footerActions={(
                     <Pager
                         activePage={page}
-                        itemsCount={data?.jobVacancies.totalCount ?? 0}
+                        itemsCount={data?.resources.totalCount ?? 0}
                         maxItemsPerPage={pageSize}
                         onActivePageChange={setPage}
                     />
@@ -114,4 +110,4 @@ function VacancyList() {
     );
 }
 
-export default VacancyList;
+export default ResourceList;

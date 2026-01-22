@@ -62,7 +62,7 @@ function PartnerList() {
 
     const columns = useMemo(() => [
         createNumberColumn<PartnerListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
-        createStringColumn<PartnerListItem, string | number>('title', 'Tile', (dept) => dept.title),
+        createStringColumn<PartnerListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<PartnerListItem, string | number>('scope', 'Scope', (dept) => dept?.scope),
         createElementColumn<PartnerListItem, string | number, TableActionsProps>(
             'actions',

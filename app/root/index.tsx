@@ -25,7 +25,28 @@ const cookies = new Cookies();
 const gqlClient = new Client({
     url: GRAPHQL_ENDPOINT,
     exchanges: [
-        cacheExchange({}),
+        cacheExchange({
+            keys: {
+                OffsetPaginationInfo: () => null,
+                BlogTypeOffsetPaginated: () => null,
+                DepartmentTypeOffsetPaginated: () => null,
+                FaqTypeOffsetPaginated: () => null,
+                StrategicDirectivesTypeOffsetPaginated: () => null,
+                HighlightTypeOffsetPaginated: () => null,
+                ProcurementTypeOffsetPaginated: () => null,
+                NewsTypeOffsetPaginated: () => null,
+                ProjectTypeOffsetPaginated: () => null,
+                PartnerTypeOffsetPaginated: () => null,
+                RadioProgramTypeOffsetPaginated: () => null,
+                VacancyTypeOffsetPaginated: () => null,
+                DjangoFileType: () => null,
+                ResourceTypeOffsetPaginated: () => null,
+                UserTypeOffsetPaginated: () => null,
+                JobVacancyTypeOffsetPaginated: () => null,
+                MajorResponsibilitiesTypeOffsetPaginated: () => null,
+
+            },
+        }),
         fetchExchange,
     ],
     fetchOptions: () => ({

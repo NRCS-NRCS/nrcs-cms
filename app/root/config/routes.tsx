@@ -251,6 +251,27 @@ const users: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const resources: RouteConfig = {
+    index: true,
+    path: 'resources',
+    load: () => import('#views/Resources/ResourcesList'),
+    visibility: 'is-authenticated',
+};
+
+const editResources: RouteConfig = {
+    index: true,
+    path: 'resources/:id/edit',
+    load: () => import('#views/Resources/ResourcesForm'),
+    visibility: 'is-authenticated',
+};
+
+const addResources: RouteConfig = {
+    index: true,
+    path: 'resources/add',
+    load: () => import('#views/Resources/ResourcesForm'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -288,6 +309,9 @@ const routes = {
     editStrategicDirectives,
     strategicDirectives,
     users,
+    resources,
+    addResources,
+    editResources,
 };
 
 export type RouteKeys = keyof typeof routes;
