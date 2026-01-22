@@ -1,4 +1,4 @@
-.page-error {
+.preload-message {
     display: flex;
     align-items: center;
     flex-direction: column;
@@ -7,4 +7,5 @@
     background-color: var(--go-ui-color-background);
     height: 100vh;
     text-align: center;
+    font-size: var(--go-ui-font-size-lg);
 }

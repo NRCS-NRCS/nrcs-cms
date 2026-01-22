@@ -8,7 +8,7 @@ export interface RouteConfig {
 }
 const home: RouteConfig = {
     index: true,
-    // path: '/',
+    path: '/',
     load: () => import('#views/Home'),
     visibility: 'is-authenticated',
 };
