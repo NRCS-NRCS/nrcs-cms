@@ -34,6 +34,7 @@ import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
 import FormSection from '#components/FormSection';
 import Page from '#components/Page';
+import RichTextEditor from '#components/RichTextEditor';
 import {
     MajorResponsibilitiesInput,
     StrategicDirectivesCreateInput,
@@ -41,6 +42,7 @@ import {
     useStrategicDirectiveDetailQuery,
     useUpdateStrategicDirectiveMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 import styles from './styles.module.css';
@@ -65,7 +67,7 @@ type MajorResponsibilitySchema = ArraySchema<PartialForm<MajorResponsibilitiesTy
     ExtendedPartialFormType>;
 type MajorResponsibilitySchemaMember = ReturnType<MajorResponsibilitySchema['member']>;
 
-const EditBlogSchema: FormSchema = {
+const DirectiveSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -104,7 +106,7 @@ const EditBlogSchema: FormSchema = {
 const defaultEditFormValue: ExtendedPartialFormType = {
     createdBy: '',
     modifiedBy: '',
-    majorResponsibilities: [{ clientId: randomString(), id: '' }],
+    majorResponsibilities: [],
 
 };
 
@@ -163,6 +165,8 @@ function MajorResponsibilities(props: CollectionInputProps) {
 function StrategicDirectiveForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useStrategicDirectiveDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -176,7 +180,7 @@ function StrategicDirectiveForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(DirectiveSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
     const errorMR = getErrorObject(error?.majorResponsibilities);
@@ -230,8 +234,11 @@ function StrategicDirectiveForm() {
                     });
                     if (res.data?.updateStrategicDirectives?.ok) {
                         navigate('/strategic-directive');
+                        alert.show('Strategic Directive updated successfully', { variant: 'success' });
                     } else if (res.data?.updateStrategicDirectives.errors) {
-                        setError(res.data.updateStrategicDirectives.errors);
+                        const errorMessages = res.data?.updateStrategicDirectives?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 } else {
                     const res = await createStrategicDirectiveMutate({
@@ -247,14 +254,17 @@ function StrategicDirectiveForm() {
 
                     if (res.data?.createStrategicDirectives.ok) {
                         navigate('/strategic-directive');
+                        alert.show('Strategic Directive created successfully', { variant: 'success' });
                     } else if (res.data?.createStrategicDirectives?.errors) {
-                        setError(res.data.createStrategicDirectives.errors);
+                        const errorMessages = res.data?.createStrategicDirectives?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, data,
+    }, [setError, validate, id, data, alert,
         createStrategicDirectiveMutate, updateStrategicDirectiveMutate, navigate]);
 
     useEffect(() => {
@@ -316,6 +326,8 @@ function StrategicDirectiveForm() {
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        autoFocus
+                        placeholder="title"
                     />
                 </FormSection>
                 <FormSection label="Cover Image" description="Add a Cover Image, which will be attached and shown on StrategicDirective" withAsteriskOnTitle>
@@ -323,14 +335,14 @@ function StrategicDirectiveForm() {
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
+                        error={error?.coverImage as string}
                     />
                 </FormSection>
-                <FormSection label="Description" description="Enter the Description" withAsteriskOnTitle>
-                    <TextArea
-                        name="description"
+                <FormSection label="Description" description="Provide a detailed description of the strategic directive. This should outline the purpose, goals, and significance of the directive within the broader organizational strategy." withAsteriskOnTitle>
+                    <RichTextEditor
                         value={value.description}
+                        onChange={(val) => setFieldValue(val, 'description')}
                         error={error?.description as string}
-                        onChange={setFieldValue}
                     />
                 </FormSection>
                 <FormSection label="Major Responsibilities" description="Define the key responsibilities required to implement this strategic directive. Focus on core actions, accountability, and expected outcomes.">

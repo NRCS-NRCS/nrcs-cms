@@ -23,12 +23,15 @@ import {
     useVacancyQuery,
     VacancyQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number];
 
 function VacancyList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -51,10 +54,11 @@ function VacancyList() {
                 if (resp.data?.deleteJobVacancy) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('Vacancy deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteVacancy, reExecuteQuery],
+        [deleteVacancy, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

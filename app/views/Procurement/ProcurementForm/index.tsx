@@ -1,4 +1,5 @@
 import {
+    Activity,
     useCallback,
     useEffect,
 } from 'react';
@@ -32,6 +33,7 @@ import {
     useProcurementDetailQuery,
     useUpdateProcurementMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<ProcurementCreateInput> &
@@ -40,7 +42,7 @@ type PartialFormType = PartialForm<ProcurementCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const ProcurementSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
@@ -74,6 +76,8 @@ const defaultEditFormValue: PartialFormType = {
 function ProcurementForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useProcurementDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -85,7 +89,7 @@ function ProcurementForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(ProcurementSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -109,8 +113,11 @@ function ProcurementForm() {
                     });
                     if (res.data?.updateProcurement?.ok) {
                         navigate('/procurements');
+                        alert.show('Procurement updated successfully', { variant: 'success' });
                     } else if (res.data?.updateProcurement.errors) {
-                        setError(res.data.updateProcurement.errors);
+                        const errorMessages = res.data?.updateProcurement?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 } else {
                     const res = await createProcurementMutate({
@@ -119,14 +126,17 @@ function ProcurementForm() {
 
                     if (res.data?.createProcurement.ok) {
                         navigate('/procurements');
+                        alert.show('Procurement created successfully', { variant: 'success' });
                     } else if (res.data?.createProcurement?.errors) {
-                        setError(res.data.createProcurement.errors);
+                        const errorMessages = res.data?.createProcurement?.errors;
+                        alert.show(errorMessages, { variant: 'danger' });
+                        setError(errorMessages);
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createProcurementMutate, updateProcurementMutate, navigate]);
+    }, [setError, alert, validate, id, createProcurementMutate, updateProcurementMutate, navigate]);
 
     useEffect(() => {
         if (data?.procurement) {
@@ -150,7 +160,7 @@ function ProcurementForm() {
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="PROCUREMENT DETAILS" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -163,13 +173,15 @@ function ProcurementForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        autoFocus
+                        placeholder="title"
                     />
                 </FormSection>
                 <FormSection label="Description" description="Describe how the EAP is aligned with the Disaster Risk Management strategy of the National Society (e.g. in the existing contingency plan, DRR plan etc.)." withAsteriskOnTitle>
@@ -178,6 +190,7 @@ function ProcurementForm() {
                         value={value.description}
                         error={error?.description as string}
                         onChange={setFieldValue}
+                        placeholder="description"
                     />
                 </FormSection>
                 <FormSection label="Procurement File" description="Add a cover photo, which will be attached and displayed on top of your application" withAsteriskOnTitle>
@@ -185,6 +198,7 @@ function ProcurementForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
+                        error={error?.file as string}
                     />
                 </FormSection>
                 <FormSection label="Published Date" description="This date should be the Published Date of the Procurement" withAsteriskOnTitle>

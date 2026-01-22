@@ -23,12 +23,14 @@ import {
     useBlogQueryQuery,
     useDeleteBlogMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number];
 
 function BlogList() {
     const navigate = useNavigate();
+    const alert = useAlert();
     const {
         page,
         setPage,
@@ -48,69 +50,49 @@ function BlogList() {
             deleteBlog({ id }).then((resp) => {
                 if (resp.data?.deleteBlog) {
                     reExecuteQuery();
+                    alert.show('Blog deleted successfully', { variant: 'success' });
                     closeModal();
                 }
             });
         },
-        [deleteBlog, reExecuteQuery],
+        [deleteBlog, reExecuteQuery, alert],
     );
     const columns = useMemo(
         () => ([
-            // Serial Number
             createNumberColumn<BlogListType & { sn: number }, string | number>(
                 'sn',
                 'S.N.',
                 (item) => item.sn,
                 { columnWidth: 60 },
             ),
-            // Title
             createStringColumn<BlogListType, string | number>(
                 'title',
                 'Title',
                 (blog) => blog.title,
-                {
-                    sortable: true,
-                },
             ),
 
-            // Published Date
             createDateColumn<BlogListType, string | number>(
                 'publishedDate',
                 'Published Date',
                 (blog) => blog.publishedDate,
-                {
-                    sortable: true,
-                },
             ),
 
-            // Author
             createStringColumn<BlogListType, string | number>(
                 'author',
                 'Author',
                 (blog) => blog.author,
-                {
-                    sortable: true,
-                },
             ),
 
-            // Featured
             createBooleanColumn<BlogListType, string | number>(
                 'featured',
                 'Featured',
                 (blog) => blog.featured,
-                {
-                    sortable: true,
-                },
             ),
 
-            // Status
             createStringColumn<BlogListType, string | number>(
                 'status',
                 'Status',
                 (blog) => blog.status,
-                {
-                    sortable: true,
-                },
             ),
 
             createElementColumn<BlogListType, string | number, TableActionsProps>(

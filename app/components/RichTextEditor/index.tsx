@@ -1,10 +1,12 @@
 import '@mdxeditor/editor/style.css';
 
 import {
+    Activity,
     useEffect,
     useMemo,
     useRef,
 } from 'react';
+import { InputError } from '@ifrc-go/ui';
 import {
     BlockTypeSelect,
     BoldItalicUnderlineToggles,
@@ -30,6 +32,7 @@ import styles from './styles.module.css';
 interface Props {
     value?: string;
     onChange?: (value: string) => void;
+    error?: string;
 }
 
 function debounce<Args extends unknown[], R>(
@@ -59,7 +62,12 @@ function ToolbarContents() {
     );
 }
 
-export default function RichTextEditor({ value = '', onChange }: Props) {
+export default function RichTextEditor(props: Props) {
+    const {
+        value = '',
+        onChange,
+        error,
+    } = props;
     const ref = useRef<MDXEditorMethods>(null);
     const prevValueRef = useRef(value);
 
@@ -101,6 +109,11 @@ export default function RichTextEditor({ value = '', onChange }: Props) {
                 placeholder="Start writing here..."
                 plugins={plugins}
             />
+            <Activity mode={error ? 'visible' : 'hidden'}>
+                <InputError>
+                    {error}
+                </InputError>
+            </Activity>
         </div>
     );
 }

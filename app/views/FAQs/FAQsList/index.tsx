@@ -21,12 +21,15 @@ import {
     useDeleteFaqMutation,
     useFaqQuery,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
 
 type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number];
 
 function FAQsList() {
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const {
         page,
         setPage,
@@ -49,10 +52,11 @@ function FAQsList() {
                 if (resp.data?.deleteFaq) {
                     reExecuteQuery();
                     closeModal();
+                    alert.show('FAQ deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteFaq, reExecuteQuery],
+        [deleteFaq, reExecuteQuery, alert],
     );
 
     const columns = useMemo(() => [

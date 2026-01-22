@@ -1,4 +1,5 @@
 import {
+    Activity,
     useCallback,
     useEffect,
 } from 'react';
@@ -31,6 +32,7 @@ import {
     useFaqDetailQuery,
     useUpdateFaqMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 
 type PartialFormType = PartialForm<FaqCreateInput> &
 { createdBy: string, modifiedBy: string }
@@ -38,7 +40,7 @@ type PartialFormType = PartialForm<FaqCreateInput> &
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const EditBlogSchema: FormSchema = {
+const FAQSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         question: {
             required: true,
@@ -65,6 +67,8 @@ const defaultEditFormValue: PartialFormType = {
 function FAQsForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const alert = useAlert();
+
     const [{ data }] = useFaqDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -76,7 +80,7 @@ function FAQsForm() {
         value,
         validate,
         setError,
-    } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+    } = useForm(FAQSchema, { value: defaultEditFormValue });
 
     const error = getErrorObject(formError);
 
@@ -97,8 +101,11 @@ function FAQsForm() {
                     });
                     if (res.data?.updateFaq?.ok) {
                         navigate('/faqs');
+                        alert.show('FAQ updated successfully', { variant: 'success' });
                     } else if (res.data?.updateFaq.errors) {
+                        const errorMessages = res.data?.updateFaq?.errors;
                         setError(res.data.updateFaq.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 } else {
                     const res = await createFaqMutate({
@@ -107,14 +114,17 @@ function FAQsForm() {
 
                     if (res.data?.createFaq.ok) {
                         navigate('/faqs');
+                        alert.show('FAQ created successfully', { variant: 'success' });
                     } else if (res.data?.createFaq?.errors) {
+                        const errorMessages = res.data?.createFaq?.errors;
                         setError(res.data.createFaq.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, createFaqMutate, updateFaqMutate, navigate]);
+    }, [setError, validate, alert, id, createFaqMutate, updateFaqMutate, navigate]);
 
     useEffect(() => {
         if (data?.faq) {
@@ -130,7 +140,7 @@ function FAQsForm() {
         <Page>
             <ContainerWrapper>
                 <FormSection headingLevel={3} label="FAQs DETAIL" />
-                {(value.createdBy && value.modifiedBy) && (
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -143,13 +153,15 @@ function FAQsForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Question*" description="Enter the question">
                     <TextArea
                         name="question"
                         value={value.question}
                         error={error?.question as string}
                         onChange={setFieldValue}
+                        placeholder="question"
+                        autoFocus
                     />
                 </FormSection>
                 <FormSection label="Answer*" description="Write the answer of the question">
@@ -158,6 +170,7 @@ function FAQsForm() {
                         value={value.answer}
                         onChange={setFieldValue}
                         error={error?.answer as string}
+                        placeholder="answer"
                     />
                 </FormSection>
                 <FormSection label="Order Index*" description="Write the question number in numeric ">

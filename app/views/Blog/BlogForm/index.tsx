@@ -1,6 +1,8 @@
 import {
+    Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
 import {
     useNavigate,
@@ -36,6 +38,7 @@ import {
     useDepartmentAndDirectiveQuery,
     useUpdateBlogMutation,
 } from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
 
 type PartialFormType = PartialForm<BlogCreateInput> &
 { createdBy: string, modifiedBy: string, slug: string | null };
@@ -97,6 +100,8 @@ const defaultEditFormValue: PartialFormType = {
 
 function BlogForm() {
     const { id } = useParams();
+    const alert = useAlert();
+
     const navigate = useNavigate();
     const [{ data }] = useBlogDetailQueryQuery({
         variables: { id: id || '' }, pause: !id,
@@ -137,8 +142,11 @@ function BlogForm() {
                     });
                     if (res.data?.updateBlog?.ok) {
                         navigate('/blog');
+                        alert.show('Blog updated successfully', { variant: 'success' });
                     } else if (res.data?.updateBlog?.errors) {
+                        const errorMessages = res.data?.updateBlog?.errors;
                         setError(res.data.updateBlog.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 } else {
                     const res = await createBlogMutate({
@@ -146,33 +154,41 @@ function BlogForm() {
                     });
                     if (res.data?.createBlog.ok) {
                         navigate('/blog');
+                        alert.show('Blog created successfully', { variant: 'success' });
                     } else if (res.data?.createBlog?.errors) {
+                        const errorMessages = res.data?.createBlog?.errors;
                         setError(res.data.createBlog.errors);
+                        alert.show(errorMessages, { variant: 'danger' });
                     }
                 }
             },
         );
         handler();
-    }, [setError, validate, id, updateBlogMutate, createBlogMutate, navigate]);
+    }, [setError, alert, validate, id, updateBlogMutate, createBlogMutate, navigate]);
 
-    const departmentOptions = departmentAndDirective?.departments.results.map(
-        (dept) => ({
+    const departmentOptions = useMemo(
+        () => departmentAndDirective?.departments.results.map((dept) => ({
             id: dept.id,
             name: dept.title,
-        }),
-    ) ?? [];
+        })) ?? [],
+        [departmentAndDirective?.departments.results],
+    );
 
-    const directiveOptions = departmentAndDirective?.strategicDirectives.results.map(
-        (directive) => ({
+    const directiveOptions = useMemo(
+        () => departmentAndDirective?.strategicDirectives.results.map((directive) => ({
             id: directive.id,
             name: directive.title,
-        }),
-    ) ?? [];
+        })) ?? [],
+        [departmentAndDirective?.strategicDirectives.results],
+    );
 
-    const statusOptions = Object.values(StatusEnum).map((status) => ({
-        value: status,
-        label: status,
-    }));
+    const statusOptions = useMemo(
+        () => Object.values(StatusEnum).map((status) => ({
+            value: status,
+            label: status,
+        })),
+        [],
+    );
 
     useEffect(() => {
         if (data?.blog) {
@@ -191,11 +207,12 @@ function BlogForm() {
             setFieldValue(`${blog.createdBy.firstName} ${blog.createdBy.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
+
     return (
         <Page>
             <ContainerWrapper>
-                <FormSection headingLevel={3} label="BLOG DETAIL" />
-                {(value.createdBy && value.modifiedBy) && (
+                <FormSection headingLevel={3} label={id ? 'BLOG DETAIL' : 'CREATE BLOG'} />
+                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
                     <FormSection>
                         <Heading level={6}>
                             Created by:
@@ -208,13 +225,15 @@ function BlogForm() {
                             {value.createdBy}
                         </Heading>
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Title" description="Enter the title name of the Blog" withAsteriskOnTitle>
                     <TextInput
                         name="title"
+                        autoFocus
                         value={value.title}
                         error={error?.title as string}
                         onChange={setFieldValue}
+                        placeholder="title"
                     />
                 </FormSection>
                 <FormSection label="Published Date" description="This date should be the Published Date of the blog" withAsteriskOnTitle>
@@ -232,6 +251,7 @@ function BlogForm() {
                         value={value.author}
                         onChange={setFieldValue}
                         error={error?.author as string}
+                        placeholder="author"
                     />
                 </FormSection>
                 <FormSection label="Cover photo" description="Add a cover photo, which will be displayed on top" withAsteriskOnTitle>
@@ -240,6 +260,7 @@ function BlogForm() {
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         accept="audio/*"
                         value={value.coverImage}
+                        error={error?.coverImage as string}
                     />
                 </FormSection>
                 <FormSection label="Featured" description="Click on the checkbox if the blog is to be featured" withAsteriskOnTitle>
@@ -263,16 +284,17 @@ function BlogForm() {
                         error={error?.status}
                     />
                 </FormSection>
-                {value.slug && (
+                <Activity mode={value.slug ? 'visible' : 'hidden'}>
                     <FormSection label="Slug" description="Unique URL identifier for the blog">
                         <TextInput
                             name="slug"
                             value={value.slug ?? ''}
                             onChange={(val) => setFieldValue(val || null, 'slug')}
                             error={error?.slug}
+                            readOnly
                         />
                     </FormSection>
-                )}
+                </Activity>
                 <FormSection label="Strategic Directive (NS)" description="Select under which strategic directive it belongs">
                     <SelectInput
                         name="directive"
@@ -302,6 +324,7 @@ function BlogForm() {
                     <RichTextEditor
                         value={value.content}
                         onChange={(val) => setFieldValue(val, 'content')}
+                        error={error?.content}
                     />
                 </FormSection>
                 <FormSection>

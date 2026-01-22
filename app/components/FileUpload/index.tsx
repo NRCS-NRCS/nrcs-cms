@@ -1,5 +1,13 @@
-import { UploadFillIcon } from '@ifrc-go/icons';
-import { RawFileInput } from '@ifrc-go/ui';
+import { Activity } from 'react';
+import {
+    AlarmWarningFillIcon,
+    AlertFillIcon,
+    UploadFillIcon,
+} from '@ifrc-go/icons';
+import {
+    InputError,
+    RawFileInput,
+} from '@ifrc-go/ui';
 
 import styles from './styles.module.css';
 
@@ -8,6 +16,7 @@ interface Props {
     onChange: (file?: File) => void;
     name?: string;
     accept?: string
+    error?: string;
 }
 
 function FileUpload(props: Props) {
@@ -16,11 +25,12 @@ function FileUpload(props: Props) {
         onChange,
         name,
         accept,
+        error,
     } = props;
 
     return (
         <div className={styles.fileInput}>
-            <div>
+            <div className={styles.inputSection}>
                 <RawFileInput
                     name={name}
                     variant="secondary"
@@ -30,12 +40,17 @@ function FileUpload(props: Props) {
                     <UploadFillIcon />
                     Upload
                 </RawFileInput>
+                <p>
+                    {value?.name ? (
+                        value.name
+                    ) : 'No document selected'}
+                </p>
             </div>
-            <p>
-                {value?.name ? (
-                    value.name
-                ) : 'No document selected'}
-            </p>
+            <Activity mode={error ? 'visible' : 'hidden'}>
+                <InputError>
+                    {error}
+                </InputError>
+            </Activity>
         </div>
     );
 }
