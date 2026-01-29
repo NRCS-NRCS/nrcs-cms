@@ -4,7 +4,6 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import { IoRemoveCircleOutline } from 'react-icons/io5';
 import {
     useNavigate,
     useParams,
@@ -16,7 +15,6 @@ import {
     Heading,
     InputSection,
     ListView,
-    TextArea,
     TextInput,
 } from '@ifrc-go/ui';
 import {
