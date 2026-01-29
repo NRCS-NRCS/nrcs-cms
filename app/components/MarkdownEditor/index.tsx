@@ -3,13 +3,11 @@ import '@mdxeditor/editor/style.css';
 import {
     Activity,
     memo,
-    useCallback,
     useEffect,
     useMemo,
     useRef,
 } from 'react';
 import {
-    BlockView,
     InputError,
     ListView,
 } from '@ifrc-go/ui';

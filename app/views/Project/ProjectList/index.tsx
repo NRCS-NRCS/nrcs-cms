@@ -14,7 +14,6 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import Page from '#components/Page';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     ProjectQuery,
