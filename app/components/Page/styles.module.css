@@ -5,10 +5,21 @@
     background: var(--go-ui-color-gray-10);
     height: 100%;
     overflow: hidden;
+
+    >* {
+        width: 100%
+    }
+
     .leftPane {
         display: flex;
         flex-direction: column;
         background-color: var(--go-ui-color-white);
         gap: var(--go-ui-spacing-md);
+        width: auto
+    }
+
+    .rightPaneContent {
+        overflow: auto;
+
     }
 }

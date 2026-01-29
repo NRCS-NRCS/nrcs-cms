@@ -1,66 +1,46 @@
-import React, {
-    useCallback,
-    useState,
-} from 'react';
 import { useNavigate } from 'react-router';
 import {
     DeleteBinLineIcon,
     EditTwoLineIcon,
 } from '@ifrc-go/icons';
-import { Button } from '@ifrc-go/ui';
-
-import ConfirmationModal from '#components/ConfirmationModal';
-
-import styles from './styles.module.css';
+import {
+    Button,
+    ConfirmButton,
+    TableActions as GoTableAction,
+} from '@ifrc-go/ui';
 
 export interface TableActionsProps {
     id: string;
-    handleConfirmButtonChange: (id: string, closeModal: () => void) => void
-    confirmPending?: boolean
+    handleConfirmButtonChange: (id: string) => void
     itemTitle: string
 }
 
 function TableActions(props: TableActionsProps) {
     const navigate = useNavigate();
     const {
-        id, handleConfirmButtonChange, confirmPending, itemTitle,
+        id, handleConfirmButtonChange, itemTitle,
     } = props;
-    const [openDeleteModal, setOpenDeleteModal] = useState(false);
-
-    const handleClose = useCallback(() => {
-        setOpenDeleteModal(false);
-    }, []);
-
-    const handleConfirmButton = useCallback(() => {
-        handleConfirmButtonChange(id, handleClose);
-    }, [id, handleClose, handleConfirmButtonChange]);
 
     return (
-        <div className={styles.tableAction}>
-            {(openDeleteModal) && (
-                <ConfirmationModal
-                    onClose={handleClose}
-                    type="delete"
-                    handleConfirmButtonChange={handleConfirmButton}
-                    confirmPending={confirmPending}
-                    itemTitle={itemTitle}
-                />
-            )}
+        <GoTableAction>
             <Button
                 name={undefined}
-                variant="tertiary"
+                styleVariant="action"
+                colorVariant="secondary"
                 onClick={() => navigate(`${id}/edit`)}
             >
                 <EditTwoLineIcon />
             </Button>
-            <Button
-                name={undefined}
-                variant="tertiary"
-                onClick={() => setOpenDeleteModal(true)}
+            <ConfirmButton
+                name={id}
+                styleVariant="action"
+                colorVariant="secondary"
+                onConfirm={handleConfirmButtonChange}
+                confirmMessage={`Are you sure you want to delete ${`"${itemTitle}"` || 'this item'}? This action cannot be undone.`}
             >
                 <DeleteBinLineIcon />
-            </Button>
-        </div>
+            </ConfirmButton>
+        </GoTableAction>
     );
 }
 

@@ -5,16 +5,15 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
     createElementColumn,
-    createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     ProcurementQuery,
@@ -23,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type ProcurementListItem = NonNullable<ProcurementQuery['procurements']>['results'][number];
 
@@ -35,23 +35,21 @@ function ProcurementList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useProcurementQuery({ variables });
-    const [{ fetching: deletePending }, deleteProcurement] = useDeleteProcurementMutation();
+    const [, deleteProcurement] = useDeleteProcurementMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<ProcurementListItem>(data?.procurements.results),
-        [data, getFormattedData],
+        () => (data?.procurements?.results),
+        [data],
     );
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteProcurement({ id }).then((resp) => {
                 if (resp.data?.deleteProcurement) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('Procurement deleted successfully', { variant: 'success' });
                 }
             });
@@ -60,29 +58,26 @@ function ProcurementList() {
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<ProcurementListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<ProcurementListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<ProcurementListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
         createStringColumn<ProcurementListItem, string | number>('expireDate', 'Expire Date', (dept) => dept?.expiryDate),
         createElementColumn<ProcurementListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
                 handleConfirmButtonChange: handleDelete,
-                confirmPending: deletePending,
                 itemTitle: datum.title,
             }),
-            { columnWidth: 150 },
         ),
-    ], [handleDelete, deletePending]);
+    ], [handleDelete]);
     return (
-        <ContainerWrapper
+        <Container
             withPadding
             heading="Procurement"
-            actions={(
-                <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
+            headerActions={(
+                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
                     Add Procurement
                 </Button>
             )}
@@ -96,13 +91,13 @@ function ProcurementList() {
             )}
         >
             <Table
-                keySelector={(item) => item.id}
+                keySelector={idSelector}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
             />
-        </ContainerWrapper>
+        </Container>
     );
 }
 

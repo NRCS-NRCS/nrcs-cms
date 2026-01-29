@@ -18,6 +18,7 @@ import {
     Button,
     Container,
     Heading,
+    ListView,
 } from '@ifrc-go/ui';
 
 import Page from '#components/Page';
@@ -110,6 +111,7 @@ function Dashboards() {
     return (
         <Page className={styles.page}>
             <Container
+                className={styles.container}
                 heading="Dashboards"
                 headingLevel={1}
                 headerDescription={(
@@ -127,39 +129,34 @@ function Dashboards() {
                         Use the navigation menu to access different sections of the CMS.
                     </>
                 )}
-                childrenContainerClassName={styles.childContainer}
-                className={styles.container}
             >
                 <div className={styles.content}>
-                    <div className={styles.cards}>
+                    <ListView layout="grid" withFullWidth numPreferredGridColumns={3}>
                         {card.map((item) => (
-                            <div key={item.title} className={styles.card}>
+                            <ListView key={item.title} withPadding withBackground layout="block">
                                 <Heading level={6}>
                                     {item.title}
                                 </Heading>
-                                <div className={styles.cardCount}>
+                                <ListView spacing="sm">
                                     {item.icon}
                                     {item.count}
-                                </div>
+                                </ListView>
+                            </ListView>
+                        ))}
+                    </ListView>
+                    <ListView withPadding withBackground layout="block" spacing="sm">
+                        <Heading level={3}>Quick Action</Heading>
+                        {card.map((item) => (
+                            <div key={item.title}>
+                                <Button styleVariant="outline" textSize="sm" name={undefined} onClick={() => navigate(item.addLink)}>
+                                    New
+                                    {' '}
+                                    {item.title}
+                                </Button>
                             </div>
                         ))}
-                    </div>
-                    <div className={styles.cards}>
-                        <div className={styles.card}>
-                            <Heading level={3}>Quick Action</Heading>
-                            {card.map((item) => (
-                                <div key={item.title}>
-                                    <Button variant="secondary" name={undefined} onClick={() => navigate(item.addLink)}>
-                                        New
-                                        {' '}
-                                        {item.title}
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    </ListView>
                 </div>
-
             </Container>
         </Page>
     );

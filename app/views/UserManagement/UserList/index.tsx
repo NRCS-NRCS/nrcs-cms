@@ -1,15 +1,11 @@
 import { useMemo } from 'react';
 import {
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
-import {
-    createNumberColumn,
-    createStringColumn,
-} from '@ifrc-go/ui/utils';
+import { createStringColumn } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
-import Page from '#components/Page';
 import {
     UsersQuery,
     useUsersQuery,
@@ -20,23 +16,18 @@ type UsersListItem = NonNullable<UsersQuery['users']>['results'][number];
 
 function UsersList() {
     const {
-        page, setPage, pageSize, variables, getFormattedData,
+        page, setPage, pageSize, variables,
     } = usePagination();
 
     const [{ fetching, data }] = useUsersQuery({ variables });
+
     const tableData = useMemo(
-        () => getFormattedData<UsersListItem>(data?.users.results),
-        [data, getFormattedData],
+        () => (data?.users.results),
+        [data],
     );
 
     const columns = useMemo(
         () => [
-            createNumberColumn<UsersListItem & { sn: number }, string | number>(
-                'sn',
-                'S.N.',
-                (item) => item.sn,
-                { columnWidth: 60 },
-            ),
             createStringColumn<UsersListItem, string | number>(
                 'firstName',
                 'First Name',
@@ -51,28 +42,26 @@ function UsersList() {
         [],
     );
     return (
-        <Page>
-            <ContainerWrapper
-                withPadding
-                heading="Users"
-                footerActions={(
-                    <Pager
-                        activePage={page}
-                        itemsCount={data?.users.totalCount ?? 0}
-                        maxItemsPerPage={pageSize}
-                        onActivePageChange={setPage}
-                    />
-                )}
-            >
-                <Table
-                    keySelector={(item) => item.id}
-                    columns={columns}
-                    data={tableData}
-                    filtered={false}
-                    pending={fetching}
+        <Container
+            withPadding
+            heading="Users"
+            footerActions={(
+                <Pager
+                    activePage={page}
+                    itemsCount={data?.users.totalCount ?? 0}
+                    maxItemsPerPage={pageSize}
+                    onActivePageChange={setPage}
                 />
-            </ContainerWrapper>
-        </Page>
+            )}
+        >
+            <Table
+                keySelector={(item) => item.id}
+                columns={columns}
+                data={tableData}
+                filtered={false}
+                pending={fetching}
+            />
+        </Container>
     );
 }
 

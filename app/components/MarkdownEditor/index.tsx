@@ -2,11 +2,17 @@ import '@mdxeditor/editor/style.css';
 
 import {
     Activity,
+    memo,
+    useCallback,
     useEffect,
     useMemo,
     useRef,
 } from 'react';
-import { InputError } from '@ifrc-go/ui';
+import {
+    BlockView,
+    InputError,
+    ListView,
+} from '@ifrc-go/ui';
 import {
     BlockTypeSelect,
     BoldItalicUnderlineToggles,
@@ -31,7 +37,9 @@ import styles from './styles.module.css';
 
 interface Props {
     value?: string;
-    onChange?: (value: string) => void;
+    onChange: (
+        value: string | undefined,
+    ) => void;
     error?: string;
 }
 
@@ -62,24 +70,25 @@ function ToolbarContents() {
     );
 }
 
-export default function RichTextEditor(props: Props) {
+function MarkdownEditor(props: Props) {
     const {
         value = '',
         onChange,
         error,
     } = props;
+
     const ref = useRef<MDXEditorMethods>(null);
     const prevValueRef = useRef(value);
 
     const handleChange = useMemo(
         () => debounce((data: string) => {
-            onChange?.(data);
+            onChange(data === '' ? undefined : data);
         }, 300),
         [onChange],
     );
 
     useEffect(() => {
-        if (ref.current && value !== prevValueRef.current) {
+        if (ref.current && !prevValueRef.current) {
             ref.current.setMarkdown(value);
             prevValueRef.current = value;
         }
@@ -101,19 +110,23 @@ export default function RichTextEditor(props: Props) {
     ], []);
 
     return (
-        <div className={styles.editor}>
-            <MDXEditor
-                markdown={value}
-                ref={ref}
-                onChange={handleChange}
-                placeholder="Start writing here..."
-                plugins={plugins}
-            />
+        <ListView layout="block" withCenteredContents>
+            <div className={styles.editor}>
+                <MDXEditor
+                    markdown={value}
+                    ref={ref}
+                    onChange={handleChange}
+                    placeholder="Start writing here..."
+                    plugins={plugins}
+                />
+            </div>
             <Activity mode={error ? 'visible' : 'hidden'}>
                 <InputError>
                     {error}
                 </InputError>
             </Activity>
-        </div>
+        </ListView>
     );
 }
+
+export default memo(MarkdownEditor);

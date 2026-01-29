@@ -50,13 +50,14 @@ function Navigation({ navigationItem }: NavigationProps) {
                             name={index}
                             type="button"
                             className={styles.navHeaderContainer}
-                            childrenContainerClassName={styles.navHeader}
                             onClick={toggleAccordion}
-                            variant="tertiary"
-                            icons={item.icon}
+                            styleVariant="action"
+                            withoutPadding
+                            withFullWidth
+                            before={item.icon}
+                            after={isOpen ? <IoChevronUpOutline /> : <IoChevronDownOutline />}
                         >
                             {item.title}
-                            {isOpen ? <IoChevronUpOutline /> : <IoChevronDownOutline />}
                         </Button>
                         {isOpen && (
                             <div

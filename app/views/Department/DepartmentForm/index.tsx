@@ -8,8 +8,12 @@ import {
     useParams,
 } from 'react-router';
 import {
+    BlockLoading,
     Button,
+    Container,
     Heading,
+    InputSection,
+    ListView,
     SelectInput,
     TextArea,
     TextInput,
@@ -25,20 +29,21 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     DepartmentCreateInput,
+    DepartmentUpdateInput,
     useCreateDepartmentMutation,
     useDepartmentDetailQuery,
     useDirectiveQuery,
     useUpdateDepartmentMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    idSelector,
+    nameSelector,
+} from '#utils/common';
 
-type PartialFormType = PartialForm<DepartmentCreateInput> &
-{ createdBy: string, modifiedBy: string, slug: string | null }
+type PartialFormType = PartialForm<DepartmentCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -64,27 +69,17 @@ const DepartmentSchema: FormSchema = {
             required: false,
             requiredValidation: requiredStringCondition,
         },
-        createdBy: {},
-        modifiedBy: {},
-        slug: {
-            required: false,
-            requiredValidation: requiredStringCondition,
-        },
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-    slug: '',
-};
+const defaultEditFormValue: PartialFormType = {};
+
 function DepartmentForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const alert = useAlert();
 
-    const [{ data }] = useDepartmentDetailQuery({
+    const [{ data, fetching: departmentDetailFetch }] = useDepartmentDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ data: directive }] = useDirectiveQuery();
@@ -101,49 +96,47 @@ function DepartmentForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/departments';
+        const alertMessage = `Department ${id ? 'updated' : 'created'} successfully`;
+        const errorMessage = 'Something Went Wrong! ';
+
+        if (id) {
+            const res = await updateDepartmentMutate({
+                pk: id,
+                data: mutationData as DepartmentUpdateInput,
+            });
+            const result = res.data?.updateDepartment;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result.errors, { variant: 'danger' });
+            }
+        } else {
+            const res = await createDepartmentMutate({
+                data: mutationData as DepartmentCreateInput,
+            });
+            const result = res.data?.createDepartment;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, updateDepartmentMutate, id, navigate, setError, createDepartmentMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    contactPersonName: val.contactPersonName ?? '',
-                    contactPersonEmail: val.contactPersonEmail ?? '',
-                    strategicDirective: val.strategicDirective ?? '',
-                    title: val.title ?? '',
-                    description: val.description ?? '',
-                };
-                if (id) {
-                    const res = await updateDepartmentMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateDepartment?.ok) {
-                        navigate('/departments');
-                        alert.show('Department updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateDepartment) {
-                        const errorMessages = res.data?.updateDepartment?.errors;
-                        setError(res.data.updateDepartment.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                } else {
-                    const res = await createDepartmentMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createDepartment.ok) {
-                        navigate('/departments');
-                        alert.show('Department created successfully', { variant: 'success' });
-                    } else if (res.data?.createDepartment?.errors) {
-                        const errorMessages = res.data?.createDepartment?.errors;
-                        setError(res.data.createDepartment.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, createDepartmentMutate, updateDepartmentMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     const directiveOptions = directive?.strategicDirectives.results.map(
         (dir) => ({
@@ -157,35 +150,38 @@ function DepartmentForm() {
             return;
         }
         const {
-            modifiedBy, createdBy, strategicDirectiveId, ...other
+            strategicDirectiveId, ...other
         } = removeNull(data.department);
         setValue({
             ...other,
             strategicDirective: strategicDirectiveId,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
     }, [data, setValue]);
 
+    if (departmentDetailFetch) {
+        return <BlockLoading withoutBorder compact message="Loading" />;
+    }
+
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection title={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
+                <Activity mode={data?.department.createdBy && data.department.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection title={`Created by: ${data?.department.createdBy.firstName} ${data?.department.createdBy.lastName}`}>
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.department.modifiedBy.firstName}
+                            {' '}
+                            {data?.department.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the title name of the Department" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the title name of the Department"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -194,8 +190,12 @@ function DepartmentForm() {
                         onChange={setFieldValue}
                         placeholder="title"
                     />
-                </FormSection>
-                <FormSection label="Department" description="Write a short description about the roles and responsibilities of the department" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Department"
+                    description="Write a short description about the roles and responsibilities of the department"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="department"
                         value={value.description}
@@ -203,8 +203,12 @@ function DepartmentForm() {
                         error={error?.description as string}
                         onChange={(val) => setFieldValue(val, 'description')}
                     />
-                </FormSection>
-                <FormSection label="Contact Person Name" description="Add contact number of the person for the department" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Contact Person Name"
+                    description="Add contact number of the person for the department"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="contactPersonName"
                         placeholder="contact person name"
@@ -212,8 +216,12 @@ function DepartmentForm() {
                         onChange={setFieldValue}
                         error={error?.contactPersonName as string}
                     />
-                </FormSection>
-                <FormSection label="Contact Person Email" description="Add Email of the person for the department" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Contact Person Email"
+                    description="Add Email of the person for the department"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="contactPersonEmail"
                         placeholder="contact person email"
@@ -221,37 +229,42 @@ function DepartmentForm() {
                         onChange={setFieldValue}
                         error={error?.contactPersonEmail}
                     />
-                </FormSection>
-                <FormSection label="Strategic Directive (NS)" description="Select under which strategic directive it belongs">
+                </InputSection>
+                <InputSection
+                    title="Strategic Directive (NS)"
+                    description="Select under which strategic directive it belongs"
+                >
                     <SelectInput
                         name="strategicDirective"
                         options={directiveOptions}
                         value={value.strategicDirective}
-                        keySelector={(option) => option.id}
-                        labelSelector={(option) => option.name}
+                        keySelector={idSelector}
+                        labelSelector={nameSelector}
                         onChange={setFieldValue}
                         placeholder="Select Directive"
                         error={error?.strategicDirective}
                     />
-                </FormSection>
-                <Activity mode={value.slug ? 'visible' : 'hidden'}>
-                    <FormSection label="Slug" description="Unique URL identifier for the department">
+                </InputSection>
+                <Activity mode={data?.department.slug ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title="Slug"
+                        description="Unique URL identifier for the department"
+                    >
                         <TextInput
                             name="slug"
-                            value={value.slug ?? ''}
-                            onChange={(val) => setFieldValue(val || null, 'slug')}
-                            error={error?.slug}
+                            value={data?.department.slug ?? ''}
+                            onChange={() => {}}
                             readOnly
                         />
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

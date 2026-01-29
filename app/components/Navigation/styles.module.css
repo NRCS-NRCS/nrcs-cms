@@ -1,30 +1,35 @@
 .nav {
-    border-right: 2px solid var(--go-ui-color-gray-20);
-    padding-right: 2px;
     min-width: 320px;
     height: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
+
+    a {
+        text-decoration: none;
+        color: inherit;
+    }
+
     .nav {
         border: none;
         padding-right: 0;
     }
+
     .navHeaderContainer {
-        border-bottom: 2px solid var(--go-ui-color-gray-20);
+        border-right: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
+        border-bottom: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
+        border-radius: 0;
         background-color: var(--go-ui-color-gray-10);
         padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
-        width: 100%;
-        .navHeader {
-            display: flex;
-            justify-content: space-between;
-        }
     }
+
     .navContent {
         display: flex;
         flex-direction: column;
+
         .routeLink {
-            border-right: 2px solid var(--go-ui-color-gray-20);
-            border-bottom: 2px solid var(--go-ui-color-gray-20);
+            border-right: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
+            border-bottom: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
             padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
+
             &:hover {
                 color: var(--go-ui-color-primary-red);
             }
@@ -35,11 +40,13 @@
             color: var(--go-ui-color-primary-red);
         }
     }
+
     .group {
         .navHeaderContainer {
             background: none;
             font-weight: var(--go-ui-font-weight-normal);
         }
+
         .leaf {
             padding-left: var(--go-ui-spacing-3xl);
         }

@@ -12,7 +12,10 @@ import {
 import { AddLineIcon } from '@ifrc-go/icons';
 import {
     Button,
+    Container,
     Heading,
+    InputSection,
+    ListView,
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
@@ -23,23 +26,17 @@ import {
 import {
     ArraySchema,
     createSubmitHandler,
-    Error,
     getErrorObject,
     ObjectSchema,
     PartialForm,
     removeNull,
     requiredStringCondition,
-    SetValueArg,
     useForm,
     useFormArray,
-    useFormObject,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
-import RichTextEditor from '#components/RichTextEditor';
+import MarkdownEditor from '#components/MarkdownEditor';
 import {
     MajorResponsibilitiesInput,
     StrategicDirectivesCreateInput,
@@ -48,12 +45,12 @@ import {
     useUpdateStrategicDirectiveMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-import styles from './styles.module.css';
+import MajorResponsibilities from './majorResponsibilites';
 
-type PartialFormType = PartialForm<StrategicDirectivesCreateInput> &
-{ createdBy: string, modifiedBy: string }
+type PartialFormType = PartialForm<StrategicDirectivesCreateInput>
 
 type MajorResponsibilitiesType = NonNullable<NonNullable<PartialFormType['majorResponsibilities']>>[number] & {
     clientId?: string
@@ -102,70 +99,12 @@ const DirectiveSchema: FormSchema = {
                 }),
             }),
         },
-        createdBy: {},
-        modifiedBy: {},
-
     }),
 };
 
 const defaultEditFormValue: ExtendedPartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
     majorResponsibilities: [],
-
 };
-
-interface CollectionInputProps {
-    value: PartialForm<MajorResponsibilitiesType>;
-    error: Error<MajorResponsibilitiesType> | undefined;
-    onChange: (value: SetValueArg<PartialForm<MajorResponsibilitiesType>>, index: number) => void;
-    onRemove: (index: number) => void;
-    index: number;
-}
-
-const defaultActionLinkValue: PartialForm<MajorResponsibilitiesType> = { clientId: '' };
-
-function MajorResponsibilities(props: CollectionInputProps) {
-    const {
-        value,
-        error: riskyError,
-        onChange,
-        onRemove,
-        index,
-    } = props;
-
-    const onFieldChange = useFormObject(index, onChange, defaultActionLinkValue);
-
-    const error = getErrorObject(riskyError);
-
-    return (
-        <div key={index} className={styles.majorResponsibilities}>
-            <div className={styles.majorResponsibilitiesHeader}>
-                <TextInput
-                    name="title"
-                    value={value.title ?? ''}
-                    placeholder="Title"
-                    error={error?.title as string}
-                    onChange={onFieldChange}
-                />
-                <Button
-                    name={index}
-                    onClick={onRemove}
-                    variant="tertiary"
-                >
-                    <IoRemoveCircleOutline />
-                </Button>
-            </div>
-            <TextArea
-                name="description"
-                value={value.description ?? ''}
-                error={error?.description as string}
-                placeholder="Description"
-                onChange={onFieldChange}
-            />
-        </div>
-    );
-}
 
 function StrategicDirectiveForm() {
     const { id } = useParams();
@@ -195,116 +134,99 @@ function StrategicDirectiveForm() {
         removeValue: onMajorResponsibilitiesRemove,
     } = useFormArray<'majorResponsibilities', PartialForm<MajorResponsibilitiesType>>('majorResponsibilities', setFieldValue);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: ExtendedPartialFormType) => {
+        const redirectPath = '/strategic-directive';
+        const alertMessage = `Strategic Directive ${id ? 'updated' : 'created'} successfully`;
+        const currentLinks = mutationData.majorResponsibilities ?? [];
+        const originalLinks = data?.strategicDirective.majorResponsibilities ?? [];
+
+        if (id) {
+            const majorResponsibilitiesList:
+                        MajorResponsibilitiesInput[] = currentLinks
+                            .map((link) => {
+                                const description = link.description ?? '';
+                                const title = link.title ?? '';
+                                if (!link.id) {
+                                    return {
+                                        create: { title, description },
+                                    };
+                                }
+                                return {
+                                    update: { id: link.id!, title, description },
+                                };
+                            });
+            originalLinks.forEach((orig) => {
+                const exists = currentLinks.find((curr) => curr.id === orig.id);
+
+                if (!exists) {
+                    majorResponsibilitiesList.push({
+                        delete: { id: orig.id ?? '' },
+                    });
+                }
+            });
+            const res = await updateStrategicDirectiveMutate({
+                pk: id,
+                data: {
+                    ...mutationData,
+                    majorResponsibilities: majorResponsibilitiesList,
+                },
+            });
+            const result = res.data?.updateStrategicDirectives;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createStrategicDirectiveMutate({
+                data: {
+                    ...mutationData,
+                    majorResponsibilities: mutationData
+                        .majorResponsibilities?.map((resp) => ({
+                            description: resp.description ?? '',
+                            title: resp.title ?? '',
+                        })),
+                } as StrategicDirectivesCreateInput,
+            });
+            const result = res.data?.createStrategicDirectives;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert,
+        createStrategicDirectiveMutate,
+        id,
+        navigate,
+        setError,
+        updateStrategicDirectiveMutate,
+        data,
+    ]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const currentLinks = val.majorResponsibilities ?? [];
-                const originalLinks = data?.strategicDirective.majorResponsibilities ?? [];
-
-                const mutateData = {
-                    coverImage: val.coverImage ?? null,
-                    title: val.title ?? '',
-                    description: val.description ?? '',
-                };
-                if (id) {
-                    const majorResponsibilitiesList:
-                        MajorResponsibilitiesInput[] = currentLinks.map((link) => {
-                            const description = link.description ?? '';
-                            const title = link.title ?? '';
-                            if (!link.id) {
-                                return {
-                                    create: { title, description },
-                                };
-                            }
-                            return {
-                                update: { id: link.id!, title, description },
-                            };
-                        });
-                    originalLinks.forEach((orig) => {
-                        const exists = currentLinks.find((curr) => curr.id === orig.id);
-
-                        if (!exists) {
-                            majorResponsibilitiesList.push({
-                                delete: { id: orig.id ?? '' },
-                            });
-                        }
-                    });
-                    const res = await updateStrategicDirectiveMutate({
-                        pk: id,
-                        data: {
-                            ...mutateData,
-                            majorResponsibilities: majorResponsibilitiesList,
-                        },
-                    });
-                    if (res.data?.updateStrategicDirectives?.ok) {
-                        navigate('/strategic-directive');
-                        alert.show('Strategic Directive updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateStrategicDirectives.errors) {
-                        const errorMessages = res.data?.updateStrategicDirectives?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                } else {
-                    const res = await createStrategicDirectiveMutate({
-                        data: {
-                            ...mutateData,
-                            majorResponsibilities: val
-                                .majorResponsibilities?.map((resp) => ({
-                                    description: resp.description ?? '',
-                                    title: resp.title ?? '',
-                                })),
-                        },
-                    });
-
-                    if (res.data?.createStrategicDirectives.ok) {
-                        navigate('/strategic-directive');
-                        alert.show('Strategic Directive created successfully', { variant: 'success' });
-                    } else if (res.data?.createStrategicDirectives?.errors) {
-                        const errorMessages = res.data?.createStrategicDirectives?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, validate, id, data, alert,
-        createStrategicDirectiveMutate, updateStrategicDirectiveMutate, navigate]);
-
-    useEffect(() => {
-        if (data?.strategicDirective) {
-            const { strategicDirective } = data;
-            if (strategicDirective.coverImage) {
-                urlToFile(strategicDirective?.coverImage?.url, strategicDirective?.coverImage?.name)
-                    .then((file) => {
-                        setFieldValue(file, 'coverImage');
-                    });
-            }
-            setFieldValue(strategicDirective?.title, 'title');
-            setFieldValue(strategicDirective?.description, 'description');
-            setFieldValue(strategicDirective?.majorResponsibilities, 'majorResponsibilities');
-            setFieldValue(`${strategicDirective.modifiedBy?.firstName} ${strategicDirective.modifiedBy?.lastName}`, 'modifiedBy');
-            setFieldValue(`${strategicDirective.createdBy?.firstName} ${strategicDirective.createdBy?.lastName}`, 'createdBy');
-        }
-    }, [data, setFieldValue]);
-
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
     useEffect(() => {
         if (isNotDefined(data?.strategicDirective)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             coverImage,
             ...other
         } = removeNull(data.strategicDirective);
 
         setValue({
             ...other,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
         if (coverImage) {
             urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
@@ -335,7 +257,7 @@ function StrategicDirectiveForm() {
     );
 
     const ContentEditor = useMemo(() => (
-        <RichTextEditor
+        <MarkdownEditor
             value={value.description}
             onChange={(val) => setFieldValue(val, 'description')}
             error={error?.description}
@@ -343,24 +265,31 @@ function StrategicDirectiveForm() {
     ), [value.description, error?.description, setFieldValue]);
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'STRATEGIC DIRECTIVE DETAILS' : 'CREATE STRATEGIC DIRECTIVE'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'hidden' : 'visible'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'STRATEGIC DIRECTIVE DETAILS' : 'CREATE STRATEGIC DIRECTIVE'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.strategicDirective.createdBy && data.strategicDirective.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.strategicDirective.createdBy.firstName} ${data?.strategicDirective.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.strategicDirective.modifiedBy.firstName}
+                            {' '}
+                            {data?.strategicDirective.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the Title"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -369,19 +298,26 @@ function StrategicDirectiveForm() {
                         autoFocus
                         placeholder="title"
                     />
-                </FormSection>
-                <FormSection label="Cover Image" description="Add a Cover Image, which will be attached and shown on StrategicDirective" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection title="Cover Image" description="Add a Cover Image, which will be attached and shown on StrategicDirective" withAsteriskOnTitle>
                     <FileUpload
                         name="coverImage"
-                        onChange={(files) => setFieldValue(files, 'coverImage')}
+                        onChange={setFieldValue}
                         value={value.coverImage}
                         error={error?.coverImage as string}
                     />
-                </FormSection>
-                <FormSection label="Description" description="Provide a detailed description of the strategic directive. This should outline the purpose, goals, and significance of the directive within the broader organizational strategy." withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Description"
+                    description="Provide a detailed description of the strategic directive. This should outline the purpose, goals, and significance of the directive within the broader organizational strategy."
+                    withAsteriskOnTitle
+                >
                     {ContentEditor}
-                </FormSection>
-                <FormSection label="Major Responsibilities" description="Define the key responsibilities required to implement this strategic directive. Focus on core actions, accountability, and expected outcomes.">
+                </InputSection>
+                <InputSection
+                    title="Major Responsibilities"
+                    description="Define the key responsibilities required to implement this strategic directive. Focus on core actions, accountability, and expected outcomes."
+                >
                     <div>
                         {value.majorResponsibilities
                             && value.majorResponsibilities.map((val, i) => (
@@ -393,20 +329,20 @@ function StrategicDirectiveForm() {
                                     index={i}
                                 />
                             ))}
-                        <Button name="add-link" onClick={handleMRAdd} variant="secondary">
+                        <Button name="add-link" onClick={handleMRAdd}>
                             <AddLineIcon />
                             {' '}
                             Add
                         </Button>
                     </div>
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

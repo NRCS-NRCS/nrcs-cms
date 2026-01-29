@@ -26,7 +26,9 @@ function Page(props: Props) {
                     {leftPaneContent}
                 </div>
             )}
-            {children}
+            <div className={styles.rightPaneContent}>
+                {children}
+            </div>
         </div>
     );
 }

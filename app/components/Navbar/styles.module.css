@@ -1,44 +1,28 @@
 .navbar {
     display: flex;
+    align-items: center;
     flex-shrink: 0;
     justify-content: space-between;
-    border-bottom: var(--go-ui-width-separator-thin) solid
-        var(--go-ui-color-primary-red);
+    border-bottom: var(--go-ui-width-separator-thin) solid var(--go-ui-color-primary-red);
     background-color: var(--go-ui-color-white);
-    padding: var(--go-ui-spacing-md) var(--go-ui-spacing-lg);
-    animation: slide-down var(--go-ui-duration-animation-medium) ease-in
-        forwards;
+    padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
     .title {
+        text-transform: capitalize;
         color: var(--go-ui-color-red);
-        font-size: var(--go-ui-font-size-3xl);
     }
     .userInfo {
         display: flex;
         align-items: start;
         flex-direction: column;
     }
-}
-.dropdown-option {
-    cursor: pointer;
-    padding: var(--go-ui-spacing-xs);
-    padding-left: var(--go-ui-spacing-md);
-    width: 100%;
-    overflow: hidden;
-    &:hover {
-        color: var(--go-ui-color-primary-red);
-    }
-}
-.test {
-    width: 150px;
-}
 
-@keyframes slide-down {
-    0% {
-        transform: translateY(-0.25rem);
-        opacity: 0;
-    }
-    100% {
-        transform: translateY(0);
-        opacity: 1;
+    .userInitial {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: var(--go-ui-color-semantic-yellow);
+        width: var(--go-ui-spacing-2xl);
+        height: var(--go-ui-spacing-2xl);
     }
 }

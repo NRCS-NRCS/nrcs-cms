@@ -42,29 +42,36 @@ function Navbar() {
 
     return (
         <nav className={styles.navbar}>
-            <Heading className={styles.title}>NRCS</Heading>
+            <Heading className={styles.title} level={2}>NRCS</Heading>
             <DropdownMenu
-                variant="tertiary"
+                labelStyleVariant="action"
+                labelColorVariant="secondary"
+                labelBefore={(
+                    <div className={styles.userInitial}>
+                        {user?.firstName.charAt(0)}
+                        {user?.lastName.charAt(0)}
+                    </div>
+                )}
                 label={(
                     <div className={styles.userInfo}>
-                        <Heading level={5}>
+                        <Heading level={6}>
                             {user?.firstName}
                             {' '}
                             {user?.lastName}
                         </Heading>
-                        <Heading level={6}>
+                        <span>
                             Admin
-                        </Heading>
+                        </span>
                     </div>
                 )}
             >
                 <React.Fragment key=".0">
                     <Button
                         name="logout"
-                        variant="tertiary"
-                        className={styles.dropdownOption}
+                        styleVariant="transparent"
                         onClick={handleLogout}
                         disabled={pendingLogout}
+                        withFullWidth
                     >
                         {pendingLogout ? 'Logging out' : 'Logout'}
                     </Button>

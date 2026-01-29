@@ -5,6 +5,7 @@ import React, {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -14,7 +15,6 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     FaqQuery,
@@ -23,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number];
 
@@ -35,23 +36,18 @@ function FAQsList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useFaqQuery({ variables });
-    const [{ fetching: deletePending }, deleteFaq] = useDeleteFaqMutation();
+    const [, deleteFaq] = useDeleteFaqMutation();
 
-    const tableData = useMemo(
-        () => getFormattedData<FaqListItem>(data?.faqs.results),
-        [data, getFormattedData],
-    );
+    const tableData = data?.faqs.results;
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteFaq({ id }).then((resp) => {
                 if (resp.data?.deleteFaq) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('FAQ deleted successfully', { variant: 'success' });
                 }
             });
@@ -60,29 +56,27 @@ function FAQsList() {
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<FaqListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<FaqListItem, string | number>('question', 'Question', (dept) => dept.question),
         createStringColumn<FaqListItem, string | number>('answer', 'Answer', (dept) => dept?.answer),
         createNumberColumn<FaqListItem, string | number>('orderIndex', 'Order Index', (dept) => dept.orderIndex),
         createElementColumn<FaqListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
                 handleConfirmButtonChange: handleDelete,
-                confirmPending: deletePending,
                 itemTitle: datum.question,
             }),
             { columnWidth: 150 },
         ),
-    ], [handleDelete, deletePending]);
+    ], [handleDelete]);
     return (
-        <ContainerWrapper
+        <Container
             withPadding
             heading="FAQs"
-            actions={(
-                <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
+            headerActions={(
+                <Button name={undefined} styleVariant="outline" disabled={false} onClick={() => navigate('add')}>
                     Add FAQs
                 </Button>
             )}
@@ -96,13 +90,13 @@ function FAQsList() {
             )}
         >
             <Table
-                keySelector={(item) => item.id}
+                keySelector={idSelector}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
             />
-        </ContainerWrapper>
+        </Container>
     );
 }
 

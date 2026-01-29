@@ -4,8 +4,9 @@
     flex: 1;
     flex-direction: column;
     justify-content: center;
-    gap: var(--go-ui-spacing-xl);
     padding: var(--go-ui-spacing-2xl) var(--go-ui-spacing-lg);
+    height: 100%;
+    gap: var(--go-ui-spacing-xl);
 
     .login-form {
         display: flex;
@@ -14,22 +15,6 @@
         width: 100%;
         max-width: var(--go-ui-width-content-max);
         gap: var(--go-ui-spacing-xl);
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: var(--go-ui-spacing-xl);
-            width: 100%;
-        }
-        .utilityLinks {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: var(--go-ui-width-separator-thin) solid
-                var(--go-ui-color-separator);
-        }
-    }
-    .login-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+
     }
 }

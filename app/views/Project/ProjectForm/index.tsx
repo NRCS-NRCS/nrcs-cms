@@ -9,7 +9,10 @@ import {
 } from 'react-router';
 import {
     Button,
+    Container,
     Heading,
+    InputSection,
+    ListView,
     SelectInput,
     TextArea,
     TextInput,
@@ -25,22 +28,24 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     ProjectCreateInput,
+    ProjectUpdateInput,
     useCreateProjectMutation,
     useDepartmentsQuery,
     useProjectDetailQuery,
     useUpdateProjectMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    errorMessage,
+    idSelector,
+    nameSelector,
+} from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<ProjectCreateInput> &
-{ createdBy: string, modifiedBy: string }
+type PartialFormType = PartialForm<ProjectCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -61,16 +66,11 @@ const ProjectSchema: FormSchema = {
         coverImage: {
             required: true,
         },
-        createdBy: {},
-        modifiedBy: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-};
+const defaultEditFormValue: PartialFormType = {};
+
 function ProjectForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -94,47 +94,45 @@ function ProjectForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/projects';
+        const alertMessage = `Project ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateProjectMutate({
+                pk: id,
+                data: mutationData as ProjectUpdateInput,
+            });
+            const result = res.data?.updateProject;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createProjectMutate({
+                data: mutationData as ProjectCreateInput,
+            });
+            const result = res.data?.createProject;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createProjectMutate, id, navigate, setError, updateProjectMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    coverImage: val.coverImage ?? null,
-                    title: val.title ?? '',
-                    department: val.department ?? null,
-                    description: val.description ?? '',
-                };
-                if (id) {
-                    const res = await updateProjectMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateProject?.ok) {
-                        navigate('/projects');
-                        alert.show('Project updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateProject.errors) {
-                        const errorMessages = res.data?.updateProject?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                } else {
-                    const res = await createProjectMutate({
-                        data: mutateData,
-                    });
-                    if (res.data?.createProject.ok) {
-                        navigate('/projects');
-                        alert.show('Project created successfully', { variant: 'success' });
-                    } else if (res.data?.createProject?.errors) {
-                        const errorMessages = res.data?.createProject?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, createProjectMutate, updateProjectMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (data?.project) {
@@ -148,8 +146,6 @@ function ProjectForm() {
             setFieldValue(project?.title, 'title');
             setFieldValue(project?.description, 'description');
             setFieldValue(project?.department?.id, 'department');
-            setFieldValue(`${project.modifiedBy?.firstName} ${project.modifiedBy?.lastName}`, 'modifiedBy');
-            setFieldValue(`${project.createdBy?.firstName} ${project.createdBy?.lastName}`, 'createdBy');
         }
     }, [data, setFieldValue]);
 
@@ -158,8 +154,6 @@ function ProjectForm() {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             coverImage,
             department,
             ...other
@@ -168,8 +162,6 @@ function ProjectForm() {
         setValue({
             ...other,
             department: department?.id,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
         if (coverImage) {
             urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
@@ -189,24 +181,31 @@ function ProjectForm() {
     ) ?? [];
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'PROJECT DETAILS' : 'CREATE PROJECT'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'PROJECT DETAILS' : 'CREATE PROJECT'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.project.createdBy && data.project.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.project.createdBy.firstName} ${data?.project.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.project.modifiedBy.firstName}
+                            {' '}
+                            {data?.project.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the Title"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -215,16 +214,24 @@ function ProjectForm() {
                         placeholder="title"
                         autoFocus
                     />
-                </FormSection>
-                <FormSection label="Cover Image" description="Add a Cover Image, which will be attached and shown on Project" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Cover Image"
+                    description="Add a Cover Image, which will be attached and shown on Project"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="coverImage"
-                        onChange={(files) => setFieldValue(files, 'coverImage')}
+                        onChange={setFieldValue}
                         value={value.coverImage}
                         error={error?.coverImage as string}
                     />
-                </FormSection>
-                <FormSection label="Description" description="Enter the Description" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Description"
+                    description="Enter the Description"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="description"
                         value={value.description}
@@ -232,26 +239,30 @@ function ProjectForm() {
                         onChange={setFieldValue}
                         placeholder="description"
                     />
-                </FormSection>
-                <FormSection label="Type" description="Add type to either Tuesday Program or Radio Red Cross" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Type"
+                    description="Add type to either Tuesday Program or Radio Red Cross"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="department"
                         options={departmentOptions}
                         value={value.department}
-                        keySelector={(o) => o.id}
-                        labelSelector={(o) => o.name}
+                        keySelector={idSelector}
+                        labelSelector={nameSelector}
                         onChange={setFieldValue}
                         placeholder="Select Status"
                         error={error?.department}
                     />
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 
