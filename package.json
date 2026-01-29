@@ -14,7 +14,7 @@
     },
     "dependencies": {
         "@ifrc-go/icons": "^2.0.1",
-        "@ifrc-go/ui": "^1.3.0",
+        "@ifrc-go/ui": "2.0.0-beta.2",
         "@mdxeditor/editor": "^3.52.3",
         "@togglecorp/fujs": "^2.2.0",
         "@togglecorp/toggle-form": "^2.0.4",

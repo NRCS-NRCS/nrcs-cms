@@ -5,6 +5,7 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
@@ -15,8 +16,6 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
-import Page from '#components/Page';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     useDeleteVacancyMutation,
@@ -25,6 +24,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number];
 
@@ -37,23 +37,21 @@ function VacancyList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useVacancyQuery({ variables });
     const [{ fetching: deletePending }, deleteVacancy] = useDeleteVacancyMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<VacancyListItem>(data?.jobVacancies.results),
-        [data, getFormattedData],
+        () => (data?.jobVacancies.results),
+        [data],
     );
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteVacancy({ id }).then((resp) => {
                 if (resp.data?.deleteJobVacancy) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('Vacancy deleted successfully', { variant: 'success' });
                 }
             });
@@ -62,7 +60,6 @@ function VacancyList() {
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<VacancyListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<VacancyListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<VacancyListItem, string | number>('vacancyPosition', 'Vacancy Position', (dept) => dept?.position),
         createNumberColumn<VacancyListItem, string | number>('numberOfVacancies', 'Number Of Vacancies', (dept) => dept?.numberOfVacancies),
@@ -72,7 +69,7 @@ function VacancyList() {
         createStringColumn<VacancyListItem, string | number>('department', 'Department', (dept) => dept?.department?.title),
         createElementColumn<VacancyListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
@@ -80,37 +77,35 @@ function VacancyList() {
                 confirmPending: deletePending,
                 itemTitle: datum.title,
             }),
-            { columnWidth: 150 },
         ),
     ], [handleDelete, deletePending]);
+
     return (
-        <Page>
-            <ContainerWrapper
-                withPadding
-                heading="Vacancy"
-                actions={(
-                    <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
-                        Add Vacancy
-                    </Button>
-                )}
-                footerActions={(
-                    <Pager
-                        activePage={page}
-                        itemsCount={data?.jobVacancies.totalCount ?? 0}
-                        maxItemsPerPage={pageSize}
-                        onActivePageChange={setPage}
-                    />
-                )}
-            >
-                <Table
-                    keySelector={(item) => item.id}
-                    columns={columns}
-                    data={tableData}
-                    filtered={false}
-                    pending={fetching}
+        <Container
+            withPadding
+            heading="Vacancy"
+            headerActions={(
+                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                    Add Vacancy
+                </Button>
+            )}
+            footerActions={(
+                <Pager
+                    activePage={page}
+                    itemsCount={data?.jobVacancies.totalCount ?? 0}
+                    maxItemsPerPage={pageSize}
+                    onActivePageChange={setPage}
                 />
-            </ContainerWrapper>
-        </Page>
+            )}
+        >
+            <Table
+                keySelector={idSelector}
+                columns={columns}
+                data={tableData}
+                filtered={false}
+                pending={fetching}
+            />
+        </Container>
     );
 }
 

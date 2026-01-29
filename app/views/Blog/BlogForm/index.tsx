@@ -9,10 +9,14 @@ import {
     useParams,
 } from 'react-router';
 import {
+    BlockLoading,
     Button,
     Checkbox,
+    Container,
     DateInput,
     Heading,
+    InputSection,
+    ListView,
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -27,13 +31,11 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
-import RichTextEditor from '#components/RichTextEditor';
+import MarkdownEditor from '#components/MarkdownEditor';
 import {
     BlogCreateInput,
+    BlogUpdateInput,
     StatusEnum,
     useBlogDetailQueryQuery,
     useCreateBlogMutation,
@@ -41,9 +43,14 @@ import {
     useUpdateBlogMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    errorMessage,
+    keySelector,
+    labelSelector,
+} from '#utils/common';
+import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<BlogCreateInput> &
-{ createdBy: string, modifiedBy: string, slug: string | null };
+type PartialFormType = PartialForm<BlogCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -63,7 +70,7 @@ const EditBlogSchema: FormSchema = {
             requiredValidation: requiredStringCondition,
         },
         coverImage: {
-            required: false,
+            required: true,
         },
         department: {
             required: false,
@@ -84,25 +91,17 @@ const EditBlogSchema: FormSchema = {
             required: false,
             requiredValidation: requiredStringCondition,
         },
-        createdBy: {},
-        modifiedBy: {},
-        slug: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-    slug: '',
-};
+const defaultEditFormValue: PartialFormType = {};
 
 function BlogForm() {
     const { id } = useParams();
     const alert = useAlert();
 
     const navigate = useNavigate();
-    const [{ data }] = useBlogDetailQueryQuery({
+    const [{ data, fetching: blogDetailFetch }] = useBlogDetailQueryQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ data: departmentAndDirective }] = useDepartmentAndDirectiveQuery();
@@ -119,72 +118,65 @@ function BlogForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/blog';
+        const alertMessage = `Blog ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateBlogMutate({
+                pk: id,
+                data: mutationData as BlogUpdateInput,
+            });
+            const result = res.data?.updateBlog;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createBlogMutate({
+                data: mutationData as BlogCreateInput,
+            });
+            const result = res.data?.createBlog;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createBlogMutate, id, navigate, setError, updateBlogMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    author: val.author ?? '',
-                    content: val.content ?? '',
-                    department: val.department,
-                    directive: val.directive,
-                    featured: val.featured,
-                    status: val.status,
-                    publishedDate: val.publishedDate,
-                    title: val.title ?? '',
-                    ...(val.coverImage instanceof File && { coverImage: val.coverImage }),
-                };
-                if (id) {
-                    const res = await updateBlogMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateBlog?.ok) {
-                        navigate('/blog');
-                        alert.show('Blog updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateBlog?.errors) {
-                        const errorMessages = res.data?.updateBlog?.errors;
-                        setError(res.data.updateBlog.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                } else {
-                    const res = await createBlogMutate({
-                        data: mutateData,
-                    });
-                    if (res.data?.createBlog.ok) {
-                        navigate('/blog');
-                        alert.show('Blog created successfully', { variant: 'success' });
-                    } else if (res.data?.createBlog?.errors) {
-                        const errorMessages = res.data?.createBlog?.errors;
-                        setError(res.data.createBlog.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, updateBlogMutate, createBlogMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     const departmentOptions = useMemo(
         () => departmentAndDirective?.departments.results.map((dept) => ({
-            id: dept.id,
-            name: dept.title,
+            key: dept.id,
+            label: dept.title,
         })) ?? [],
         [departmentAndDirective?.departments.results],
     );
 
     const directiveOptions = useMemo(
         () => departmentAndDirective?.strategicDirectives.results.map((directive) => ({
-            id: directive.id,
-            name: directive.title,
+            key: directive.id,
+            label: directive.title,
         })) ?? [],
         [departmentAndDirective?.strategicDirectives.results],
     );
 
     const statusOptions = useMemo(
         () => Object.values(StatusEnum).map((status) => ({
-            value: status,
+            key: status,
             label: status,
         })),
         [],
@@ -195,45 +187,63 @@ function BlogForm() {
             return;
         }
         const {
-            modifiedBy, createdBy, departmentId, directiveId, ...other
+            coverImage, departmentId, directiveId, ...other
         } = removeNull(data.blog);
 
         setValue({
             ...other,
             department: departmentId,
             directive: directiveId,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
+        if (coverImage) {
+            urlToFile(coverImage.url, coverImage.name).then((file) => {
+                setValue((prev) => ({
+                    ...prev,
+                    coverImage: file,
+                }));
+            });
+        }
     }, [data, setValue]);
 
     const ContentEditor = useMemo(() => (
-        <RichTextEditor
+        <MarkdownEditor
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
         />
     ), [value.content, error?.content, setFieldValue]);
 
+    if (blogDetailFetch) {
+        return <BlockLoading withoutBorder compact message="Loading" />;
+    }
+
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'BLOG DETAIL' : 'CREATE BLOG'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView
+                layout="block"
+                spacing="lg"
+            >
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'BLOG DETAIL' : 'CREATE BLOG'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.blog.createdBy && data?.blog.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.blog.createdBy.firstName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.blog.createdBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the title name of the Blog" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the title name of the Blog"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         autoFocus
@@ -242,8 +252,12 @@ function BlogForm() {
                         onChange={setFieldValue}
                         placeholder="title"
                     />
-                </FormSection>
-                <FormSection label="Published Date" description="This date should be the Published Date of the blog" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Published Date"
+                    description="This date should be the Published Date of the blog"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -251,8 +265,12 @@ function BlogForm() {
                         placeholder="Select Date"
                         error={error?.publishedDate as string}
                     />
-                </FormSection>
-                <FormSection label="Author" description="Author name should be the person who wrote the blog" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Author"
+                    description="Author name should be the person who wrote the blog"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="author"
                         value={value.author}
@@ -260,16 +278,24 @@ function BlogForm() {
                         error={error?.author as string}
                         placeholder="author"
                     />
-                </FormSection>
-                <FormSection label="Cover photo" description="Add a cover photo, which will be displayed on top" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Cover photo"
+                    description="Add a cover photo, which will be displayed on top"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="coverImage"
-                        onChange={(files) => setFieldValue(files, 'coverImage')}
+                        onChange={setFieldValue}
                         value={value.coverImage}
                         error={error?.coverImage as string}
                     />
-                </FormSection>
-                <FormSection label="Featured" description="Click on the checkbox if the blog is to be featured" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Featured"
+                    description="Click on the checkbox if the blog is to be featured"
+                    withAsteriskOnTitle
+                >
                     <Checkbox
                         name="featured"
                         label="Feature"
@@ -277,63 +303,77 @@ function BlogForm() {
                         value={value.featured}
                         error={error?.featured}
                     />
-                </FormSection>
-                <FormSection label="Status" description="Add status to either draft, publish or archived" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Status"
+                    description="Add status to either draft, publish or archived"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="status"
                         options={statusOptions}
                         value={value.status}
-                        keySelector={(o) => o.label}
-                        labelSelector={(o) => o.value}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Status"
                         error={error?.status}
+
                     />
-                </FormSection>
-                <Activity mode={value.slug ? 'visible' : 'hidden'}>
-                    <FormSection label="Slug" description="Unique URL identifier for the blog">
+                </InputSection>
+                <Activity mode={data?.blog.slug ? 'visible' : 'hidden'}>
+                    <InputSection title="Slug" description="Unique URL identifier for the blog">
                         <TextInput
                             name="slug"
-                            value={value.slug ?? ''}
-                            onChange={(val) => setFieldValue(val || null, 'slug')}
-                            error={error?.slug}
+                            value={data?.blog.slug ?? ''}
+                            onChange={() => {}}
                             readOnly
                         />
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Strategic Directive (NS)" description="Select under which strategic directive it belongs">
+                <InputSection
+                    title="Strategic Directive (NS)"
+                    description="Select under which strategic directive it belongs"
+                >
                     <SelectInput
                         name="directive"
                         options={directiveOptions}
                         value={value.directive}
-                        keySelector={(option) => option.id}
-                        labelSelector={(option) => option.name}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Directive"
                         error={error?.directive}
                     />
-                </FormSection>
-                <FormSection label="Department" description="Select the department">
+                </InputSection>
+                <InputSection
+                    title="Department"
+                    description="Select the department"
+                >
                     <SelectInput
                         name="department"
                         options={departmentOptions}
                         value={value.department}
-                        keySelector={(option) => option.id}
-                        labelSelector={(option) => option.name}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Department"
                         error={error?.department}
                     />
-                </FormSection>
-                <FormSection label="Write blog" />
-                <FormSection>{ContentEditor}</FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <InputSection withoutTitleSection>
+                    <Heading level={5}>
+                        Write Blogs
+                    </Heading>
+                </InputSection>
+                <InputSection withoutTitleSection>{ContentEditor}</InputSection>
+                <ListView withFullWidth withCenteredContents withBackground withPadding>
+                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

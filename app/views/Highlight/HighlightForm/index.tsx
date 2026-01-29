@@ -3,15 +3,18 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import { IoRemoveCircleOutline } from 'react-icons/io5';
 import {
     useNavigate,
     useParams,
 } from 'react-router';
 import {
+    BlockLoading,
     Button,
     Checkbox,
+    Container,
     Heading,
+    InputSection,
+    ListView,
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
@@ -22,27 +25,22 @@ import {
 import {
     ArraySchema,
     createSubmitHandler,
-    type Error,
     getErrorObject,
     ObjectSchema,
     PartialForm,
     removeNull,
     requiredStringCondition,
-    type SetValueArg,
     urlCondition,
     useForm,
     useFormArray,
-    useFormObject,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     ActionLinkInput,
     ActionLinkType,
     HighlightCreateInput,
+    HighlightUpdateInput,
     useCreateHighlightMutation,
     useHighlightDetailQuery,
     useUpdateHighlightMutation,
@@ -50,22 +48,13 @@ import {
 import useAlert from '#hooks/useAlert';
 import urlToFile from '#utils/urlToFile';
 
-import styles from './styles.module.css';
+import ActionLinkInputComponent from './actionLinkInput';
 
 interface ActionLinkFormValue extends ActionLinkType {
     clientId: string;
 }
-interface CollectionInputProps {
-    value: PartialForm<ActionLinkFormValue>;
-    error: Error<ActionLinkFormValue> | undefined;
-    onChange: (value: SetValueArg<PartialForm<ActionLinkFormValue>>, index: number) => void;
-    onRemove: (index: number) => void;
-    index: number;
-}
 type PartialFormType = Omit<PartialForm<HighlightCreateInput>, 'actionLinks'> & {
     actionLinks?: PartialForm<ActionLinkFormValue>[];
-    createdBy: string;
-    modifiedBy: string;
 };
 
 type FormSchema = ObjectSchema<PartialFormType>;
@@ -87,7 +76,7 @@ const HighlightSchema: FormSchema = {
             requiredValidation: requiredStringCondition,
         },
         image: {
-            required: false,
+            required: true,
         },
         actionLinks: {
             keySelector: (col) => col.clientId ?? '',
@@ -96,11 +85,11 @@ const HighlightSchema: FormSchema = {
                     clientId: {},
                     id: {},
                     label: {
-                        required: false,
+                        required: true,
                         requiredValidation: requiredStringCondition,
                     },
                     url: {
-                        required: false,
+                        required: true,
                         validations: [urlCondition],
                         requiredValidation: requiredStringCondition,
                     },
@@ -111,65 +100,19 @@ const HighlightSchema: FormSchema = {
         isActive: {
             required: true,
         },
-        createdBy: {},
-        modifiedBy: {},
     }),
 };
 
 const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
     actionLinks: [{ clientId: randomString() }],
 };
-
-const defaultActionLinkValue: PartialForm<ActionLinkFormValue> = { clientId: '' };
-
-function ActionLinkInputComponent(props: CollectionInputProps) {
-    const {
-        value,
-        error: riskyError,
-        onChange,
-        onRemove,
-        index,
-    } = props;
-
-    const onFieldChange = useFormObject(index, onChange, defaultActionLinkValue);
-
-    const error = getErrorObject(riskyError);
-
-    return (
-        <div key={index} className={styles.actionLinkRow}>
-            <TextInput
-                name="url"
-                value={value.url ?? ''}
-                placeholder="URL"
-                error={error?.url as string}
-                onChange={onFieldChange}
-            />
-            <TextInput
-                name="label"
-                value={value.label ?? ''}
-                error={error?.label as string}
-                placeholder="Label"
-                onChange={onFieldChange}
-            />
-            <Button
-                name={index}
-                onClick={onRemove}
-                variant="tertiary"
-            >
-                <IoRemoveCircleOutline />
-            </Button>
-        </div>
-    );
-}
 
 function HighlightForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const alert = useAlert();
 
-    const [{ data }] = useHighlightDetailQuery({
+    const [{ data, fetching: highlightDetailFetch }] = useHighlightDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ fetching: createPending }, createHighlightMutate] = useCreateHighlightMutation();
@@ -192,97 +135,92 @@ function HighlightForm() {
         removeValue: onActionLinkRemove,
     } = useFormArray<'actionLinks', PartialForm<ActionLinkFormValue>>('actionLinks', setFieldValue);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/highlights';
+        const alertMessage = `Highlight ${id ? 'updated' : 'created'} successfully`;
+        const currentLinks = mutationData.actionLinks ?? [];
+        const originalLinks = data?.highlight?.actionLinks ?? [];
+        const errorMessage = 'Something Went Wrong! ';
+
+        if (id) {
+            const actionLinksMutation: NonNullable<ActionLinkInput[]> = currentLinks
+                .map((link) => {
+                    const label = link.label ?? '';
+                    const url = link.url ?? '';
+                    if (!link.id) {
+                        return {
+                            create: { label, url },
+                        };
+                    }
+                    return {
+                        update: { id: link.id, label, url },
+                    };
+                });
+
+            originalLinks.forEach((orig) => {
+                const exists = currentLinks.find((curr) => curr.id === orig.id);
+                if (!exists) {
+                    actionLinksMutation.push({
+                        delete: { id: orig.id },
+                    });
+                }
+            });
+
+            const res = await updateHighlightMutate({
+                pk: id,
+                data: {
+                    ...mutationData,
+                    actionLinks: removeNull(actionLinksMutation),
+                } as HighlightUpdateInput,
+            });
+            const result = res.data?.updateHighlight;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createHighlightMutate({
+                data: {
+                    ...mutationData,
+                    actionLinks: currentLinks.map((l) => ({
+                        label: l.label ?? '',
+                        url: l.url ?? '',
+                    })),
+                } as HighlightCreateInput,
+            });
+            const result = res.data?.createHighlight;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createHighlightMutate, id, navigate, setError, updateHighlightMutate, data]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const currentLinks = val.actionLinks ?? [];
-                const originalLinks = data?.highlight?.actionLinks ?? [];
-                if (id) {
-                    const actionLinksMutation: ActionLinkInput[] = currentLinks.map((link) => {
-                        const label = link.label ?? '';
-                        const url = link.url ?? '';
-                        if (!link.id) {
-                            return {
-                                create: { label, url },
-                            };
-                        }
-                        return {
-                            update: { id: link.id!, label, url },
-                        };
-                    });
-                    originalLinks.forEach((orig) => {
-                        const exists = currentLinks.find((curr) => curr.id === orig.id);
-                        if (!exists) {
-                            actionLinksMutation.push({
-                                delete: { id: orig.id },
-                            });
-                        }
-                    });
-
-                    const res = await updateHighlightMutate({
-                        pk: id,
-                        data: {
-                            heading: val.heading ?? '',
-                            description: val.description ?? '',
-                            image: val.image,
-                            isActive: val.isActive ?? false,
-                            actionLinks: actionLinksMutation,
-                        },
-                    });
-                    if (res.data?.updateHighlight?.ok) {
-                        navigate('/highlights');
-                        alert.show('Highlight updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateHighlight?.errors) {
-                        const errorMessages = res.data?.updateHighlight?.errors;
-                        setError(res.data.updateHighlight.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                } else {
-                    const res = await createHighlightMutate({
-                        data: {
-                            heading: val.heading ?? '',
-                            description: val.description ?? '',
-                            image: val.image,
-                            isActive: val.isActive ?? false,
-                            actionLinks: currentLinks.map((l) => ({
-                                label: l.label ?? '',
-                                url: l.url ?? '',
-                            })),
-                        },
-                    });
-                    if (res.data?.createHighlight?.ok) {
-                        navigate('/highlights');
-                        alert.show('Highlight created successfully', { variant: 'success' });
-                    } else if (res.data?.createHighlight?.errors) {
-                        const errorMessages = res.data?.createHighlight?.errors;
-                        setError(res.data.createHighlight.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                }
-            },
-        );
-        handler();
-    }, [data, id, alert,
-        validate, setError, updateHighlightMutate, createHighlightMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (isNotDefined(data?.highlight)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             image,
             ...other
         } = removeNull(data.highlight);
 
-        setValue({
-            ...other,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
-        });
+        setValue({ ...other });
 
         if (image) {
             urlToFile(image.url, image.name).then((file) => {
@@ -297,7 +235,6 @@ function HighlightForm() {
     const handleCollectionAdd = useCallback(
         () => {
             const clientId = randomString();
-
             const newActionLink: PartialForm<ActionLinkFormValue> = {
                 clientId,
             };
@@ -312,25 +249,36 @@ function HighlightForm() {
         [setFieldValue],
     );
 
+    if (highlightDetailFetch) {
+        return <BlockLoading withoutBorder compact message="Loading" />;
+    }
+
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'HIGHLIGHT DETAILS' : 'CREATE HIGHLIGHT'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'HIGHLIGHT DETAILS' : 'CREATE HIGHLIGHT'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.highlight.createdBy && data.highlight.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.highlight.createdBy.firstName} ${data?.highlight.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.highlight.modifiedBy.firstName}
+                            {' '}
+                            {data?.highlight.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Heading" description="Enter the Heading name of the highlight" withAsteriskOnTitle>
+                <InputSection
+                    title="Heading"
+                    description="Enter the Heading name of the highlight"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="heading"
                         autoFocus
@@ -339,8 +287,12 @@ function HighlightForm() {
                         onChange={setFieldValue}
                         placeholder="heading"
                     />
-                </FormSection>
-                <FormSection label="Description" description="Enter the description" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Description"
+                    description="Enter the description"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="description"
                         value={value.description}
@@ -349,8 +301,11 @@ function HighlightForm() {
                         placeholder="description"
 
                     />
-                </FormSection>
-                <FormSection label="isActive" description="Click on the checkbox if the blog is to be featured">
+                </InputSection>
+                <InputSection
+                    title="isActive"
+                    description="Click on the checkbox if the blog is to be featured"
+                >
                     <Checkbox
                         name="isActive"
                         label="isActive"
@@ -358,17 +313,24 @@ function HighlightForm() {
                         value={value.isActive}
                         error={error?.isActive}
                     />
-                </FormSection>
-                <FormSection label="Image" description="Add a cover photo, which will be displayed on top" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Image"
+                    description="Add a cover photo, which will be displayed on top"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
-                        name="audioFile"
-                        onChange={(files) => setFieldValue(files, 'image')}
+                        name="image"
+                        onChange={setFieldValue}
                         value={value.image}
                         error={error?.image as string}
                     />
-                </FormSection>
-                <FormSection label="Action Link" description="Add link to the highlight and the name to be displayed for the URL">
-                    <div>
+                </InputSection>
+                <InputSection
+                    title="Action Link"
+                    description="Add link to the highlight and the name to be displayed for the URL"
+                >
+                    <ListView layout="block" spacing="sm">
                         {(value.actionLinks || []).map((link, index) => (
                             <ActionLinkInputComponent
                                 key={link.clientId}
@@ -379,18 +341,18 @@ function HighlightForm() {
                                 error={actionLinkErrors?.[link.clientId ?? 0]}
                             />
                         ))}
-                        <Button name="add-link" onClick={handleCollectionAdd} variant="primary">
+                        <Button name="add-link" onClick={handleCollectionAdd}>
                             Add Link
                         </Button>
-                    </div>
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                    </ListView>
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

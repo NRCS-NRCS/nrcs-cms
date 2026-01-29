@@ -10,8 +10,11 @@ import {
 } from 'react-router';
 import {
     Button,
+    Container,
     DateInput,
     Heading,
+    InputSection,
+    ListView,
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -26,25 +29,24 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     RadioProgramCreateInput,
-    RadioProgramQuery,
     RadioProgramTypeEnum,
+    RadioProgramUpdateInput,
     useCreateRadioProgramMutation,
     useRadioProgramQuery,
     useUpdateRadioProgramMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    errorMessage,
+    keySelector,
+    labelSelector,
+} from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
-
-type PartialFormType = PartialForm<RadioProgramCreateInput> &
-{ createdBy: string, modifiedBy: string }
+type PartialFormType = PartialForm<RadioProgramCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -65,16 +67,10 @@ const RadioProgramSchema: FormSchema = {
         audioFile: {
             required: true,
         },
-        createdBy: {},
-        modifiedBy: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-};
+const defaultEditFormValue: PartialFormType = {};
 function RadioProgramForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -100,66 +96,58 @@ function RadioProgramForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/radio-programs';
+        const alertMessage = `Radio Program ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateRadioProgramMutate({
+                pk: id,
+                data: mutationData as RadioProgramUpdateInput,
+            });
+            const result = res.data?.updateRadioProgram;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createRadioProgramMutate({
+                data: mutationData as RadioProgramCreateInput,
+            });
+            const result = res.data?.createRadioProgram;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createRadioProgramMutate, id, navigate, setError, updateRadioProgramMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    audioFile: val.audioFile ?? null,
-                    title: val.title ?? '',
-                    publishedDate: val.publishedDate,
-                    type: val.type,
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
-                };
-                if (id) {
-                    const res = await updateRadioProgramMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateRadioProgram?.ok) {
-                        navigate('/radio-programs');
-                        alert.show('Radio Program updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateRadioProgram.errors) {
-                        const errorMessages = res.data?.updateRadioProgram?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                } else {
-                    const res = await createRadioProgramMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createRadioProgram.ok) {
-                        navigate('/radio-programs');
-                        alert.show('Radio Program created successfully', { variant: 'success' });
-                    } else if (res.data?.createRadioProgram?.errors) {
-                        const errorMessages = res.data?.createRadioProgram?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert,
-        validate, id, createRadioProgramMutate, updateRadioProgramMutate, navigate]);
+    const radioProgramData = data?.radioProgram.results[0];
 
     useEffect(() => {
-        if (isNotDefined(data?.radioProgram.results[0])) {
+        if (isNotDefined(radioProgramData)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             audioFile,
             ...other
-        } = removeNull(data.radioProgram.results[0]);
-
+        } = removeNull(radioProgramData);
         setValue({
             ...other,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
         if (audioFile) {
             urlToFile(audioFile.url, audioFile.name).then((audioFileData) => {
@@ -169,32 +157,39 @@ function RadioProgramForm() {
                 }));
             });
         }
-    }, [data, setValue]);
+    }, [radioProgramData, setValue]);
 
     const radioType = useMemo(() => Object.values(RadioProgramTypeEnum).map((status) => ({
-        value: status,
+        key: status,
         label: status,
     })), []);
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'RADIO PROGRAM DETAILS' : 'CREATE RADIO PROGRAM'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'RADIO PROGRAM DETAILS' : 'CREATE RADIO PROGRAM'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={radioProgramData?.createdBy && radioProgramData?.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${radioProgramData?.createdBy.firstName} ${radioProgramData?.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {radioProgramData?.modifiedBy.firstName}
+                            {' '}
+                            {radioProgramData?.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the Title"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -203,17 +198,25 @@ function RadioProgramForm() {
                         placeholder="title"
                         autoFocus
                     />
-                </FormSection>
-                <FormSection label="Audio File" description="Add a Audio, which will be attached and shown on Radio Page" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Audio File"
+                    description="Add a Audio, which will be attached and shown on Radio Page"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="audioFile"
-                        onChange={(files) => setFieldValue(files, 'audioFile')}
+                        onChange={setFieldValue}
                         accept="audio/*"
                         value={value.audioFile}
                         error={error?.audioFile as string}
                     />
-                </FormSection>
-                <FormSection label="Published Date" description="This date should be the Published Date of the RadioProgram" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Published Date"
+                    description="This date should be the Published Date of the RadioProgram"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -221,26 +224,30 @@ function RadioProgramForm() {
                         placeholder="Select Date"
                         error={error?.publishedDate as string}
                     />
-                </FormSection>
-                <FormSection label="Type" description="Add type to either Tuesday Program or Radio Red Cross" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Type"
+                    description="Add type to either Tuesday Program or Radio Red Cross"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="type"
                         options={radioType}
                         value={value.type}
-                        keySelector={(o) => o.label}
-                        labelSelector={(o) => o.value}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Status"
                         error={error?.type}
                     />
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

@@ -5,16 +5,15 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
     createElementColumn,
-    createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     DepartmentsQuery,
@@ -23,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type EventListItem = NonNullable<DepartmentsQuery['departments']>['results'][number];
 
@@ -35,23 +35,18 @@ function DepartmentList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useDepartmentsQuery({ variables });
-    const [{ fetching: deletePending }, deleteDepartment] = useDeleteDepartmentMutation();
+    const [, deleteDepartment] = useDeleteDepartmentMutation();
 
-    const tableData = useMemo(
-        () => getFormattedData<EventListItem>(data?.departments.results),
-        [data, getFormattedData],
-    );
+    const tableData = data?.departments.results;
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteDepartment({ id }).then((resp) => {
                 if (resp.data?.deleteDepartment) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('Department deleted successfully', { variant: 'success' });
                 }
             });
@@ -59,31 +54,29 @@ function DepartmentList() {
         [deleteDepartment, reExecuteQuery, alert],
     );
     const columns = useMemo(() => [
-        createNumberColumn<EventListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<EventListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<EventListItem, string | number>('strategicDirective', 'Strategic Directive', (dept) => dept?.strategicDirective?.title),
         createStringColumn<EventListItem, string | number>('contactPersonName', 'Contact Person Name', (dept) => dept.contactPersonName),
         createStringColumn<EventListItem, string | number>('contactPersonEmail', 'Contact Person Email', (dept) => dept.contactPersonEmail),
         createElementColumn<EventListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
                 handleConfirmButtonChange: handleDelete,
-                confirmPending: deletePending,
                 itemTitle: datum.title,
             }),
             { columnWidth: 150 },
         ),
-    ], [handleDelete, deletePending]);
+    ], [handleDelete]);
 
     return (
-        <ContainerWrapper
+        <Container
             withPadding
             heading="Department"
-            actions={(
-                <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
+            headerActions={(
+                <Button name={undefined} styleVariant="outline" disabled={false} onClick={() => navigate('add')}>
                     Add Department
                 </Button>
             )}
@@ -97,13 +90,13 @@ function DepartmentList() {
             )}
         >
             <Table
-                keySelector={(item) => item.id}
+                keySelector={idSelector}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
             />
-        </ContainerWrapper>
+        </Container>
     );
 }
 

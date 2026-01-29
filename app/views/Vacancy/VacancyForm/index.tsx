@@ -11,8 +11,11 @@ import {
 import {
     Button,
     Checkbox,
+    Container,
     DateInput,
     Heading,
+    InputSection,
+    ListView,
     NumberInput,
     SelectInput,
     TextArea,
@@ -30,23 +33,24 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     JobVacancyCreateInput,
+    JobVacancyUpdateInput,
     useCreateVacancyMutation,
     useDepartmentsQuery,
     useUpdateVacancyMutation,
     useVacancyDetailQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    errorMessage,
+    keySelector,
+    labelSelector,
+} from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<JobVacancyCreateInput> &
-{ createdBy: string, modifiedBy: string }
-
+type PartialFormType = PartialForm<JobVacancyCreateInput>
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
@@ -84,16 +88,10 @@ const VacancySchema: FormSchema = {
 
         },
         isArchived: {},
-        createdBy: {},
-        modifiedBy: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-};
+const defaultEditFormValue: PartialFormType = {};
 function VacancyForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -117,84 +115,51 @@ function VacancyForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/vacancy';
+        const alertMessage = `Vacancy ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateVacancyMutate({
+                pk: id,
+                data: mutationData as JobVacancyUpdateInput,
+            });
+            const result = res.data?.updateJobVacancy;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createVacancyMutate({
+                data: mutationData as JobVacancyCreateInput,
+            });
+            const result = res.data?.createJobVacancy;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createVacancyMutate, id, navigate, setError, updateVacancyMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    file: val.file ?? null,
-                    title: val.title ?? '',
-                    publishedAt: val.publishedAt,
-                    department: val.department ?? null,
-                    description: val.description ?? '',
-                    expiryDate: val.expiryDate,
-                    numberOfVacancies: val.numberOfVacancies ?? 0,
-                    position: val.position ?? '',
-                    isArchived: val.isArchived,
-
-                };
-                if (id) {
-                    const res = await updateVacancyMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateJobVacancy?.ok) {
-                        navigate('/vacancy');
-                        alert.show('Vacancy updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateJobVacancy.errors) {
-                        const errorMessages = res.data?.updateJobVacancy?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                } else {
-                    const res = await createVacancyMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createJobVacancy.ok) {
-                        navigate('/vacancy');
-                        alert.show('Vacancy created successfully', { variant: 'success' });
-                    } else if (res.data?.createJobVacancy?.errors) {
-                        const errorMessages = res.data?.createJobVacancy?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, createVacancyMutate, updateVacancyMutate, navigate]);
-
-    useEffect(() => {
-        if (data?.jobVacancy) {
-            const { jobVacancy } = data;
-            if (jobVacancy.file) {
-                urlToFile(jobVacancy?.file?.url, jobVacancy?.file?.name)
-                    .then((file) => {
-                        setFieldValue(file, 'file');
-                    });
-            }
-            setFieldValue(jobVacancy?.title, 'title');
-            setFieldValue(jobVacancy?.description, 'description');
-            setFieldValue(jobVacancy?.publishedAt, 'publishedAt');
-            setFieldValue(jobVacancy?.isArchived, 'isArchived');
-            setFieldValue(jobVacancy?.expiryDate, 'expiryDate');
-            setFieldValue(jobVacancy?.departmentId, 'department');
-            setFieldValue(jobVacancy?.numberOfVacancies, 'numberOfVacancies');
-            setFieldValue(jobVacancy?.position, 'position');
-            setFieldValue(`${jobVacancy.modifiedBy?.firstName} ${jobVacancy.modifiedBy?.lastName}`, 'modifiedBy');
-            setFieldValue(`${jobVacancy.createdBy?.firstName} ${jobVacancy.createdBy?.lastName}`, 'createdBy');
-        }
-    }, [data, setFieldValue]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (isNotDefined(data?.jobVacancy)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             departmentId,
             file,
             ...other
@@ -203,8 +168,6 @@ function VacancyForm() {
         setValue({
             ...other,
             department: departmentId,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
         if (file) {
             urlToFile(file.url, file.name).then((fileData) => {
@@ -218,30 +181,37 @@ function VacancyForm() {
 
     const departmentOptions = useMemo(() => departments?.departments.results.map(
         (dept) => ({
-            id: dept.id,
-            name: dept.title,
+            key: dept.id,
+            label: dept.title,
         }),
     ) ?? [], [departments]);
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'VACANCY DETAILS' : 'CREATE VACANCY'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'VACANCY DETAILS' : 'CREATE VACANCY'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.jobVacancy.createdBy && data.jobVacancy.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.jobVacancy.createdBy.firstName} ${data?.jobVacancy.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.jobVacancy.modifiedBy.firstName}
+                            {' '}
+                            {data?.jobVacancy.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the Title"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -250,16 +220,24 @@ function VacancyForm() {
                         placeholder="title"
                         autoFocus
                     />
-                </FormSection>
-                <FormSection label="File" description="Add a File, which will be attached and shown on Radio Page" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="File"
+                    description="Add a File, which will be attached and shown on Radio Page"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="file"
-                        onChange={(files) => setFieldValue(files, 'file')}
+                        onChange={setFieldValue}
                         value={value.file}
                         error={error?.file as string}
                     />
-                </FormSection>
-                <FormSection label="Vacancy Position" description="Enter the Vacancy Position" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Vacancy Position"
+                    description="Enter the Vacancy Position"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="position"
                         value={value.position}
@@ -267,8 +245,12 @@ function VacancyForm() {
                         onChange={setFieldValue}
                         placeholder="position"
                     />
-                </FormSection>
-                <FormSection label="Description" description="Enter the Description" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Description"
+                    description="Enter the Description"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="description"
                         value={value.description}
@@ -276,17 +258,26 @@ function VacancyForm() {
                         onChange={setFieldValue}
                         placeholder="description"
                     />
-                </FormSection>
-                <FormSection label="Number of Vacancies" description="Enter the Number of Vacancies" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Number of Vacancies"
+                    description="Enter the Number of Vacancies"
+                    withAsteriskOnTitle
+                >
                     <NumberInput
                         name="numberOfVacancies"
                         value={value.numberOfVacancies}
                         error={error?.numberOfVacancies as string}
                         onChange={setFieldValue}
                         placeholder="numberOfVacancies"
+                        min={1}
                     />
-                </FormSection>
-                <FormSection label="Published Date" description="This date should be the Published Date of the Vacancy" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Published Date"
+                    description="This date should be the Published Date of the Vacancy"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="publishedAt"
                         value={value.publishedAt}
@@ -294,8 +285,12 @@ function VacancyForm() {
                         placeholder="Select Date"
                         error={error?.publishedAt as string}
                     />
-                </FormSection>
-                <FormSection label="Expire Date" description="This date should be the Expire Date of the Vacancy" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Expire Date"
+                    description="This date should be the Expire Date of the Vacancy"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="expiryDate"
                         value={value.expiryDate}
@@ -303,20 +298,27 @@ function VacancyForm() {
                         placeholder="Select Date"
                         error={error?.expiryDate as string}
                     />
-                </FormSection>
-                <FormSection label="Department" description="Add which department this vacancy belongs to" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Department"
+                    description="Add which department this vacancy belongs to"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="department"
                         options={departmentOptions}
                         value={value.department}
-                        keySelector={(o) => o.id}
-                        labelSelector={(o) => o.name}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Department"
                         error={error?.department}
                     />
-                </FormSection>
-                <FormSection label="Archive" description="Click on the checkbox if the Vacancy is to be archived?" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Archive"
+                    description="Click on the checkbox if the Vacancy is to be archived?"
+                >
                     <Checkbox
                         name="isArchived"
                         value={value.isArchived}
@@ -324,14 +326,14 @@ function VacancyForm() {
                         error={error?.isArchived as string}
                         label="Is Archived"
                     />
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

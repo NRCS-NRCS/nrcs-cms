@@ -11,6 +11,7 @@ body {
     font-size: var(--go-ui-font-size-md);
     font-weight: var(--go-ui-font-weight-normal);
 }
+
 h1,
 h2,
 h3,
@@ -24,15 +25,6 @@ h6 {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-}
-
-p {
-    line-height: 1.5;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
 }
 
 ::-webkit-scrollbar {
@@ -52,4 +44,15 @@ a {
 
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--go-ui-color-gray-30);
+}
+
+
+table {
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+
+    border-bottom: none;
+
+    td {
+        background: var(--go-ui-color-white);
+    }
 }

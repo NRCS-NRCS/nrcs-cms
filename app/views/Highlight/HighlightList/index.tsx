@@ -5,17 +5,16 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
     createBooleanColumn,
     createElementColumn,
-    createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     HighlightQuery,
@@ -24,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type HighlightListItem = NonNullable<HighlightQuery['highlights']>['results'][number];
 
@@ -36,23 +36,21 @@ function HighlightList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useHighlightQuery({ variables });
-    const [{ fetching: deletePending }, deleteHighlight] = useDeleteHighlightMutation();
+    const [, deleteHighlight] = useDeleteHighlightMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<HighlightListItem>(data?.highlights.results),
-        [data, getFormattedData],
+        () => (data?.highlights.results),
+        [data],
     );
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteHighlight({ id }).then((resp) => {
                 if (resp.data?.deleteHighlight) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('Highlight deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,30 +59,27 @@ function HighlightList() {
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<HighlightListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<HighlightListItem, string | number>('heading', 'Heading', (high) => high.heading),
         createBooleanColumn<HighlightListItem, string | number>('isActive', 'Active', (high) => high?.isActive),
         createStringColumn<HighlightListItem, string | number>('createdBy', 'Created By', (high) => `${high.createdBy.firstName} ${high.createdBy.lastName}`),
         createElementColumn<HighlightListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
                 handleConfirmButtonChange: handleDelete,
-                confirmPending: deletePending,
                 itemTitle: datum.heading,
             }),
-            { columnWidth: 150 },
         ),
-    ], [handleDelete, deletePending]);
+    ], [handleDelete]);
 
     return (
-        <ContainerWrapper
+        <Container
             withPadding
             heading="Highlight"
-            actions={(
-                <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
+            headerActions={(
+                <Button name={undefined} styleVariant="outline" disabled={false} onClick={() => navigate('add')}>
                     Add Highlight
                 </Button>
             )}
@@ -98,13 +93,13 @@ function HighlightList() {
             )}
         >
             <Table
-                keySelector={(item) => item.id}
+                keySelector={idSelector}
                 columns={columns}
                 data={tableData}
                 filtered={false}
                 pending={fetching}
             />
-        </ContainerWrapper>
+        </Container>
     );
 }
 

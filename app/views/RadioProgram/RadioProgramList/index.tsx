@@ -5,16 +5,15 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
     createElementColumn,
-    createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import Page from '#components/Page';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
@@ -24,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
 
@@ -36,23 +36,21 @@ function RadioProgramList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useRadioProgramQuery({ variables });
-    const [{ fetching: deletePending }, deleteRadioProgram] = useDeleteRadioProgramMutation();
+    const [, deleteRadioProgram] = useDeleteRadioProgramMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<RadioProgramListItem>(data?.radioProgram.results),
-        [data, getFormattedData],
+        () => (data?.radioProgram.results),
+        [data],
     );
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteRadioProgram({ id }).then((resp) => {
                 if (resp.data?.deleteRadioProgram) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('Radio Program deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,51 +59,47 @@ function RadioProgramList() {
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<RadioProgramListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<RadioProgramListItem, string | number>('title', 'Title', (dept) => dept.title),
         createStringColumn<RadioProgramListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
         createStringColumn<RadioProgramListItem, string | number>('type', 'Type', (dept) => dept?.type),
         createElementColumn<RadioProgramListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
                 handleConfirmButtonChange: handleDelete,
-                confirmPending: deletePending,
                 itemTitle: datum.title,
             }),
             { columnWidth: 150 },
         ),
-    ], [handleDelete, deletePending]);
+    ], [handleDelete]);
     return (
-        <Page>
-            <ContainerWrapper
-                withPadding
-                heading="Radio Program"
-                actions={(
-                    <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
-                        Add Radio Program
-                    </Button>
-                )}
-                footerActions={(
-                    <Pager
-                        activePage={page}
-                        itemsCount={data?.radioProgram.totalCount ?? 0}
-                        maxItemsPerPage={pageSize}
-                        onActivePageChange={setPage}
-                    />
-                )}
-            >
-                <Table
-                    keySelector={(item) => item.id}
-                    columns={columns}
-                    data={tableData}
-                    filtered={false}
-                    pending={fetching}
+        <Container
+            withPadding
+            heading="Radio Program"
+            headerActions={(
+                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                    Add Radio Program
+                </Button>
+            )}
+            footerActions={(
+                <Pager
+                    activePage={page}
+                    itemsCount={data?.radioProgram.totalCount ?? 0}
+                    maxItemsPerPage={pageSize}
+                    onActivePageChange={setPage}
                 />
-            </ContainerWrapper>
-        </Page>
+            )}
+        >
+            <Table
+                keySelector={idSelector}
+                columns={columns}
+                data={tableData}
+                filtered={false}
+                pending={fetching}
+            />
+        </Container>
     );
 }
 

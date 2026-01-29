@@ -5,17 +5,15 @@ import {
 import { useNavigate } from 'react-router';
 import {
     Button,
+    Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
     createElementColumn,
-    createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import ContainerWrapper from '#components/ContainerWrapper';
-import Page from '#components/Page';
 import TableActions, { TableActionsProps } from '#components/TableAction';
 import {
     StrategicDirectiveQuery,
@@ -24,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import { idSelector } from '#utils/common';
 
 type StrategicDirectiveListItem = NonNullable<StrategicDirectiveQuery['strategicDirectives']>['results'][number];
 
@@ -36,24 +35,21 @@ function StrategicDirectiveList() {
         setPage,
         pageSize,
         variables,
-        getFormattedData,
     } = usePagination();
 
     const [{ fetching, data }, reExecuteQuery] = useStrategicDirectiveQuery({ variables });
-    const [{ fetching: deletePending },
-        deleteStrategicDirective] = useDeleteStrategicDirectiveMutation();
+    const [, deleteStrategicDirective] = useDeleteStrategicDirectiveMutation();
 
     const tableData = useMemo(
-        () => getFormattedData<StrategicDirectiveListItem>(data?.strategicDirectives.results),
-        [data, getFormattedData],
+        () => (data?.strategicDirectives.results),
+        [data],
     );
 
     const handleDelete = useCallback(
-        (id: string, closeModal: () => void) => {
+        (id: string) => {
             deleteStrategicDirective({ id }).then((resp) => {
                 if (resp.data?.deleteStrategicDirectives) {
                     reExecuteQuery();
-                    closeModal();
                     alert.show('Strategic Directive deleted successfully', { variant: 'success' });
                 }
             });
@@ -62,48 +58,44 @@ function StrategicDirectiveList() {
     );
 
     const columns = useMemo(() => [
-        createNumberColumn<StrategicDirectiveListItem & { sn: number }, string | number>('sn', 'S.N.', (item) => item.sn, { columnWidth: 60 }),
         createStringColumn<StrategicDirectiveListItem, string | number>('title', 'Title', (dept) => dept.title),
         createElementColumn<StrategicDirectiveListItem, string | number, TableActionsProps>(
             'actions',
-            'Actions',
+            '',
             TableActions,
             (_, datum) => ({
                 id: datum.id,
                 handleConfirmButtonChange: handleDelete,
-                confirmPending: deletePending,
                 itemTitle: datum.title,
             }),
         ),
-    ], [handleDelete, deletePending]);
+    ], [handleDelete]);
     return (
-        <Page>
-            <ContainerWrapper
-                withPadding
-                heading="Strategic Directive"
-                actions={(
-                    <Button name={undefined} variant="primary" disabled={false} onClick={() => navigate('add')}>
-                        Add Strategic Directive
-                    </Button>
-                )}
-                footerActions={(
-                    <Pager
-                        activePage={page}
-                        itemsCount={data?.strategicDirectives.totalCount ?? 0}
-                        maxItemsPerPage={pageSize}
-                        onActivePageChange={setPage}
-                    />
-                )}
-            >
-                <Table
-                    keySelector={(item) => item.id}
-                    columns={columns}
-                    data={tableData}
-                    filtered={false}
-                    pending={fetching}
+        <Container
+            withPadding
+            heading="Strategic Directive"
+            headerActions={(
+                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                    Add Strategic Directive
+                </Button>
+            )}
+            footerActions={(
+                <Pager
+                    activePage={page}
+                    itemsCount={data?.strategicDirectives.totalCount ?? 0}
+                    maxItemsPerPage={pageSize}
+                    onActivePageChange={setPage}
                 />
-            </ContainerWrapper>
-        </Page>
+            )}
+        >
+            <Table
+                keySelector={idSelector}
+                columns={columns}
+                data={tableData}
+                filtered={false}
+                pending={fetching}
+            />
+        </Container>
     );
 }
 

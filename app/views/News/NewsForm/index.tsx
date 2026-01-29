@@ -10,8 +10,11 @@ import {
 } from 'react-router';
 import {
     Button,
+    Container,
     DateInput,
     Heading,
+    InputSection,
+    ListView,
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -26,13 +29,11 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
-import RichTextEditor from '#components/RichTextEditor';
+import MarkdownEditor from '#components/MarkdownEditor';
 import {
     NewsCreateInput,
+    NewsUpdateInput,
     StatusEnum,
     useCreateNewsMutation,
     useDirectiveQuery,
@@ -40,10 +41,16 @@ import {
     useUpdateNewsMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    errorMessage,
+    idSelector,
+    keySelector,
+    labelSelector,
+    nameSelector,
+} from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<NewsCreateInput> &
-{ createdBy: string, modifiedBy: string }
+type PartialFormType = PartialForm<NewsCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -76,17 +83,11 @@ const EditNewsSchema: FormSchema = {
         status: {
             required: true,
         },
-        slug: {},
-        createdBy: {},
-        modifiedBy: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-};
+const defaultEditFormValue: PartialFormType = {};
+
 function NewsForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -110,60 +111,51 @@ function NewsForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/news';
+        const alertMessage = `News ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateNewsMutate({
+                pk: id,
+                data: mutationData as NewsUpdateInput,
+            });
+            const result = res.data?.updateNews;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createNewsMutate({
+                data: mutationData as NewsCreateInput,
+            });
+            const result = res.data?.createNews;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, updateNewsMutate, id, navigate, setError, createNewsMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    content: val.content ?? '',
-                    coverImage: val.coverImage ?? null,
-                    title: val.title ?? '',
-                    file: val.file ?? null,
-                    status: val.status ?? '' as StatusEnum,
-                    publishedDate: val.publishedDate ?? '',
-                    directive: val.directive ?? '',
-
-                };
-                if (id) {
-                    const res = await updateNewsMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateNews?.ok) {
-                        navigate('/news');
-                        alert.show('News updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateNews.errors) {
-                        const errorMessages = res.data?.updateNews?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(res.data.updateNews.errors);
-                    }
-                } else {
-                    const res = await createNewsMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createNews.ok) {
-                        navigate('/news');
-                        alert.show('News created successfully', { variant: 'success' });
-                    } else if (res.data?.createNews?.errors) {
-                        const errorMessages = res.data?.createNews?.errors;
-                        setError(res.data.createNews.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, createNewsMutate, updateNewsMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (isNotDefined(data?.newsItem)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             coverImage,
             file,
             directiveId,
@@ -173,8 +165,6 @@ function NewsForm() {
         setValue({
             ...other,
             directive: directiveId,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
 
         if (coverImage) {
@@ -203,12 +193,12 @@ function NewsForm() {
     ) ?? [], [directives]);
 
     const statusOptions = useMemo(() => Object.values(StatusEnum).map((status) => ({
-        value: status,
+        key: status,
         label: status,
     })), []);
 
     const ContentEditor = useMemo(() => (
-        <RichTextEditor
+        <MarkdownEditor
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
@@ -216,24 +206,31 @@ function NewsForm() {
     ), [value.content, error?.content, setFieldValue]);
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'NEWS DETAILS' : 'CREATE NEWS'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading>
+                        {id ? 'NEWS DETAILS' : 'CREATE NEWS'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.newsItem.createdBy && data.newsItem.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.newsItem.createdBy.firstName} ${data?.newsItem.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.newsItem.modifiedBy.firstName}
+                            {' '}
+                            {data?.newsItem.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the title name of the News" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the title name of the News"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -242,8 +239,12 @@ function NewsForm() {
                         autoFocus
                         placeholder="title"
                     />
-                </FormSection>
-                <FormSection label="Published Date" description="This date should be the Published Date of the news" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Published Date"
+                    description="This date should be the Published Date of the news"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -251,67 +252,89 @@ function NewsForm() {
                         placeholder="Select Date"
                         error={error?.publishedDate as string}
                     />
-                </FormSection>
-                <FormSection label="Strategic Directive (NS)" description="Select under which strategic directive it belongs">
+                </InputSection>
+                <InputSection
+                    title="Strategic Directive (NS)"
+                    description="Select under which strategic directive it belongs"
+                >
                     <SelectInput
                         name="directive"
                         options={directiveOptions}
                         value={value.directive}
-                        keySelector={(option) => option.id}
-                        labelSelector={(option) => option.name}
+                        keySelector={idSelector}
+                        labelSelector={nameSelector}
                         onChange={setFieldValue}
                         placeholder="Select Directive"
                         error={error?.directive}
                     />
-                </FormSection>
-                <FormSection label="Cover photo" description="Add a cover photo, which will be displayed on top" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Cover photo"
+                    description="Add a cover photo, which will be displayed on top"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="coverImage"
-                        onChange={(files) => setFieldValue(files, 'coverImage')}
+                        onChange={setFieldValue}
                         value={value.coverImage}
                         error={error?.coverImage as string}
                     />
-                </FormSection>
-                <FormSection label="File" description="Add a file, which will be displayed on the page" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="File"
+                    description="Add a file, which will be displayed on the page"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="file"
-                        onChange={(files) => setFieldValue(files, 'file')}
+                        onChange={setFieldValue}
                         value={value.file}
                         error={error?.file as string}
                     />
-                </FormSection>
+                </InputSection>
                 <Activity mode={value.slug ? 'visible' : 'hidden'}>
-                    <FormSection label="Slug" description="Unique URL identifier for the news">
+                    <InputSection
+                        title="Slug"
+                        description="Unique URL identifier for the news"
+                    >
                         <TextInput
                             name="slug"
                             value={value.slug ?? ''}
-                            onChange={(val) => setFieldValue(val || null, 'slug')}
+                            onChange={() => {}}
                             error={error?.slug}
                             readOnly
                         />
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Status" description="Add status to either draft, publish or archived" withAsteriskOnTitle>
+                <InputSection
+                    title="Status"
+                    description="Add status to either draft, publish or archived"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="status"
                         options={statusOptions}
                         value={value.status}
-                        keySelector={(o) => o.label}
-                        labelSelector={(o) => o.value}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Status"
                         error={error?.status}
                     />
-                </FormSection>
-                <FormSection label="Write blog" />
-                <FormSection>{ContentEditor}</FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <InputSection withoutTitleSection>
+                    <Heading level={5}>
+                        Write News
+                    </Heading>
+                </InputSection>
+                <InputSection withoutTitleSection>{ContentEditor}</InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

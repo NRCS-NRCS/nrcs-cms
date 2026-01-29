@@ -9,8 +9,11 @@ import {
 } from 'react-router';
 import {
     Button,
+    Container,
     DateInput,
     Heading,
+    InputSection,
+    ListView,
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
@@ -25,21 +28,19 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     ProcurementCreateInput,
+    ProcurementUpdateInput,
     useCreateProcurementMutation,
     useProcurementDetailQuery,
     useUpdateProcurementMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<ProcurementCreateInput> &
-{ createdBy: string, modifiedBy: string }
+type PartialFormType = PartialForm<ProcurementCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -65,16 +66,11 @@ const ProcurementSchema: FormSchema = {
         file: {
             required: true,
         },
-        createdBy: {},
-        modifiedBy: {},
 
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-};
+const defaultEditFormValue: PartialFormType = {};
 function ProcurementForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -96,66 +92,57 @@ function ProcurementForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/procurements';
+        const alertMessage = `Procurement ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateProcurementMutate({
+                pk: id,
+                data: mutationData as ProcurementUpdateInput,
+            });
+            const result = res.data?.updateProcurement;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createProcurementMutate({
+                data: mutationData as ProcurementCreateInput,
+            });
+            const result = res.data?.createProcurement;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createProcurementMutate, id, navigate, setError, updateProcurementMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    file: val.file ?? null,
-                    title: val.title ?? '',
-                    description: val.description ?? '',
-                    expiryDate: val.expiryDate,
-                    publishedDate: val.publishedDate,
-
-                };
-                if (id) {
-                    const res = await updateProcurementMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateProcurement?.ok) {
-                        navigate('/procurements');
-                        alert.show('Procurement updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateProcurement.errors) {
-                        const errorMessages = res.data?.updateProcurement?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                } else {
-                    const res = await createProcurementMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createProcurement.ok) {
-                        navigate('/procurements');
-                        alert.show('Procurement created successfully', { variant: 'success' });
-                    } else if (res.data?.createProcurement?.errors) {
-                        const errorMessages = res.data?.createProcurement?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, createProcurementMutate, updateProcurementMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (isNotDefined(data?.procurement)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             file,
             ...other
         } = removeNull(data.procurement);
 
         setValue({
             ...other,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
         if (file) {
             urlToFile(file.url, file.name).then((fileData) => {
@@ -168,24 +155,27 @@ function ProcurementForm() {
     }, [data, setValue]);
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'PROCUREMENT DETAILS' : 'CREATE PROCUREMENT'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'PROCUREMENT DETAILS' : 'CREATE PROCUREMENT'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.procurement.createdBy && data.procurement.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.procurement.createdBy.firstName} ${data?.procurement.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.procurement.modifiedBy.firstName}
+                            {' '}
+                            {data?.procurement.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
+                <InputSection title="Title" description="Enter the Title" withAsteriskOnTitle>
                     <TextInput
                         name="title"
                         value={value.title}
@@ -194,8 +184,12 @@ function ProcurementForm() {
                         autoFocus
                         placeholder="title"
                     />
-                </FormSection>
-                <FormSection label="Description" description="Describe how the EAP is aligned with the Disaster Risk Management strategy of the National Society (e.g. in the existing contingency plan, DRR plan etc.)." withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Description"
+                    description="Enter the description"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="description"
                         value={value.description}
@@ -203,16 +197,24 @@ function ProcurementForm() {
                         onChange={setFieldValue}
                         placeholder="description"
                     />
-                </FormSection>
-                <FormSection label="Procurement File" description="Add a cover photo, which will be attached and displayed on top of your application" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Procurement File"
+                    description="Add a cover photo, which will be attached and displayed on top of your application"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
                         error={error?.file as string}
                     />
-                </FormSection>
-                <FormSection label="Published Date" description="This date should be the Published Date of the Procurement" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Published Date"
+                    description="This date should be the Published Date of the Procurement"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -220,8 +222,12 @@ function ProcurementForm() {
                         placeholder="Select Date"
                         error={error?.publishedDate as string}
                     />
-                </FormSection>
-                <FormSection label="Expire Date" description="This date should be the Expire Date of the Procurement" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Expire Date"
+                    description="This date should be the Expire Date of the Procurement"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="expiryDate"
                         value={value.expiryDate}
@@ -229,14 +235,14 @@ function ProcurementForm() {
                         placeholder="Select Date"
                         error={error?.expiryDate as string}
                     />
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

@@ -31,20 +31,11 @@ function usePagination() {
         [offset],
     );
 
-    const getFormattedData = useCallback(
-        <T extends object>(results?: T[]) => results?.map((item, index) => ({
-            ...item,
-            sn: offset + index + 1,
-        })) ?? [],
-        [offset],
-    );
-
     return {
         page,
         setPage,
         variables,
         pageSize: PAGE_SIZE,
-        getFormattedData,
     };
 }
 

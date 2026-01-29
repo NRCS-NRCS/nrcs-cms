@@ -8,8 +8,12 @@ import {
     useParams,
 } from 'react-router';
 import {
+    BlockLoading,
     Button,
+    Container,
     Heading,
+    InputSection,
+    ListView,
     NumberInput,
     TextArea,
 } from '@ifrc-go/ui';
@@ -25,19 +29,16 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
 import {
     FaqCreateInput,
+    FaqUpdateInput,
     useCreateFaqMutation,
     useFaqDetailQuery,
     useUpdateFaqMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 
-type PartialFormType = PartialForm<FaqCreateInput> &
-{ createdBy: string, modifiedBy: string }
+type PartialFormType = PartialForm<FaqCreateInput>
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -56,22 +57,17 @@ const FAQSchema: FormSchema = {
             required: true,
             requiredValidation: integerCondition,
         },
-        createdBy: {},
-        modifiedBy: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-};
+const defaultEditFormValue: PartialFormType = {};
+
 function FAQsForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const alert = useAlert();
 
-    const [{ data }] = useFaqDetailQuery({
+    const [{ data, fetching: faqDetailFetch }] = useFaqDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ fetching: createPending }, createFaqMutate] = useCreateFaqMutation();
@@ -87,79 +83,86 @@ function FAQsForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/faqs';
+        const alertMessage = `FAQ ${id ? 'updated' : 'created'} successfully`;
+        const errorMessage = 'Something Went Wrong! ';
+
+        if (id) {
+            const res = await updateFaqMutate({
+                pk: id,
+                data: mutationData as FaqUpdateInput,
+            });
+            const result = res.data?.updateFaq;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createFaqMutate({
+                data: mutationData as FaqCreateInput,
+            });
+            const result = res.data?.createFaq;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createFaqMutate, id, navigate, setError, updateFaqMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    answer: val.answer ?? '',
-                    question: val.question ?? '',
-                    orderIndex: val.orderIndex ?? 0,
-                };
-                if (id) {
-                    const res = await updateFaqMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateFaq?.ok) {
-                        navigate('/faqs');
-                        alert.show('FAQ updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateFaq.errors) {
-                        const errorMessages = res.data?.updateFaq?.errors;
-                        setError(res.data.updateFaq.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                } else {
-                    const res = await createFaqMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createFaq.ok) {
-                        navigate('/faqs');
-                        alert.show('FAQ created successfully', { variant: 'success' });
-                    } else if (res.data?.createFaq?.errors) {
-                        const errorMessages = res.data?.createFaq?.errors;
-                        setError(res.data.createFaq.errors);
-                        alert.show(errorMessages, { variant: 'danger' });
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, validate, alert, id, createFaqMutate, updateFaqMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (isNotDefined(data?.faq)) {
             return;
         }
-        const { modifiedBy, createdBy, ...other } = removeNull(data.faq);
-        setValue({
-            ...other,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
-        });
+        const faqData = removeNull(data.faq);
+        setValue({ ...faqData });
     }, [data, setValue]);
 
+    if (faqDetailFetch) {
+        return <BlockLoading withoutBorder compact message="Loading" />;
+    }
+
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'FAQs DETAIL' : 'CREATE FAQ'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'FAQs DETAIL' : 'CREATE FAQ'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.faq.createdBy && data.faq.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.faq.createdBy.firstName} ${data?.faq.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.faq.modifiedBy.firstName}
+                            {' '}
+                            {data?.faq.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Question" description="Enter the question" withAsteriskOnTitle>
+                <InputSection
+                    title="Question"
+                    description="Enter the question"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="question"
                         value={value.question}
@@ -168,8 +171,12 @@ function FAQsForm() {
                         placeholder="question"
                         autoFocus
                     />
-                </FormSection>
-                <FormSection label="Answer" description="Write the answer of the question" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Answer"
+                    description="Write the answer of the question"
+                    withAsteriskOnTitle
+                >
                     <TextArea
                         name="answer"
                         value={value.answer}
@@ -177,22 +184,26 @@ function FAQsForm() {
                         error={error?.answer as string}
                         placeholder="answer"
                     />
-                </FormSection>
-                <FormSection label="Order Index" description="Write the question number in numeric" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Order Index"
+                    description="Write the question number in numeric"
+                    withAsteriskOnTitle
+                >
                     <NumberInput
                         name="orderIndex"
                         value={value.orderIndex ?? 0}
                         onChange={setFieldValue}
                         error={error?.orderIndex}
                     />
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

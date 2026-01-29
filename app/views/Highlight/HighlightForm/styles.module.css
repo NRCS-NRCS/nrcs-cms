@@ -1,12 +1,5 @@
-
 .actionLinkRow {
-    display: flex;
-    align-items: center;
-    
-    margin-bottom: var(--go-ui-spacing-sm);
-    width: 100%;
-    gap: var(--go-ui-spacing-sm);
-    > * {
+    >* {
         flex-grow: 1;
     }
 }

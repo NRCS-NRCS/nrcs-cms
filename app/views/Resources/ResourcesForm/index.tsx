@@ -10,8 +10,11 @@ import {
 } from 'react-router';
 import {
     Button,
+    Container,
     DateInput,
     Heading,
+    InputSection,
+    ListView,
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -26,25 +29,28 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
-import ContainerWrapper from '#components/ContainerWrapper';
 import FileUpload from '#components/FileUpload';
-import FormSection from '#components/FormSection';
-import Page from '#components/Page';
-import RichTextEditor from '#components/RichTextEditor';
+import MarkdownEditor from '#components/MarkdownEditor';
 import {
     ResourceCreateInput,
     ResourceTypeEnum,
+    ResourceUpdateInput,
     useCreateResourceMutation,
     useDirectiveQuery,
     useResourceDetailQuery,
     useUpdateResourceMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import {
+    errorMessage,
+    idSelector,
+    keySelector,
+    labelSelector,
+    nameSelector,
+} from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<ResourceCreateInput> &
-{ createdBy: string, modifiedBy: string, slug: string};
-
+type PartialFormType = PartialForm<ResourceCreateInput>
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
@@ -75,18 +81,11 @@ const ResourceSchema: FormSchema = {
             required: true,
             requiredValidation: requiredStringCondition,
         },
-        createdBy: {},
-        modifiedBy: {},
-        slug: {},
-
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    createdBy: '',
-    modifiedBy: '',
-    slug: '',
-};
+const defaultEditFormValue: PartialFormType = {};
+
 function ResourceForm() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -110,60 +109,51 @@ function ResourceForm() {
 
     const error = getErrorObject(formError);
 
-    const handleFormSubmit = useCallback(() => {
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = '/resources';
+        const alertMessage = `Resources ${id ? 'updated' : 'created'} successfully`;
+        if (id) {
+            const res = await updateResourceMutate({
+                pk: id,
+                data: mutationData as ResourceUpdateInput,
+            });
+            const result = res.data?.updateResource;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createResourceMutate({
+                data: mutationData as ResourceCreateInput,
+            });
+            const result = res.data?.createResource;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createResourceMutate, id, navigate, setError, updateResourceMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                const mutateData = {
-                    file: val.file ?? null,
-                    title: val.title ?? '',
-                    publishedDate: val.publishedDate,
-                    directive: val.directive ?? '',
-                    content: val.content ?? '',
-                    coverImage: val.coverImage ?? null,
-                    type: val.type ?? null,
-
-                };
-                if (id) {
-                    const res = await updateResourceMutate({
-                        pk: id,
-                        data: mutateData,
-                    });
-                    if (res.data?.updateResource?.ok) {
-                        navigate('/resources');
-                        alert.show('Resource updated successfully', { variant: 'success' });
-                    } else if (res.data?.updateResource.errors) {
-                        const errorMessages = res.data?.updateResource?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                } else {
-                    const res = await createResourceMutate({
-                        data: mutateData,
-                    });
-
-                    if (res.data?.createResource.ok) {
-                        navigate('/resources');
-                        alert.show('Resource created successfully', { variant: 'success' });
-                    } else if (res.data?.createResource?.errors) {
-                        const errorMessages = res.data?.createResource?.errors;
-                        alert.show(errorMessages, { variant: 'danger' });
-                        setError(errorMessages);
-                    }
-                }
-            },
-        );
-        handler();
-    }, [setError, alert, validate, id, createResourceMutate, updateResourceMutate, navigate]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     useEffect(() => {
         if (isNotDefined(data?.resource)) {
             return;
         }
         const {
-            modifiedBy,
-            createdBy,
             file,
             coverImage,
             directiveId,
@@ -173,8 +163,6 @@ function ResourceForm() {
         setValue({
             ...other,
             directive: directiveId,
-            modifiedBy: `${modifiedBy.firstName} ${modifiedBy.lastName}`,
-            createdBy: `${createdBy.firstName} ${createdBy.lastName}`,
         });
         if (file) {
             urlToFile(file.url, file.name).then((fileData) => {
@@ -203,12 +191,12 @@ function ResourceForm() {
     ) ?? [], [directive]);
 
     const resourcesOptions = useMemo(() => Object.values(ResourceTypeEnum).map((scope) => ({
-        value: scope,
+        key: scope,
         label: scope,
     })), []);
 
     const ContentEditor = useMemo(() => (
-        <RichTextEditor
+        <MarkdownEditor
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
@@ -216,24 +204,31 @@ function ResourceForm() {
     ), [value.content, error?.content, setFieldValue]);
 
     return (
-        <Page>
-            <ContainerWrapper>
-                <FormSection headingLevel={3} label={id ? 'RESOURCE DETAILS' : 'CREATE RESOURCE'} />
-                <Activity mode={value.createdBy && value.modifiedBy ? 'visible' : 'hidden'}>
-                    <FormSection>
-                        <Heading level={6}>
-                            Created by:
-                            {' '}
-                            {value.createdBy}
-                        </Heading>
+        <Container>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'RESOURCE DETAILS' : 'CREATE RESOURCE'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.resource.createdBy && data.resource.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.resource.createdBy.firstName} ${data?.resource.createdBy.lastName}`}
+                    >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {value.createdBy}
+                            {data?.resource.modifiedBy.firstName}
+                            {' '}
+                            {data?.resource.modifiedBy.lastName}
                         </Heading>
-                    </FormSection>
+                    </InputSection>
                 </Activity>
-                <FormSection label="Title" description="Enter the Title" withAsteriskOnTitle>
+                <InputSection
+                    title="Title"
+                    description="Enter the Title"
+                    withAsteriskOnTitle
+                >
                     <TextInput
                         name="title"
                         value={value.title}
@@ -242,27 +237,43 @@ function ResourceForm() {
                         placeholder="title"
                         autoFocus
                     />
-                </FormSection>
-                <FormSection label="File" description="Add a File, which will be attached and shown on Radio Page" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="File"
+                    description="Add a File, which will be attached and shown on Radio Page"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
                         error={error?.file as string}
                     />
-                </FormSection>
-                <FormSection label="Cover Image" description="Add a File, which will be attached and shown on Radio Page" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Cover Image"
+                    description="Add a File, which will be attached and shown on Radio Page"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
                         error={error?.coverImage as string}
                     />
-                </FormSection>
-                <FormSection label="Content" description="Enter the Content" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Content"
+                    description="Enter the Content"
+                    withAsteriskOnTitle
+                >
                     {ContentEditor}
-                </FormSection>
-                <FormSection label="Published Date" description="This date should be the Published Date of the Resource" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Published Date"
+                    description="This date should be the Published Date of the Resource"
+                    withAsteriskOnTitle
+                >
                     <DateInput
                         name="publishedDate"
                         value={value.publishedDate}
@@ -270,38 +281,46 @@ function ResourceForm() {
                         placeholder="Select Date"
                         error={error?.publishedDate as string}
                     />
-                </FormSection>
-                <FormSection label="Strategic Directive" description="Add the Strategic Directive" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Strategic Directive"
+                    description="Add the Strategic Directive"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="directive"
                         options={directiveOptions}
                         value={value.directive}
-                        keySelector={(o) => o.id}
-                        labelSelector={(o) => o.name}
+                        keySelector={idSelector}
+                        labelSelector={nameSelector}
                         onChange={setFieldValue}
                         placeholder="Select Strategic Directive"
                         error={error?.directive as string}
                     />
-                </FormSection>
-                <FormSection label="Type" description="Add type to either global or local" withAsteriskOnTitle>
+                </InputSection>
+                <InputSection
+                    title="Type"
+                    description="Add type to either global or local"
+                    withAsteriskOnTitle
+                >
                     <SelectInput
                         name="type"
                         options={resourcesOptions}
                         value={value.type}
-                        keySelector={(o) => o.label}
-                        labelSelector={(o) => o.value}
+                        keySelector={keySelector}
+                        labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Type"
                         error={error?.type as string}
                     />
-                </FormSection>
-                <FormSection>
-                    <Button name="save" onClick={handleFormSubmit} variant="primary">
+                </InputSection>
+                <ListView withPadding withBackground withCenteredContents>
+                    <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
-                </FormSection>
-            </ContainerWrapper>
-        </Page>
+                </ListView>
+            </ListView>
+        </Container>
     );
 }
 

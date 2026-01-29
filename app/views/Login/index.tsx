@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router';
 import {
     Button,
     Image,
+    ListView,
     PasswordInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -129,12 +130,14 @@ function Login() {
     return (
         <Page>
             <main className={styles.loginContainer}>
-                <Image src={banner} />
+                <Image src={banner} size="sm" withContainedFit withoutBackground />
                 <form
                     className={styles.loginForm}
                     onSubmit={handleFormSubmit}
                 >
-                    <div className={styles.field}>
+                    <ListView
+                        layout="block"
+                    >
                         <TextInput
                             name="email"
                             label="Email"
@@ -142,6 +145,8 @@ function Login() {
                             onChange={setFieldValue}
                             error={error?.email}
                             autoFocus
+                            withAsterisk
+
                         />
                         <PasswordInput
                             name="password"
@@ -149,18 +154,20 @@ function Login() {
                             value={value.password}
                             error={error?.password}
                             onChange={setFieldValue}
+                            withAsterisk
                         />
-                    </div>
-                    <div className={styles.loginBtn}>
+                    </ListView>
+                    <ListView layout="block" withCenteredContents>
                         <Button
                             name={undefined}
-                            spacing="relaxed"
+                            styleVariant="filled"
+                            spacing="sm"
                             disabled={loginPending}
                             type="submit"
                         >
                             {loginPending ? 'Logging in...' : 'Login'}
                         </Button>
-                    </div>
+                    </ListView>
                 </form>
             </main>
         </Page>
