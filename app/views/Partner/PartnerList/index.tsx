@@ -2,7 +2,6 @@ import React, {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -14,7 +13,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     PartnerQuery,
     useDeletePartnerMutation,
@@ -22,12 +21,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type PartnerListItem = NonNullable<PartnerQuery['partners']>['results'][number];
 
 function PartnerList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -45,7 +45,7 @@ function PartnerList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deletePartner({ id }).then((resp) => {
                 if (resp.data?.deletePartner) {
@@ -58,25 +58,44 @@ function PartnerList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<PartnerListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createStringColumn<PartnerListItem, string | number>('scope', 'Scope', (dept) => dept?.scope),
-        createElementColumn<PartnerListItem, string | number, TableActionsProps>(
-            'actions',
-            '',
-            TableActions,
-            (_, datum) => ({
-                id: datum.id,
-                handleConfirmButtonChange: handleDelete,
-                itemTitle: datum.title,
-            }),
+        createStringColumn<PartnerListItem, string | number>(
+            'title',
+            'Title',
+            (dept) => dept.title,
         ),
-    ], [handleDelete]);
+        createStringColumn<PartnerListItem, string | number>(
+            'scope',
+            'Scope',
+            (dept) => dept?.scope,
+        ),
+        createElementColumn<PartnerListItem, string | number,
+         EditDeleteActionsProps>(
+             'actions',
+             '',
+             EditDeleteActions,
+             (_, datum) => ({
+                 id: datum.id,
+                 onDelete,
+                 itemTitle: datum.title,
+                 to: 'editPartner',
+             }),
+         ),
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addPartner');
+    }, [navigate]);
+
     return (
         <Container
             withPadding
             heading="Partner"
             headerActions={(
-                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add Partner
                 </Button>
             )}

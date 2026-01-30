@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -18,7 +16,10 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
-import { isNotDefined } from '@togglecorp/fujs';
+import {
+    isNotDefined,
+    noOp,
+} from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
@@ -41,6 +42,7 @@ import {
     useUpdateNewsMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     idSelector,
@@ -90,12 +92,12 @@ const defaultEditFormValue: PartialFormType = {};
 
 function NewsForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const [{ data: directives }] = useDirectiveQuery();
 
-    const [{ data }] = useNewsDetailQuery({
+    const [{ data, fetching: newsDetailFetch }] = useNewsDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ fetching: createPending }, createNewsMutate] = useCreateNewsMutation();
@@ -112,7 +114,7 @@ function NewsForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/news';
+        const redirectPath = 'news';
         const alertMessage = `News ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateNewsMutate({
@@ -202,8 +204,18 @@ function NewsForm() {
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
+            placeholder="Start writing news here..."
         />
     ), [value.content, error?.content, setFieldValue]);
+
+    if (newsDetailFetch) {
+        return (
+            <BlockLoading
+                compact
+                message="Loading"
+            />
+        );
+    }
 
     return (
         <Container withPadding>
@@ -300,7 +312,7 @@ function NewsForm() {
                         <TextInput
                             name="slug"
                             value={value.slug ?? ''}
-                            onChange={() => {}}
+                            onChange={noOp}
                             error={error?.slug}
                             readOnly
                         />
@@ -327,8 +339,13 @@ function NewsForm() {
                         Write News
                     </Heading>
                 </InputSection>
-                <InputSection withoutTitleSection>{ContentEditor}</InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                {ContentEditor}
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
+                    {' '}
                     <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

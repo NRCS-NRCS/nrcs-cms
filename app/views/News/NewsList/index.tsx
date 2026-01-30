@@ -2,7 +2,6 @@ import React, {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -14,7 +13,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     NewsQuery,
     useDeleteNewsMutation,
@@ -22,12 +21,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type NewsListItem = NonNullable<NewsQuery['news']>['results'][number];
 
 function NewsList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -45,7 +45,7 @@ function NewsList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteNews({ id }).then((resp) => {
                 if (resp.data?.deleteNews) {
@@ -58,26 +58,50 @@ function NewsList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<NewsListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createStringColumn<NewsListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
-        createStringColumn<NewsListItem, string | number>('directive', 'Strategic Directives', (dept) => dept?.directive?.title),
-        createElementColumn<NewsListItem, string | number, TableActionsProps>(
-            'actions',
-            '',
-            TableActions,
-            (_, datum) => ({
-                id: datum.id,
-                handleConfirmButtonChange: handleDelete,
-                itemTitle: datum.title,
-            }),
+        createStringColumn<NewsListItem, string | number>(
+            'title',
+            'Title',
+            (dept) => dept.title,
         ),
-    ], [handleDelete]);
+        createStringColumn<NewsListItem, string | number>(
+            'publishedDate',
+            'Published Date',
+            (dept) => dept?.publishedDate,
+        ),
+        createStringColumn<NewsListItem, string | number>(
+            'directive',
+
+            'Strategic Directives',
+            (dept) => dept?.directive?.title,
+        ),
+        createElementColumn<NewsListItem, string | number,
+         EditDeleteActionsProps>(
+             'actions',
+             '',
+             EditDeleteActions,
+             (_, datum) => ({
+                 id: datum.id,
+                 onDelete,
+                 itemTitle: datum.title,
+                 to: 'editNews',
+             }),
+         ),
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addNews');
+    }, [navigate]);
+
     return (
         <Container
             withPadding
             heading="News"
             headerActions={(
-                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add News
                 </Button>
             )}

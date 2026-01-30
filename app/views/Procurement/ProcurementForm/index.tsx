@@ -3,11 +3,9 @@ import {
     useCallback,
     useEffect,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -37,6 +35,7 @@ import {
     useUpdateProcurementMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
@@ -73,10 +72,10 @@ const ProcurementSchema: FormSchema = {
 const defaultEditFormValue: PartialFormType = {};
 function ProcurementForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useProcurementDetailQuery({
+    const [{ data, fetching: procurementDetailFetch }] = useProcurementDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ fetching: createPending }, createProcurementMutate] = useCreateProcurementMutation();
@@ -93,7 +92,7 @@ function ProcurementForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/procurements';
+        const redirectPath = 'procurements';
         const alertMessage = `Procurement ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateProcurementMutate({
@@ -153,6 +152,16 @@ function ProcurementForm() {
             });
         }
     }, [data, setValue]);
+
+    if (procurementDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
 
     return (
         <Container withPadding>
@@ -236,7 +245,11 @@ function ProcurementForm() {
                         error={error?.expiryDate as string}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

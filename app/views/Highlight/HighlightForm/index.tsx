@@ -3,10 +3,7 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -46,6 +43,8 @@ import {
     useUpdateHighlightMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
+import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
 import ActionLinkInputComponent from './actionLinkInput';
@@ -109,7 +108,7 @@ const defaultEditFormValue: PartialFormType = {
 
 function HighlightForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const [{ data, fetching: highlightDetailFetch }] = useHighlightDetailQuery({
@@ -136,11 +135,10 @@ function HighlightForm() {
     } = useFormArray<'actionLinks', PartialForm<ActionLinkFormValue>>('actionLinks', setFieldValue);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/highlights';
+        const redirectPath = 'highlight';
         const alertMessage = `Highlight ${id ? 'updated' : 'created'} successfully`;
         const currentLinks = mutationData.actionLinks ?? [];
         const originalLinks = data?.highlight?.actionLinks ?? [];
-        const errorMessage = 'Something Went Wrong! ';
 
         if (id) {
             const actionLinksMutation: NonNullable<ActionLinkInput[]> = currentLinks
@@ -250,7 +248,13 @@ function HighlightForm() {
     );
 
     if (highlightDetailFetch) {
-        return <BlockLoading withoutBorder compact message="Loading" />;
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
     }
 
     return (
@@ -346,7 +350,12 @@ function HighlightForm() {
                         </Button>
                     </ListView>
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
+                    {' '}
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

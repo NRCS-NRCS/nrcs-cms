@@ -2,7 +2,6 @@ import {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -15,7 +14,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     HighlightQuery,
     useDeleteHighlightMutation,
@@ -23,12 +22,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type HighlightListItem = NonNullable<HighlightQuery['highlights']>['results'][number];
 
 function HighlightList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -46,7 +46,7 @@ function HighlightList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteHighlight({ id }).then((resp) => {
                 if (resp.data?.deleteHighlight) {
@@ -59,27 +59,50 @@ function HighlightList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<HighlightListItem, string | number>('heading', 'Heading', (high) => high.heading),
-        createBooleanColumn<HighlightListItem, string | number>('isActive', 'Active', (high) => high?.isActive),
-        createStringColumn<HighlightListItem, string | number>('createdBy', 'Created By', (high) => `${high.createdBy.firstName} ${high.createdBy.lastName}`),
-        createElementColumn<HighlightListItem, string | number, TableActionsProps>(
+        createStringColumn<HighlightListItem, string | number>(
+            'heading',
+            'Heading',
+            (high) => high.heading,
+        ),
+        createBooleanColumn<HighlightListItem, string | number>(
+            'isActive',
+            'Active',
+            (high) => high?.isActive,
+        ),
+        createStringColumn<HighlightListItem, string | number>(
+            'createdBy',
+            'Created By',
+            (high) => `${high.createdBy.firstName} ${high.createdBy.lastName}`,
+        ),
+        createElementColumn<HighlightListItem, string | number,
+        EditDeleteActionsProps>(
             'actions',
             '',
-            TableActions,
+            EditDeleteActions,
             (_, datum) => ({
                 id: datum.id,
-                handleConfirmButtonChange: handleDelete,
+                onDelete,
                 itemTitle: datum.heading,
+                to: 'editHighlight',
             }),
         ),
-    ], [handleDelete]);
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addHighlight');
+    }, [navigate]);
 
     return (
         <Container
             withPadding
             heading="Highlight"
             headerActions={(
-                <Button name={undefined} styleVariant="outline" disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    styleVariant="outline"
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add Highlight
                 </Button>
             )}

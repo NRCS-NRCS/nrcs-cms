@@ -2,7 +2,6 @@ import {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -16,7 +15,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     BlogQueryQuery,
     useBlogQueryQuery,
@@ -24,12 +23,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number];
 
 function BlogList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
     const {
         page,
@@ -40,7 +40,7 @@ function BlogList() {
     const [{ fetching, data }, reExecuteQuery] = useBlogQueryQuery({ variables });
     const [, deleteBlog] = useDeleteBlogMutation();
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteBlog({ id }).then((resp) => {
                 if (resp.data?.deleteBlog) {
@@ -78,19 +78,25 @@ function BlogList() {
                 'Status',
                 (blog) => blog.status,
             ),
-            createElementColumn<BlogListType, string | number, TableActionsProps>(
-                'actions',
-                '',
-                TableActions,
-                (_, datum) => ({
-                    id: datum.id,
-                    handleConfirmButtonChange: handleDelete,
-                    itemTitle: datum.title,
-                }),
-            ),
+            createElementColumn<BlogListType, string | number,
+             EditDeleteActionsProps>(
+                 'actions',
+                 '',
+                 EditDeleteActions,
+                 (_, datum) => ({
+                     id: datum.id,
+                     onDelete,
+                     itemTitle: datum.title,
+                     to: 'editBlog',
+                 }),
+             ),
         ]),
-        [handleDelete],
+        [onDelete],
     );
+
+    const handleAddClick = useCallback(() => {
+        navigate('addBlog');
+    }, [navigate]);
 
     return (
         <Container
@@ -98,10 +104,10 @@ function BlogList() {
             heading="Blog"
             headerActions={(
                 <Button
-                    name={undefined}
+                    name="addBlog"
                     disabled={false}
                     styleVariant="outline"
-                    onClick={() => navigate('add')}
+                    onClick={handleAddClick}
                 >
                     Add blogs
                 </Button>

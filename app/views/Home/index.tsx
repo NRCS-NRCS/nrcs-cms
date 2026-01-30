@@ -1,4 +1,8 @@
-import { use } from 'react';
+import {
+    ReactElement,
+    use,
+    useCallback,
+} from 'react';
 import {
     FaFileAlt,
     FaFileAudio,
@@ -13,7 +17,6 @@ import {
     FaWarehouse,
     FaWindowMaximize,
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -24,89 +27,101 @@ import {
 import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 import { useCountsQuery } from '#generated/types/graphql';
+import useRouting, { RoutesMap } from '#hooks/useRouting';
 
 import styles from './styles.module.css';
+
+interface CardItem {
+    title: string;
+    count: number;
+    icon: ReactElement;
+    redirect: keyof RoutesMap ;
+}
 
 function Dashboards() {
     const { user } = use(UserContext);
     const [{ data }] = useCountsQuery();
-    const navigate = useNavigate();
+    const navigate = useRouting();
 
-    const card = [
+    const card : CardItem[] = [
         {
-            title: 'Featured blogs',
+            title: 'Blogs',
             count: data?.blogs.totalCount || 0,
             icon: <FaFileAlt />,
-            addLink: '/blog/add',
+            redirect: 'addBlog',
         },
         {
             title: 'Departments',
             count: data?.departments.totalCount || 0,
             icon: <FaMoneyCheck />,
-            addLink: '/departments/add',
-
+            redirect: 'addDepartment',
         },
         {
             title: 'FAQs',
             count: data?.faqs.totalCount || 0,
             icon: <FaQuestionCircle />,
-            addLink: '/faqs/add',
+            redirect: 'addFaq',
         },
         {
             title: 'Highlights',
             count: data?.highlights.totalCount || 0,
             icon: <FaHighlighter />,
-            addLink: '/highlights/add',
+            redirect: 'addHighlight',
         },
         {
             title: 'Vacancies',
             count: data?.jobVacancies.totalCount || 0,
             icon: <FaSuitcase />,
-            addLink: '/job-vacancies/add',
+            redirect: 'addVacancy',
         },
         {
             title: 'News',
             count: data?.news.totalCount || 0,
             icon: <FaRegNewspaper />,
-            addLink: '/news/add',
+            redirect: 'addNews',
         },
         {
             title: 'Partners',
             count: data?.partners.totalCount || 0,
             icon: <FaUserFriends />,
-            addLink: '/partners/add',
+            redirect: 'addPartner',
         },
         {
             title: 'Radio Programs',
             count: data?.radioProgram.totalCount || 0,
             icon: <FaFileAudio />,
-            addLink: '/radio-programs/add',
+            redirect: 'addRadioProgram',
         },
         {
             title: 'Strategic Directives',
             count: data?.strategicDirectives.totalCount || 0,
             icon: <FaThinkPeaks />,
-            addLink: '/strategic-directives/add',
+            redirect: 'addStrategicDirectives',
         },
         {
             title: 'Resources',
             count: data?.resources.totalCount || 0,
             icon: <FaWarehouse />,
-            addLink: '/resources/add',
+            redirect: 'addResources',
         },
         {
             title: 'Projects',
             count: data?.projects.totalCount || 0,
             icon: <FaProjectDiagram />,
-            addLink: '/projects/add',
+            redirect: 'addProject',
         },
         {
             title: 'Procurements',
             count: data?.procurements.totalCount || 0,
             icon: <FaWindowMaximize />,
-            addLink: '/procurements/add',
+            redirect: 'addProcurements',
         },
     ];
+
+    const handleNavigate = useCallback(
+        (redirect:keyof RoutesMap) => navigate(redirect),
+        [navigate],
+    );
 
     return (
         <Page className={styles.page}>
@@ -131,7 +146,11 @@ function Dashboards() {
                 )}
             >
                 <div className={styles.content}>
-                    <ListView layout="grid" withFullWidth numPreferredGridColumns={3}>
+                    <ListView
+                        layout="grid"
+                        withFullWidth
+                        numPreferredGridColumns={3}
+                    >
                         {card.map((item) => (
                             <ListView key={item.title} withPadding withBackground layout="block">
                                 <Heading level={6}>
@@ -144,11 +163,21 @@ function Dashboards() {
                             </ListView>
                         ))}
                     </ListView>
-                    <ListView withPadding withBackground layout="block" spacing="sm">
+                    <ListView
+                        withPadding
+                        withBackground
+                        layout="block"
+                        spacing="sm"
+                    >
                         <Heading level={3}>Quick Action</Heading>
                         {card.map((item) => (
                             <div key={item.title}>
-                                <Button styleVariant="outline" textSize="sm" name={undefined} onClick={() => navigate(item.addLink)}>
+                                <Button
+                                    name={item.redirect}
+                                    styleVariant="outline"
+                                    textSize="sm"
+                                    onClick={handleNavigate}
+                                >
                                     New
                                     {' '}
                                     {item.title}

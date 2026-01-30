@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Checkbox,
     Container,
@@ -43,6 +41,7 @@ import {
     useVacancyDetailQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -94,10 +93,10 @@ const VacancySchema: FormSchema = {
 const defaultEditFormValue: PartialFormType = {};
 function VacancyForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useVacancyDetailQuery({
+    const [{ data, fetching: vacancyDetailFetch }] = useVacancyDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ data: departments }] = useDepartmentsQuery();
@@ -116,7 +115,7 @@ function VacancyForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/vacancy';
+        const redirectPath = 'vacancy';
         const alertMessage = `Vacancy ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateVacancyMutate({
@@ -185,6 +184,16 @@ function VacancyForm() {
             label: dept.title,
         }),
     ) ?? [], [departments]);
+
+    if (vacancyDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
 
     return (
         <Container withPadding>
@@ -327,7 +336,11 @@ function VacancyForm() {
                         label="Is Archived"
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

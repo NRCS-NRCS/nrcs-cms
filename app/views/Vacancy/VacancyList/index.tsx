@@ -2,7 +2,6 @@ import {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -16,7 +15,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     useDeleteVacancyMutation,
     useVacancyQuery,
@@ -24,12 +23,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number];
 
 function VacancyList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -47,7 +47,7 @@ function VacancyList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteVacancy({ id }).then((resp) => {
                 if (resp.data?.deleteJobVacancy) {
@@ -60,32 +60,70 @@ function VacancyList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<VacancyListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createStringColumn<VacancyListItem, string | number>('vacancyPosition', 'Vacancy Position', (dept) => dept?.position),
-        createNumberColumn<VacancyListItem, string | number>('numberOfVacancies', 'Number Of Vacancies', (dept) => dept?.numberOfVacancies),
-        createStringColumn<VacancyListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedAt),
-        createStringColumn<VacancyListItem, string | number>('expireDate', 'Expire Date', (dept) => dept?.publishedAt),
-        createBooleanColumn<VacancyListItem, string | number>('archive', 'Archived', (dept) => dept?.isArchived),
-        createStringColumn<VacancyListItem, string | number>('department', 'Department', (dept) => dept?.department?.title),
-        createElementColumn<VacancyListItem, string | number, TableActionsProps>(
+        createStringColumn<VacancyListItem, string | number>(
+            'title',
+            'Title',
+            (dept) => dept.title,
+        ),
+        createStringColumn<VacancyListItem, string | number>(
+            'vacancyPosition',
+            'Vacancy Position',
+            (dept) => dept?.position,
+        ),
+        createNumberColumn<VacancyListItem, string | number>(
+            'numberOfVacancies',
+            'Number Of Vacancies',
+            (dept) => dept?.numberOfVacancies,
+        ),
+        createStringColumn<VacancyListItem, string | number>(
+            'publishedDate',
+            'Published Date',
+            (dept) => dept?.publishedAt,
+        ),
+        createStringColumn<VacancyListItem, string | number>(
+            'expireDate',
+            'Expire Date',
+            (dept) => dept?.publishedAt,
+        ),
+        createBooleanColumn<VacancyListItem, string | number>(
+            'archive',
+            'Archived',
+            (dept) => dept?.isArchived,
+        ),
+        createStringColumn<VacancyListItem, string | number>(
+            'department',
+            'Department',
+            (dept) => dept?.department?.title,
+        ),
+        createElementColumn<VacancyListItem, string | number,
+        EditDeleteActionsProps>(
             'actions',
             '',
-            TableActions,
+            EditDeleteActions,
             (_, datum) => ({
                 id: datum.id,
-                handleConfirmButtonChange: handleDelete,
+                onDelete,
                 confirmPending: deletePending,
                 itemTitle: datum.title,
+                to: 'editVacancy',
             }),
         ),
-    ], [handleDelete, deletePending]);
+    ], [onDelete, deletePending]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addBlog');
+    }, [navigate]);
 
     return (
         <Container
             withPadding
             heading="Vacancy"
             headerActions={(
-                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add Vacancy
                 </Button>
             )}

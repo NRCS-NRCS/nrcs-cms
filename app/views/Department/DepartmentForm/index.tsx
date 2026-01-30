@@ -3,10 +3,7 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -18,7 +15,10 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
-import { isNotDefined } from '@togglecorp/fujs';
+import {
+    isNotDefined,
+    noOp,
+} from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
@@ -38,7 +38,9 @@ import {
     useUpdateDepartmentMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
+    errorMessage,
     idSelector,
     nameSelector,
 } from '#utils/common';
@@ -76,7 +78,7 @@ const defaultEditFormValue: PartialFormType = {};
 
 function DepartmentForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const [{ data, fetching: departmentDetailFetch }] = useDepartmentDetailQuery({
@@ -97,9 +99,8 @@ function DepartmentForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/departments';
+        const redirectPath = 'department';
         const alertMessage = `Department ${id ? 'updated' : 'created'} successfully`;
-        const errorMessage = 'Something Went Wrong! ';
 
         if (id) {
             const res = await updateDepartmentMutate({
@@ -159,7 +160,13 @@ function DepartmentForm() {
     }, [data, setValue]);
 
     if (departmentDetailFetch) {
-        return <BlockLoading withoutBorder compact message="Loading" />;
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
     }
 
     return (
@@ -253,12 +260,16 @@ function DepartmentForm() {
                         <TextInput
                             name="slug"
                             value={data?.department.slug ?? ''}
-                            onChange={() => {}}
+                            onChange={noOp}
                             readOnly
                         />
                     </InputSection>
                 </Activity>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

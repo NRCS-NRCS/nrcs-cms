@@ -4,12 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import { AddLineIcon } from '@ifrc-go/icons';
 import {
+    BlockLoading,
     Button,
     Container,
     Heading,
@@ -43,6 +41,7 @@ import {
     useUpdateStrategicDirectiveMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
@@ -106,10 +105,10 @@ const defaultEditFormValue: ExtendedPartialFormType = {
 
 function StrategicDirectiveForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useStrategicDirectiveDetailQuery({
+    const [{ data, fetching: directiveDetailFetch }] = useStrategicDirectiveDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ fetching: createPending },
@@ -133,7 +132,7 @@ function StrategicDirectiveForm() {
     } = useFormArray<'majorResponsibilities', PartialForm<MajorResponsibilitiesType>>('majorResponsibilities', setFieldValue);
 
     const handleMutation = useCallback(async (mutationData: ExtendedPartialFormType) => {
-        const redirectPath = '/strategic-directive';
+        const redirectPath = 'strategicDirectives';
         const alertMessage = `Strategic Directive ${id ? 'updated' : 'created'} successfully`;
         const currentLinks = mutationData.majorResponsibilities ?? [];
         const originalLinks = data?.strategicDirective.majorResponsibilities ?? [];
@@ -262,6 +261,16 @@ function StrategicDirectiveForm() {
         />
     ), [value.description, error?.description, setFieldValue]);
 
+    if (directiveDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
         <Container withPadding>
             <ListView layout="block">
@@ -334,7 +343,11 @@ function StrategicDirectiveForm() {
                         </Button>
                     </div>
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

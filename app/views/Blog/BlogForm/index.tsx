@@ -4,10 +4,7 @@ import React, {
     useEffect,
     useMemo,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -20,7 +17,10 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
-import { isNotDefined } from '@togglecorp/fujs';
+import {
+    isNotDefined,
+    noOp,
+} from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
@@ -43,6 +43,7 @@ import {
     useUpdateBlogMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -100,7 +101,7 @@ function BlogForm() {
     const { id } = useParams();
     const alert = useAlert();
 
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const [{ data, fetching: blogDetailFetch }] = useBlogDetailQueryQuery({
         variables: { id: id || '' }, pause: !id,
     });
@@ -119,7 +120,7 @@ function BlogForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/blog';
+        const redirectPath = 'blog';
         const alertMessage = `Blog ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateBlogMutate({
@@ -210,11 +211,19 @@ function BlogForm() {
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
+            placeholder="Start writing blog here..."
+
         />
     ), [value.content, error?.content, setFieldValue]);
 
     if (blogDetailFetch) {
-        return <BlockLoading withoutBorder compact message="Loading" />;
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
     }
 
     return (
@@ -326,7 +335,7 @@ function BlogForm() {
                         <TextInput
                             name="slug"
                             value={data?.blog.slug ?? ''}
-                            onChange={() => {}}
+                            onChange={noOp}
                             readOnly
                         />
                     </InputSection>
@@ -366,8 +375,13 @@ function BlogForm() {
                         Write Blogs
                     </Heading>
                 </InputSection>
-                <InputSection withoutTitleSection>{ContentEditor}</InputSection>
-                <ListView withFullWidth withCenteredContents withBackground withPadding>
+                {ContentEditor}
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
                     <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

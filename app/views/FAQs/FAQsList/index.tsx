@@ -2,7 +2,6 @@ import React, {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -15,7 +14,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     FaqQuery,
     useDeleteFaqMutation,
@@ -23,12 +22,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number];
 
 function FAQsList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -43,7 +43,7 @@ function FAQsList() {
 
     const tableData = data?.faqs.results;
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteFaq({ id }).then((resp) => {
                 if (resp.data?.deleteFaq) {
@@ -56,27 +56,51 @@ function FAQsList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<FaqListItem, string | number>('question', 'Question', (dept) => dept.question),
-        createStringColumn<FaqListItem, string | number>('answer', 'Answer', (dept) => dept?.answer),
-        createNumberColumn<FaqListItem, string | number>('orderIndex', 'Order Index', (dept) => dept.orderIndex),
-        createElementColumn<FaqListItem, string | number, TableActionsProps>(
+        createStringColumn<FaqListItem, string | number>(
+            'question',
+            'Question',
+            (dept) => dept.question,
+        ),
+        createStringColumn<FaqListItem, string | number>(
+            'answer',
+            'Answer',
+            (dept) => dept?.answer,
+        ),
+        createNumberColumn<FaqListItem, string | number>(
+            'orderIndex',
+            'Order Index',
+            (dept) => dept.orderIndex,
+        ),
+        createElementColumn<FaqListItem, string | number,
+        EditDeleteActionsProps>(
             'actions',
             '',
-            TableActions,
+            EditDeleteActions,
             (_, datum) => ({
                 id: datum.id,
-                handleConfirmButtonChange: handleDelete,
+                onDelete,
                 itemTitle: datum.question,
+                to: 'editFaq',
             }),
             { columnWidth: 150 },
         ),
-    ], [handleDelete]);
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addFaq');
+    }, [navigate]);
+
     return (
         <Container
             withPadding
             heading="FAQs"
             headerActions={(
-                <Button name={undefined} styleVariant="outline" disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    styleVariant="outline"
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add FAQs
                 </Button>
             )}

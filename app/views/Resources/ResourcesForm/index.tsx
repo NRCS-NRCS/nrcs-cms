@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -41,6 +39,7 @@ import {
     useUpdateResourceMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     idSelector,
@@ -88,10 +87,10 @@ const defaultEditFormValue: PartialFormType = {};
 
 function ResourceForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useResourceDetailQuery({
+    const [{ data, fetching: resourcesDetailFetch }] = useResourceDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ data: directive }] = useDirectiveQuery();
@@ -110,7 +109,7 @@ function ResourceForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/resources';
+        const redirectPath = 'resources';
         const alertMessage = `Resources ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateResourceMutate({
@@ -200,11 +199,22 @@ function ResourceForm() {
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
+            placeholder="Start writing content here..."
         />
     ), [value.content, error?.content, setFieldValue]);
 
+    if (resourcesDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
-        <Container>
+        <Container withPadding>
             <ListView layout="block">
                 <InputSection withoutTitleSection>
                     <Heading level={4}>
@@ -266,9 +276,8 @@ function ResourceForm() {
                     title="Content"
                     description="Enter the Content"
                     withAsteriskOnTitle
-                >
-                    {ContentEditor}
-                </InputSection>
+                />
+                {ContentEditor}
                 <InputSection
                     title="Published Date"
                     description="This date should be the Published Date of the Resource"
@@ -314,7 +323,11 @@ function ResourceForm() {
                         error={error?.type as string}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

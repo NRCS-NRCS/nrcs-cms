@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { useCallback } from 'react';
 import {
     DeleteBinLineIcon,
     EditTwoLineIcon,
@@ -6,28 +6,39 @@ import {
 import {
     Button,
     ConfirmButton,
-    TableActions as GoTableAction,
+    TableActions,
 } from '@ifrc-go/ui';
 
-export interface TableActionsProps {
-    id: string;
-    handleConfirmButtonChange: (id: string) => void
-    itemTitle: string
+import useRouting, { RoutesMap } from '#hooks/useRouting';
+
+export interface EditDeleteActionsProps {
+    id: string ;
+    onDelete: (id: string) => void;
+    itemTitle: string;
+    to: keyof RoutesMap ;
 }
 
-function TableActions(props: TableActionsProps) {
-    const navigate = useNavigate();
+function EditDeleteActions(props: EditDeleteActionsProps) {
     const {
-        id, handleConfirmButtonChange, itemTitle,
+        id,
+        onDelete,
+        itemTitle,
+        to,
     } = props;
 
+    const navigate = useRouting();
+
+    const handleEditClick = useCallback(() => {
+        navigate(to, { id });
+    }, [navigate, to, id]);
+
     return (
-        <GoTableAction>
+        <TableActions>
             <Button
                 name={undefined}
                 styleVariant="action"
                 colorVariant="secondary"
-                onClick={() => navigate(`${id}/edit`)}
+                onClick={handleEditClick}
             >
                 <EditTwoLineIcon />
             </Button>
@@ -35,13 +46,13 @@ function TableActions(props: TableActionsProps) {
                 name={id}
                 styleVariant="action"
                 colorVariant="secondary"
-                onConfirm={handleConfirmButtonChange}
+                onConfirm={onDelete}
                 confirmMessage={`Are you sure you want to delete ${`"${itemTitle}"` || 'this item'}? This action cannot be undone.`}
             >
                 <DeleteBinLineIcon />
             </ConfirmButton>
-        </GoTableAction>
+        </TableActions>
     );
 }
 
-export default TableActions;
+export default EditDeleteActions;

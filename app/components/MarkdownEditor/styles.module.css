@@ -1,12 +1,7 @@
 .editor {
-    display: flex;
-    position: relative;
-    flex-direction: row;
-    border: 1px solid var(--go-ui-color-gray-20);
-    border-radius: var(--go-ui-spacing-sm);
+    z-index: 0;
     width: 100%;
     min-height: var(--go-ui-width-min-modal);
-    gap: var(--go-ui-spacing-md);
 
     >* {
         flex: 1;

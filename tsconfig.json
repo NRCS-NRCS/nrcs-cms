@@ -10,7 +10,9 @@
             "#components/*": ["app/components/*"],
             "#hooks/*": ["app/hooks/*"],
             "#assets/*": ["app/assets/*"],
-            "#resources/*": ["app/resources/*"]
+            "#resources/*": ["app/resources/*"],
+            "#root/*": ["app/root/*"]
+
         },
         "target": "ESNext",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],

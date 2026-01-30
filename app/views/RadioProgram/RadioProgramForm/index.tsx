@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -39,6 +37,7 @@ import {
     useUpdateRadioProgramMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -73,10 +72,10 @@ const RadioProgramSchema: FormSchema = {
 const defaultEditFormValue: PartialFormType = {};
 function RadioProgramForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useRadioProgramQuery({
+    const [{ data, fetching: radioProgramDetailFetch }] = useRadioProgramQuery({
         variables: {
             filter: { id },
         },
@@ -97,7 +96,7 @@ function RadioProgramForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/radio-programs';
+        const redirectPath = 'radioProgram';
         const alertMessage = `Radio Program ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateRadioProgramMutate({
@@ -163,6 +162,16 @@ function RadioProgramForm() {
         key: status,
         label: status,
     })), []);
+
+    if (radioProgramDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
 
     return (
         <Container withPadding>
@@ -241,7 +250,11 @@ function RadioProgramForm() {
                         error={error?.type}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

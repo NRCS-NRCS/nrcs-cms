@@ -2,19 +2,17 @@ import {
     Activity,
     useCallback,
     useEffect,
+    useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     Heading,
     InputSection,
     ListView,
     SelectInput,
-    TextArea,
     TextInput,
 } from '@ifrc-go/ui';
 import { isNotDefined } from '@togglecorp/fujs';
@@ -29,6 +27,7 @@ import {
 } from '@togglecorp/toggle-form';
 
 import FileUpload from '#components/FileUpload';
+import MarkdownEditor from '#components/MarkdownEditor';
 import {
     ProjectCreateInput,
     ProjectUpdateInput,
@@ -38,6 +37,7 @@ import {
     useUpdateProjectMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     idSelector,
@@ -73,10 +73,10 @@ const defaultEditFormValue: PartialFormType = {};
 
 function ProjectForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useProjectDetailQuery({
+    const [{ data, fetching: projectDetailFetch }] = useProjectDetailQuery({
         variables: { id: id || '' }, pause: !id,
     });
     const [{ data: departments }] = useDepartmentsQuery();
@@ -95,7 +95,7 @@ function ProjectForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/projects';
+        const redirectPath = 'project';
         const alertMessage = `Project ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateProjectMutate({
@@ -180,6 +180,25 @@ function ProjectForm() {
         }),
     ) ?? [];
 
+    const ContentEditor = useMemo(() => (
+        <MarkdownEditor
+            value={value.description}
+            onChange={(val) => setFieldValue(val, 'description')}
+            error={error?.description}
+            placeholder="Start writing description here..."
+        />
+    ), [value.description, error?.description, setFieldValue]);
+
+    if (projectDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
         <Container withPadding>
             <ListView layout="block">
@@ -228,19 +247,6 @@ function ProjectForm() {
                     />
                 </InputSection>
                 <InputSection
-                    title="Description"
-                    description="Enter the Description"
-                    withAsteriskOnTitle
-                >
-                    <TextArea
-                        name="description"
-                        value={value.description}
-                        error={error?.description as string}
-                        onChange={setFieldValue}
-                        placeholder="description"
-                    />
-                </InputSection>
-                <InputSection
                     title="Type"
                     description="Add type to either Tuesday Program or Radio Red Cross"
                     withAsteriskOnTitle
@@ -256,7 +262,17 @@ function ProjectForm() {
                         error={error?.department}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <InputSection
+                    title="Write Description"
+                    description="Enter the Description"
+                    withAsteriskOnTitle
+                />
+                {ContentEditor}
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
