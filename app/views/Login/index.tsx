@@ -2,7 +2,6 @@ import {
     use,
     useCallback,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Image,
@@ -23,7 +22,9 @@ import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 import { useLoginMutation } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import banner from '#resources/image/redCrossBanner.png';
+import { errorMessage } from '#utils/common';
 
 import styles from './styles.module.css';
 
@@ -64,7 +65,7 @@ const defaultLoginFormValue: LoginFormFields = {};
 
 function Login() {
     const { setUser } = use(UserContext);
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -79,53 +80,53 @@ function Login() {
 
     const [{ fetching: loginPending }, triggerLogin] = useLoginMutation();
 
-    const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const handler = createSubmitHandler(
+    const handleMutation = useCallback(async (mutationData: LoginFormFields) => {
+        try {
+            const { data, error: apiError } = await triggerLogin({
+                username: mutationData.email ?? '',
+                password: mutationData.password ?? '',
+            });
+
+            if (apiError) {
+                alert.show('Incorrect username/password', {
+                    variant: 'danger',
+                });
+                return;
+            }
+
+            const loginResponse = data?.login;
+
+            if (!loginResponse) {
+                alert.show(errorMessage, {
+                    variant: 'danger',
+                });
+                return;
+            }
+
+            setUser({
+                id: loginResponse.id,
+                firstName: loginResponse.firstName,
+                lastName: loginResponse.lastName,
+                email: loginResponse.email,
+            });
+
+            alert.show('Login successful!', { variant: 'success' });
+            navigate('home');
+        } catch {
+            alert.show(errorMessage, {
+                variant: 'danger',
+            });
+        }
+    }, [alert, navigate, setUser, triggerLogin]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
             validate,
             setError,
-            async (val) => {
-                try {
-                    const { data, error: apiError } = await triggerLogin({
-                        username: val.email ?? '',
-                        password: val.password ?? '',
-                    });
-
-                    if (apiError) {
-                        alert.show('Incorrect username/password', {
-                            variant: 'danger',
-                        });
-                        return;
-                    }
-
-                    const loginResponse = data?.login;
-
-                    if (!loginResponse) {
-                        alert.show('Something went wrong. Please try again.', {
-                            variant: 'danger',
-                        });
-                        return;
-                    }
-
-                    setUser({
-                        id: loginResponse.id,
-                        firstName: loginResponse.firstName,
-                        lastName: loginResponse.lastName,
-                        email: loginResponse.email,
-                    });
-
-                    alert.show('Login successful!', { variant: 'success' });
-                    navigate('/');
-                } catch {
-                    alert.show('Something went wrong. Please try again.', {
-                        variant: 'danger',
-                    });
-                }
-            },
-        );
-
-        handler();
-    }, [validate, setError, triggerLogin, setUser, navigate, alert]);
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
 
     return (
         <Page>
@@ -133,7 +134,6 @@ function Login() {
                 <Image src={banner} size="sm" withContainedFit withoutBackground />
                 <form
                     className={styles.loginForm}
-                    onSubmit={handleFormSubmit}
                 >
                     <ListView
                         layout="block"
@@ -163,7 +163,7 @@ function Login() {
                             styleVariant="filled"
                             spacing="sm"
                             disabled={loginPending}
-                            type="submit"
+                            onClick={handleFormSubmit}
                         >
                             {loginPending ? 'Logging in...' : 'Login'}
                         </Button>

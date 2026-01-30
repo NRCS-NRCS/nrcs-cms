@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -22,6 +20,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -39,6 +38,7 @@ import {
     useUpdateRadioProgramMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -73,10 +73,10 @@ const RadioProgramSchema: FormSchema = {
 const defaultEditFormValue: PartialFormType = {};
 function RadioProgramForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useRadioProgramQuery({
+    const [{ data, fetching: radioProgramDetailFetch }] = useRadioProgramQuery({
         variables: {
             filter: { id },
         },
@@ -97,7 +97,7 @@ function RadioProgramForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/radio-programs';
+        const redirectPath = 'radioProgram';
         const alertMessage = `Radio Program ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateRadioProgramMutate({
@@ -164,6 +164,16 @@ function RadioProgramForm() {
         label: status,
     })), []);
 
+    if (radioProgramDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
         <Container withPadding>
             <ListView layout="block">
@@ -193,7 +203,7 @@ function RadioProgramForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -209,7 +219,7 @@ function RadioProgramForm() {
                         onChange={setFieldValue}
                         accept="audio/*"
                         value={value.audioFile}
-                        error={error?.audioFile as string}
+                        error={getErrorString(error?.audioFile)}
                     />
                 </InputSection>
                 <InputSection
@@ -222,7 +232,7 @@ function RadioProgramForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -241,7 +251,11 @@ function RadioProgramForm() {
                         error={error?.type}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

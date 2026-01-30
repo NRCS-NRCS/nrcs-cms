@@ -31,28 +31,17 @@ import {
     UndoRedo,
 } from '@mdxeditor/editor';
 
+import useDebounce from '#hooks/useDebounce';
+
 import styles from './styles.module.css';
 
-interface Props {
+interface Props{
     value?: string;
     onChange: (
         value: string | undefined,
     ) => void;
     error?: string;
-}
-
-function debounce<Args extends unknown[], R>(
-    fn: (...args: Args) => R,
-    delay: number,
-): (...args: Args) => void {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    return (...args: Args) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            fn(...args);
-        }, delay);
-    };
+    placeholder?:string
 }
 
 function ToolbarContents() {
@@ -72,18 +61,14 @@ function MarkdownEditor(props: Props) {
     const {
         value = '',
         onChange,
+        placeholder = 'Start writing here...',
         error,
     } = props;
 
     const ref = useRef<MDXEditorMethods>(null);
     const prevValueRef = useRef(value);
 
-    const handleChange = useMemo(
-        () => debounce((data: string) => {
-            onChange(data === '' ? undefined : data);
-        }, 300),
-        [onChange],
-    );
+    const debouncedSearch = useDebounce(onChange, 300);
 
     useEffect(() => {
         if (ref.current && !prevValueRef.current) {
@@ -108,13 +93,13 @@ function MarkdownEditor(props: Props) {
     ], []);
 
     return (
-        <ListView layout="block" withCenteredContents>
+        <ListView layout="block" withCenteredContents withBackground>
             <div className={styles.editor}>
                 <MDXEditor
                     markdown={value}
                     ref={ref}
-                    onChange={handleChange}
-                    placeholder="Start writing here..."
+                    onChange={debouncedSearch}
+                    placeholder={placeholder}
                     plugins={plugins}
                 />
             </div>

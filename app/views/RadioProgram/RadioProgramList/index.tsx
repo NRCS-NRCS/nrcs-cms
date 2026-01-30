@@ -2,7 +2,6 @@ import {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -14,7 +13,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     RadioProgramQuery,
     useDeleteRadioProgramMutation,
@@ -22,12 +21,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
 
 function RadioProgramList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -45,7 +45,7 @@ function RadioProgramList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteRadioProgram({ id }).then((resp) => {
                 if (resp.data?.deleteRadioProgram) {
@@ -58,27 +58,49 @@ function RadioProgramList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<RadioProgramListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createStringColumn<RadioProgramListItem, string | number>('publishedDate', 'Published Date', (dept) => dept?.publishedDate),
-        createStringColumn<RadioProgramListItem, string | number>('type', 'Type', (dept) => dept?.type),
-        createElementColumn<RadioProgramListItem, string | number, TableActionsProps>(
-            'actions',
-            '',
-            TableActions,
-            (_, datum) => ({
-                id: datum.id,
-                handleConfirmButtonChange: handleDelete,
-                itemTitle: datum.title,
-            }),
-            { columnWidth: 150 },
+        createStringColumn<RadioProgramListItem, string | number>(
+            'title',
+            'Title',
+            (dept) => dept.title,
         ),
-    ], [handleDelete]);
+        createStringColumn<RadioProgramListItem, string | number>(
+            'publishedDate',
+            'Published Date',
+            (dept) => dept?.publishedDate,
+        ),
+        createStringColumn<RadioProgramListItem, string | number>(
+            'type',
+            'Type',
+            (dept) => dept?.type,
+        ),
+        createElementColumn<RadioProgramListItem, string | number,
+         EditDeleteActionsProps>(
+             'actions',
+             '',
+             EditDeleteActions,
+             (_, datum) => ({
+                 id: datum.id,
+                 onDelete,
+                 itemTitle: datum.title,
+                 to: 'editRadioProgram',
+             }),
+         ),
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addRadioProgram');
+    }, [navigate]);
+
     return (
         <Container
             withPadding
             heading="Radio Program"
             headerActions={(
-                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add Radio Program
                 </Button>
             )}

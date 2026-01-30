@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     Heading,
@@ -21,6 +19,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -38,6 +37,7 @@ import {
     useUpdatePartnerMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -70,11 +70,11 @@ const defaultEditFormValue: PartialFormType = {};
 
 function PartnerForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = usePartnerDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+    const [{ data, fetching: partnerDetailFetch }] = usePartnerDetailQuery({
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createPartnerMutate] = useCreatePartnerMutation();
     const [{ fetching: updatePending }, updatePartnerMutate] = useUpdatePartnerMutation();
@@ -90,7 +90,7 @@ function PartnerForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/partners';
+        const redirectPath = 'partner';
         const alertMessage = `Partner ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updatePartnerMutate({
@@ -157,6 +157,16 @@ function PartnerForm() {
         label: scope,
     })), []);
 
+    if (partnerDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
         <Container withPadding>
             <ListView
@@ -187,7 +197,7 @@ function PartnerForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -218,10 +228,15 @@ function PartnerForm() {
                         name="image"
                         onChange={setFieldValue}
                         value={value.image}
-                        error={error?.image as string}
+                        error={getErrorString(error?.image)}
                     />
                 </InputSection>
-                <ListView withFullWidth withCenteredContents withBackground withPadding>
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
                     <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

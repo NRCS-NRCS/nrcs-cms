@@ -3,10 +3,7 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -37,6 +34,7 @@ import {
     useUpdateFaqMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 
 type PartialFormType = PartialForm<FaqCreateInput>
 
@@ -64,11 +62,11 @@ const defaultEditFormValue: PartialFormType = {};
 
 function FAQsForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const [{ data, fetching: faqDetailFetch }] = useFaqDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createFaqMutate] = useCreateFaqMutation();
     const [{ fetching: updatePending }, updateFaqMutate] = useUpdateFaqMutation();
@@ -84,7 +82,7 @@ function FAQsForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/faqs';
+        const redirectPath = 'faqs';
         const alertMessage = `FAQ ${id ? 'updated' : 'created'} successfully`;
         const errorMessage = 'Something Went Wrong! ';
 
@@ -134,7 +132,13 @@ function FAQsForm() {
     }, [data, setValue]);
 
     if (faqDetailFetch) {
-        return <BlockLoading withoutBorder compact message="Loading" />;
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
     }
 
     return (
@@ -166,7 +170,7 @@ function FAQsForm() {
                     <TextArea
                         name="question"
                         value={value.question}
-                        error={error?.question as string}
+                        error={error?.question}
                         onChange={setFieldValue}
                         placeholder="question"
                         autoFocus
@@ -181,7 +185,7 @@ function FAQsForm() {
                         name="answer"
                         value={value.answer}
                         onChange={setFieldValue}
-                        error={error?.answer as string}
+                        error={error?.answer}
                         placeholder="answer"
                     />
                 </InputSection>
@@ -197,7 +201,11 @@ function FAQsForm() {
                         error={error?.orderIndex}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

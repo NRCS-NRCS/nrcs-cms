@@ -14,4 +14,4 @@ export function nameSelector<T>(item: { name: T }) {
     return item.name;
 }
 
-export const errorMessage = 'Something Went Wrong! ';
+export const errorMessage = 'Something went wrong. Please try again. ';

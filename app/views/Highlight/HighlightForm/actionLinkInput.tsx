@@ -4,6 +4,7 @@ import {
     ListView,
     TextInput,
 } from '@ifrc-go/ui';
+import { randomString } from '@togglecorp/fujs';
 import {
     Error,
     getErrorObject,
@@ -20,16 +21,18 @@ interface ActionLinkFormValue extends ActionLinkType {
     clientId: string;
 }
 
+type PartialActionLinkForm = PartialForm<ActionLinkFormValue, 'clientId'>;
+
 interface ActionInputProps {
-    value: PartialForm<ActionLinkFormValue>;
+    value: PartialActionLinkForm;
     error: Error<ActionLinkFormValue> | undefined;
-    onChange: (value: SetValueArg<PartialForm<ActionLinkFormValue>>, index: number) => void;
+    onChange: (value: SetValueArg<PartialActionLinkForm>, index: number) => void;
     onRemove: (index: number) => void;
     index: number;
 
 }
 
-const defaultActionLinkValue: PartialForm<ActionLinkFormValue> = { clientId: '' };
+const defaultActionLinkValue: PartialActionLinkForm = { clientId: randomString() };
 
 function ActionLinkInputComponent(props: ActionInputProps) {
     const {
@@ -50,13 +53,13 @@ function ActionLinkInputComponent(props: ActionInputProps) {
                 name="url"
                 value={value.url ?? ''}
                 placeholder="URL"
-                error={error?.url as string}
+                error={error?.url}
                 onChange={onFieldChange}
             />
             <TextInput
                 name="label"
                 value={value.label ?? ''}
-                error={error?.label as string}
+                error={error?.label}
                 placeholder="Label"
                 onChange={onFieldChange}
             />

@@ -2,7 +2,6 @@ import {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -14,7 +13,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     ProjectQuery,
     useDeleteProjectMutation,
@@ -22,12 +21,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type ProjectListItem = NonNullable<ProjectQuery['projects']>['results'][number];
 
 function ProjectList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -45,7 +45,7 @@ function ProjectList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteProject({ id }).then((resp) => {
                 if (resp.data?.deleteProject) {
@@ -58,25 +58,44 @@ function ProjectList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<ProjectListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createStringColumn<ProjectListItem, string | number>('department', 'Department', (dept) => dept?.department?.title),
-        createElementColumn<ProjectListItem, string | number, TableActionsProps>(
-            'actions',
-            '',
-            TableActions,
-            (_, datum) => ({
-                id: datum.id,
-                handleConfirmButtonChange: handleDelete,
-                itemTitle: datum.title,
-            }),
+        createStringColumn<ProjectListItem, string | number>(
+            'title',
+            'Title',
+            (dept) => dept.title,
         ),
-    ], [handleDelete]);
+        createStringColumn<ProjectListItem, string | number>(
+            'department',
+            'Department',
+            (dept) => dept?.department?.title,
+        ),
+        createElementColumn<ProjectListItem, string | number,
+         EditDeleteActionsProps>(
+             'actions',
+             '',
+             EditDeleteActions,
+             (_, datum) => ({
+                 id: datum.id,
+                 onDelete,
+                 itemTitle: datum.title,
+                 to: 'editProject',
+             }),
+         ),
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addProject');
+    }, [navigate]);
+
     return (
         <Container
             withPadding
             heading="Project"
             headerActions={(
-                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add Project
                 </Button>
             )}

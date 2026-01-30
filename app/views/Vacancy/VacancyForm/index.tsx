@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Checkbox,
     Container,
@@ -25,6 +23,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     integerCondition,
     ObjectSchema,
     PartialForm,
@@ -43,6 +42,7 @@ import {
     useVacancyDetailQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -94,11 +94,11 @@ const VacancySchema: FormSchema = {
 const defaultEditFormValue: PartialFormType = {};
 function VacancyForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useVacancyDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+    const [{ data, fetching: vacancyDetailFetch }] = useVacancyDetailQuery({
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: departments }] = useDepartmentsQuery();
 
@@ -116,7 +116,7 @@ function VacancyForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/vacancy';
+        const redirectPath = 'vacancy';
         const alertMessage = `Vacancy ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateVacancyMutate({
@@ -186,6 +186,16 @@ function VacancyForm() {
         }),
     ) ?? [], [departments]);
 
+    if (vacancyDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
         <Container withPadding>
             <ListView layout="block">
@@ -215,7 +225,7 @@ function VacancyForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -230,7 +240,7 @@ function VacancyForm() {
                         name="file"
                         onChange={setFieldValue}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <InputSection
@@ -241,7 +251,7 @@ function VacancyForm() {
                     <TextInput
                         name="position"
                         value={value.position}
-                        error={error?.position as string}
+                        error={error?.position}
                         onChange={setFieldValue}
                         placeholder="position"
                     />
@@ -254,7 +264,7 @@ function VacancyForm() {
                     <TextArea
                         name="description"
                         value={value.description}
-                        error={error?.description as string}
+                        error={error?.description}
                         onChange={setFieldValue}
                         placeholder="description"
                     />
@@ -267,7 +277,7 @@ function VacancyForm() {
                     <NumberInput
                         name="numberOfVacancies"
                         value={value.numberOfVacancies}
-                        error={error?.numberOfVacancies as string}
+                        error={error?.numberOfVacancies}
                         onChange={setFieldValue}
                         placeholder="numberOfVacancies"
                         min={1}
@@ -283,7 +293,7 @@ function VacancyForm() {
                         value={value.publishedAt}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedAt as string}
+                        error={getErrorString(error?.publishedAt)}
                     />
                 </InputSection>
                 <InputSection
@@ -296,7 +306,7 @@ function VacancyForm() {
                         value={value.expiryDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.expiryDate as string}
+                        error={getErrorString(error?.expiryDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -323,11 +333,15 @@ function VacancyForm() {
                         name="isArchived"
                         value={value.isArchived}
                         onChange={setFieldValue}
-                        error={error?.isArchived as string}
+                        error={error?.isArchived}
                         label="Is Archived"
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

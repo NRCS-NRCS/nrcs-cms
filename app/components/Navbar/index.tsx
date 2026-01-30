@@ -2,7 +2,6 @@ import React, {
     use,
     useCallback,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     DropdownMenu,
@@ -13,6 +12,7 @@ import { gql } from 'urql';
 import UserContext from '#contexts/UserContext';
 import { useLogoutMutation } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 
 import styles from './styles.module.css';
 
@@ -26,7 +26,7 @@ const LOGOUT = gql`
 function Navbar() {
     const { user, setUser } = use(UserContext);
     const alert = useAlert();
-    const navigate = useNavigate();
+    const navigate = useRouting();
 
     const [{ fetching: pendingLogout }, triggerLogout] = useLogoutMutation();
 
@@ -35,7 +35,7 @@ function Navbar() {
         const logoutResponse = res.data?.logout;
         if (logoutResponse) {
             setUser(undefined);
-            navigate('/login');
+            navigate('login');
             alert.show('Logout Successful', { variant: 'success' });
         }
     }, [navigate, triggerLogout, setUser, alert]);

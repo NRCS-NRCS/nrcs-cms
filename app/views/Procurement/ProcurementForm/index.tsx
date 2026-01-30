@@ -3,11 +3,9 @@ import {
     useCallback,
     useEffect,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -21,6 +19,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -37,6 +36,7 @@ import {
     useUpdateProcurementMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
@@ -73,11 +73,11 @@ const ProcurementSchema: FormSchema = {
 const defaultEditFormValue: PartialFormType = {};
 function ProcurementForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useProcurementDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+    const [{ data, fetching: procurementDetailFetch }] = useProcurementDetailQuery({
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createProcurementMutate] = useCreateProcurementMutation();
     const [{ fetching: updatePending }, updateProcurementMutate] = useUpdateProcurementMutation();
@@ -93,7 +93,7 @@ function ProcurementForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/procurements';
+        const redirectPath = 'procurements';
         const alertMessage = `Procurement ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateProcurementMutate({
@@ -154,6 +154,16 @@ function ProcurementForm() {
         }
     }, [data, setValue]);
 
+    if (procurementDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
         <Container withPadding>
             <ListView layout="block">
@@ -179,7 +189,7 @@ function ProcurementForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         autoFocus
                         placeholder="title"
@@ -193,7 +203,7 @@ function ProcurementForm() {
                     <TextArea
                         name="description"
                         value={value.description}
-                        error={error?.description as string}
+                        error={error?.description}
                         onChange={setFieldValue}
                         placeholder="description"
                     />
@@ -207,7 +217,7 @@ function ProcurementForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <InputSection
@@ -220,7 +230,7 @@ function ProcurementForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -233,10 +243,14 @@ function ProcurementForm() {
                         value={value.expiryDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.expiryDate as string}
+                        error={getErrorString(error?.expiryDate)}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

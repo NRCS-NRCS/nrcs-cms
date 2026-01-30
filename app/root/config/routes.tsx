@@ -86,14 +86,14 @@ const highlight: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
-const addHighlight: RouteConfig = {
+const editHighlight: RouteConfig = {
     index: true,
     path: 'highlights/:id/edit',
     load: () => import('#views/Highlight/HighlightForm'),
     visibility: 'is-authenticated',
 };
 
-const editHighlight: RouteConfig = {
+const addHighlight: RouteConfig = {
     index: true,
     path: 'highlights/add',
     load: () => import('#views/Highlight/HighlightForm'),

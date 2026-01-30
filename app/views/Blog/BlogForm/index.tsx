@@ -4,10 +4,7 @@ import React, {
     useEffect,
     useMemo,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -20,10 +17,14 @@ import {
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
-import { isNotDefined } from '@togglecorp/fujs';
+import {
+    isNotDefined,
+    noOp,
+} from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -43,6 +44,7 @@ import {
     useUpdateBlogMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
@@ -100,9 +102,9 @@ function BlogForm() {
     const { id } = useParams();
     const alert = useAlert();
 
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const [{ data, fetching: blogDetailFetch }] = useBlogDetailQueryQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: departmentAndDirective }] = useDepartmentAndDirectiveQuery();
     const [{ fetching: createPending }, createBlogMutate] = useCreateBlogMutation();
@@ -119,7 +121,7 @@ function BlogForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/blog';
+        const redirectPath = 'blog';
         const alertMessage = `Blog ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateBlogMutate({
@@ -210,11 +212,19 @@ function BlogForm() {
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
+            placeholder="Start writing blog here..."
+
         />
     ), [value.content, error?.content, setFieldValue]);
 
     if (blogDetailFetch) {
-        return <BlockLoading withoutBorder compact message="Loading" />;
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
     }
 
     return (
@@ -241,14 +251,14 @@ function BlogForm() {
                 </Activity>
                 <InputSection
                     title="Title"
-                    description="Enter the title name of the Blog"
+                    description="Enter the title of the Blog"
                     withAsteriskOnTitle
                 >
                     <TextInput
                         name="title"
                         autoFocus
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                     />
@@ -263,7 +273,7 @@ function BlogForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -275,7 +285,7 @@ function BlogForm() {
                         name="author"
                         value={value.author}
                         onChange={setFieldValue}
-                        error={error?.author as string}
+                        error={error?.author}
                         placeholder="author"
                     />
                 </InputSection>
@@ -288,7 +298,7 @@ function BlogForm() {
                         name="coverImage"
                         onChange={setFieldValue}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection
@@ -326,7 +336,7 @@ function BlogForm() {
                         <TextInput
                             name="slug"
                             value={data?.blog.slug ?? ''}
-                            onChange={() => {}}
+                            onChange={noOp}
                             readOnly
                         />
                     </InputSection>
@@ -366,8 +376,13 @@ function BlogForm() {
                         Write Blogs
                     </Heading>
                 </InputSection>
-                <InputSection withoutTitleSection>{ContentEditor}</InputSection>
-                <ListView withFullWidth withCenteredContents withBackground withPadding>
+                {ContentEditor}
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
                     <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

@@ -4,12 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import {
-    useNavigate,
-    useParams,
-} from 'react-router';
+import { useParams } from 'react-router';
 import { AddLineIcon } from '@ifrc-go/icons';
 import {
+    BlockLoading,
     Button,
     Container,
     Heading,
@@ -25,6 +23,7 @@ import {
     ArraySchema,
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -43,6 +42,7 @@ import {
     useUpdateStrategicDirectiveMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
@@ -51,19 +51,22 @@ import MajorResponsibilities from './majorResponsibilites';
 type PartialFormType = PartialForm<StrategicDirectivesCreateInput>
 
 type MajorResponsibilitiesType = NonNullable<NonNullable<PartialFormType['majorResponsibilities']>>[number] & {
-    clientId?: string
+    clientId: string
     id?: string
 };
+
+type PartialMajorResponsibilitiesType= PartialForm<MajorResponsibilitiesType, 'clientId'>
+
 type ExtendedPartialFormType = Omit<PartialFormType, 'majorResponsibilities'> & {
-    majorResponsibilities?: MajorResponsibilitiesType[];
+    majorResponsibilities?: PartialMajorResponsibilitiesType[];
 };
 type FormSchema = ObjectSchema<ExtendedPartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-type MajorResponsibilitiesSchema = ObjectSchema<PartialForm<MajorResponsibilitiesType>,
+type MajorResponsibilitiesSchema = ObjectSchema<PartialMajorResponsibilitiesType,
     ExtendedPartialFormType>;
 type MajorResponsibilitiesFields = ReturnType<MajorResponsibilitiesSchema['fields']>;
-type MajorResponsibilitySchema = ArraySchema<PartialForm<MajorResponsibilitiesType>,
+type MajorResponsibilitySchema = ArraySchema<PartialMajorResponsibilitiesType,
     ExtendedPartialFormType>;
 type MajorResponsibilitySchemaMember = ReturnType<MajorResponsibilitySchema['member']>;
 
@@ -81,10 +84,12 @@ const DirectiveSchema: FormSchema = {
             required: true,
         },
         majorResponsibilities: {
-            keySelector: (col) => col.clientId ?? '',
+            keySelector: (col) => col.clientId,
             member: (): MajorResponsibilitySchemaMember => ({
                 fields: (): MajorResponsibilitiesFields => ({
-                    clientId: {},
+                    clientId: {
+                        required: true,
+                    },
                     id: {},
                     description: {
                         required: true,
@@ -106,11 +111,11 @@ const defaultEditFormValue: ExtendedPartialFormType = {
 
 function StrategicDirectiveForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useStrategicDirectiveDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+    const [{ data, fetching: directiveDetailFetch }] = useStrategicDirectiveDetailQuery({
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending },
         createStrategicDirectiveMutate] = useCreateStrategicDirectiveMutation();
@@ -130,10 +135,10 @@ function StrategicDirectiveForm() {
     const {
         setValue: onMajorResponsibilitiesChange,
         removeValue: onMajorResponsibilitiesRemove,
-    } = useFormArray<'majorResponsibilities', PartialForm<MajorResponsibilitiesType>>('majorResponsibilities', setFieldValue);
+    } = useFormArray<'majorResponsibilities', PartialMajorResponsibilitiesType>('majorResponsibilities', setFieldValue);
 
     const handleMutation = useCallback(async (mutationData: ExtendedPartialFormType) => {
-        const redirectPath = '/strategic-directive';
+        const redirectPath = 'strategicDirectives';
         const alertMessage = `Strategic Directive ${id ? 'updated' : 'created'} successfully`;
         const currentLinks = mutationData.majorResponsibilities ?? [];
         const originalLinks = data?.strategicDirective.majorResponsibilities ?? [];
@@ -220,11 +225,16 @@ function StrategicDirectiveForm() {
         }
         const {
             coverImage,
+            majorResponsibilities,
             ...other
         } = removeNull(data.strategicDirective);
 
         setValue({
             ...other,
+            majorResponsibilities: majorResponsibilities?.map((mr) => ({
+                ...mr,
+                clientId: randomString(),
+            })),
         });
         if (coverImage) {
             urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
@@ -240,12 +250,12 @@ function StrategicDirectiveForm() {
         () => {
             const clientId = randomString();
 
-            const newActionLink: PartialForm<MajorResponsibilitiesType> = {
+            const newActionLink: PartialMajorResponsibilitiesType = {
                 clientId,
             };
 
             setFieldValue(
-                (oldValue: PartialForm<MajorResponsibilitiesType>[] | undefined) => (
+                (oldValue: PartialMajorResponsibilitiesType[] | undefined) => (
                     [...(oldValue ?? []), newActionLink]
                 ),
                 'majorResponsibilities',
@@ -261,6 +271,16 @@ function StrategicDirectiveForm() {
             error={error?.description}
         />
     ), [value.description, error?.description, setFieldValue]);
+
+    if (directiveDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
 
     return (
         <Container withPadding>
@@ -291,7 +311,7 @@ function StrategicDirectiveForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         autoFocus
                         placeholder="title"
@@ -302,7 +322,7 @@ function StrategicDirectiveForm() {
                         name="coverImage"
                         onChange={setFieldValue}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection
@@ -334,7 +354,11 @@ function StrategicDirectiveForm() {
                         </Button>
                     </div>
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

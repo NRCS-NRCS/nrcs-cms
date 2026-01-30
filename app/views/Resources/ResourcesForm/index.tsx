@@ -4,11 +4,9 @@ import {
     useEffect,
     useMemo,
 } from 'react';
+import { useParams } from 'react-router';
 import {
-    useNavigate,
-    useParams,
-} from 'react-router';
-import {
+    BlockLoading,
     Button,
     Container,
     DateInput,
@@ -22,6 +20,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -41,6 +40,7 @@ import {
     useUpdateResourceMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     idSelector,
@@ -88,11 +88,11 @@ const defaultEditFormValue: PartialFormType = {};
 
 function ResourceForm() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
-    const [{ data }] = useResourceDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+    const [{ data, fetching: resourcesDetailFetch }] = useResourceDetailQuery({
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: directive }] = useDirectiveQuery();
 
@@ -110,7 +110,7 @@ function ResourceForm() {
     const error = getErrorObject(formError);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = '/resources';
+        const redirectPath = 'resources';
         const alertMessage = `Resources ${id ? 'updated' : 'created'} successfully`;
         if (id) {
             const res = await updateResourceMutate({
@@ -200,11 +200,22 @@ function ResourceForm() {
             value={value.content}
             onChange={(val) => setFieldValue(val, 'content')}
             error={error?.content}
+            placeholder="Start writing content here..."
         />
     ), [value.content, error?.content, setFieldValue]);
 
+    if (resourcesDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
     return (
-        <Container>
+        <Container withPadding>
             <ListView layout="block">
                 <InputSection withoutTitleSection>
                     <Heading level={4}>
@@ -232,7 +243,7 @@ function ResourceForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -247,7 +258,7 @@ function ResourceForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <InputSection
@@ -259,16 +270,15 @@ function ResourceForm() {
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection
                     title="Content"
                     description="Enter the Content"
                     withAsteriskOnTitle
-                >
-                    {ContentEditor}
-                </InputSection>
+                />
+                {ContentEditor}
                 <InputSection
                     title="Published Date"
                     description="This date should be the Published Date of the Resource"
@@ -279,7 +289,7 @@ function ResourceForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -295,7 +305,7 @@ function ResourceForm() {
                         labelSelector={nameSelector}
                         onChange={setFieldValue}
                         placeholder="Select Strategic Directive"
-                        error={error?.directive as string}
+                        error={error?.directive}
                     />
                 </InputSection>
                 <InputSection
@@ -311,10 +321,14 @@ function ResourceForm() {
                         labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Type"
-                        error={error?.type as string}
+                        error={error?.type}
                     />
                 </InputSection>
-                <ListView withPadding withBackground withCenteredContents>
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
                     <Button name="save" onClick={handleFormSubmit}>
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

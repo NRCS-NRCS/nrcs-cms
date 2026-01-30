@@ -2,7 +2,6 @@ import {
     useCallback,
     useMemo,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     Container,
@@ -14,7 +13,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import TableActions, { TableActionsProps } from '#components/TableAction';
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     StrategicDirectiveQuery,
     useDeleteStrategicDirectiveMutation,
@@ -22,12 +21,13 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePagination from '#hooks/usePagination';
+import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 type StrategicDirectiveListItem = NonNullable<StrategicDirectiveQuery['strategicDirectives']>['results'][number];
 
 function StrategicDirectiveList() {
-    const navigate = useNavigate();
+    const navigate = useRouting();
     const alert = useAlert();
 
     const {
@@ -45,7 +45,7 @@ function StrategicDirectiveList() {
         [data],
     );
 
-    const handleDelete = useCallback(
+    const onDelete = useCallback(
         (id: string) => {
             deleteStrategicDirective({ id }).then((resp) => {
                 if (resp.data?.deleteStrategicDirectives) {
@@ -58,24 +58,39 @@ function StrategicDirectiveList() {
     );
 
     const columns = useMemo(() => [
-        createStringColumn<StrategicDirectiveListItem, string | number>('title', 'Title', (dept) => dept.title),
-        createElementColumn<StrategicDirectiveListItem, string | number, TableActionsProps>(
+        createStringColumn<StrategicDirectiveListItem, string | number>(
+            'title',
+            'Title',
+            (dept) => dept.title,
+        ),
+        createElementColumn<StrategicDirectiveListItem, string | number,
+        EditDeleteActionsProps>(
             'actions',
             '',
-            TableActions,
+            EditDeleteActions,
             (_, datum) => ({
                 id: datum.id,
-                handleConfirmButtonChange: handleDelete,
+                onDelete,
                 itemTitle: datum.title,
+                to: 'editStrategicDirectives',
             }),
         ),
-    ], [handleDelete]);
+    ], [onDelete]);
+
+    const handleAddClick = useCallback(() => {
+        navigate('addStrategicDirectives');
+    }, [navigate]);
+
     return (
         <Container
             withPadding
             heading="Strategic Directive"
             headerActions={(
-                <Button name={undefined} disabled={false} onClick={() => navigate('add')}>
+                <Button
+                    name={undefined}
+                    disabled={false}
+                    onClick={handleAddClick}
+                >
                     Add Strategic Directive
                 </Button>
             )}
