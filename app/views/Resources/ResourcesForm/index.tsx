@@ -20,6 +20,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -91,7 +92,7 @@ function ResourceForm() {
     const alert = useAlert();
 
     const [{ data, fetching: resourcesDetailFetch }] = useResourceDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: directive }] = useDirectiveQuery();
 
@@ -242,7 +243,7 @@ function ResourceForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -257,7 +258,7 @@ function ResourceForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <InputSection
@@ -269,7 +270,7 @@ function ResourceForm() {
                         name="coverImage"
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection
@@ -288,7 +289,7 @@ function ResourceForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -304,7 +305,7 @@ function ResourceForm() {
                         labelSelector={nameSelector}
                         onChange={setFieldValue}
                         placeholder="Select Strategic Directive"
-                        error={error?.directive as string}
+                        error={error?.directive}
                     />
                 </InputSection>
                 <InputSection
@@ -320,7 +321,7 @@ function ResourceForm() {
                         labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Type"
-                        error={error?.type as string}
+                        error={error?.type}
                     />
                 </InputSection>
                 <ListView

@@ -24,6 +24,7 @@ import {
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -103,7 +104,7 @@ function BlogForm() {
 
     const navigate = useRouting();
     const [{ data, fetching: blogDetailFetch }] = useBlogDetailQueryQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: departmentAndDirective }] = useDepartmentAndDirectiveQuery();
     const [{ fetching: createPending }, createBlogMutate] = useCreateBlogMutation();
@@ -250,14 +251,14 @@ function BlogForm() {
                 </Activity>
                 <InputSection
                     title="Title"
-                    description="Enter the title name of the Blog"
+                    description="Enter the title of the Blog"
                     withAsteriskOnTitle
                 >
                     <TextInput
                         name="title"
                         autoFocus
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                     />
@@ -272,7 +273,7 @@ function BlogForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -284,7 +285,7 @@ function BlogForm() {
                         name="author"
                         value={value.author}
                         onChange={setFieldValue}
-                        error={error?.author as string}
+                        error={error?.author}
                         placeholder="author"
                     />
                 </InputSection>
@@ -297,7 +298,7 @@ function BlogForm() {
                         name="coverImage"
                         onChange={setFieldValue}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection

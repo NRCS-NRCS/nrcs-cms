@@ -19,6 +19,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -76,7 +77,7 @@ function ProcurementForm() {
     const alert = useAlert();
 
     const [{ data, fetching: procurementDetailFetch }] = useProcurementDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createProcurementMutate] = useCreateProcurementMutation();
     const [{ fetching: updatePending }, updateProcurementMutate] = useUpdateProcurementMutation();
@@ -188,7 +189,7 @@ function ProcurementForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         autoFocus
                         placeholder="title"
@@ -202,7 +203,7 @@ function ProcurementForm() {
                     <TextArea
                         name="description"
                         value={value.description}
-                        error={error?.description as string}
+                        error={error?.description}
                         onChange={setFieldValue}
                         placeholder="description"
                     />
@@ -216,7 +217,7 @@ function ProcurementForm() {
                         name="file"
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <InputSection
@@ -229,7 +230,7 @@ function ProcurementForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -242,7 +243,7 @@ function ProcurementForm() {
                         value={value.expiryDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.expiryDate as string}
+                        error={getErrorString(error?.expiryDate)}
                     />
                 </InputSection>
                 <ListView

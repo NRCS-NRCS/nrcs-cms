@@ -82,7 +82,7 @@ function DepartmentForm() {
     const alert = useAlert();
 
     const [{ data, fetching: departmentDetailFetch }] = useDepartmentDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: directive }] = useDirectiveQuery();
     const [{ fetching: createPending }, createDepartmentMutate] = useCreateDepartmentMutation();
@@ -186,28 +186,28 @@ function DepartmentForm() {
                 </Activity>
                 <InputSection
                     title="Title"
-                    description="Enter the title name of the Department"
+                    description="Enter the title of the Department"
                     withAsteriskOnTitle
                 >
                     <TextInput
                         name="title"
                         value={value.title}
                         autoFocus
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                     />
                 </InputSection>
                 <InputSection
-                    title="Department"
+                    title="Description"
                     description="Write a short description about the roles and responsibilities of the department"
                     withAsteriskOnTitle
                 >
                     <TextArea
-                        name="department"
+                        name="description"
                         value={value.description}
                         placeholder="description"
-                        error={error?.description as string}
+                        error={error?.description}
                         onChange={(val) => setFieldValue(val, 'description')}
                     />
                 </InputSection>
@@ -221,7 +221,7 @@ function DepartmentForm() {
                         placeholder="contact person name"
                         value={value.contactPersonName}
                         onChange={setFieldValue}
-                        error={error?.contactPersonName as string}
+                        error={error?.contactPersonName}
                     />
                 </InputSection>
                 <InputSection

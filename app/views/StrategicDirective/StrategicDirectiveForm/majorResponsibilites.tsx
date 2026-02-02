@@ -4,6 +4,7 @@ import {
     TextArea,
     TextInput,
 } from '@ifrc-go/ui';
+import { randomString } from '@togglecorp/fujs';
 import {
     Error,
     getErrorObject,
@@ -19,19 +20,20 @@ import styles from './styles.module.css';
 type PartialFormType = PartialForm<StrategicDirectivesCreateInput>
 
 type MajorResponsibilitiesType = NonNullable<NonNullable<PartialFormType['majorResponsibilities']>>[number] & {
-    clientId?: string
+    clientId: string
     id?: string
 };
 
+type PartialMajorResponsibilitiesType= PartialForm<MajorResponsibilitiesType, 'clientId'>
 interface MajorResponsibilitiesInputProps {
-    value: PartialForm<MajorResponsibilitiesType>;
+    value: PartialMajorResponsibilitiesType;
     error: Error<MajorResponsibilitiesType> | undefined;
-    onChange: (value: SetValueArg<PartialForm<MajorResponsibilitiesType>>, index: number) => void;
+    onChange: (value: SetValueArg<PartialMajorResponsibilitiesType>, index: number) => void;
     onRemove: (index: number) => void;
     index: number;
 }
 
-const defaultActionLinkValue: PartialForm<MajorResponsibilitiesType> = { clientId: '' };
+const defaultActionLinkValue: PartialMajorResponsibilitiesType = { clientId: randomString() };
 
 function MajorResponsibilities(props: MajorResponsibilitiesInputProps) {
     const {
@@ -53,7 +55,7 @@ function MajorResponsibilities(props: MajorResponsibilitiesInputProps) {
                     name="title"
                     value={value.title ?? ''}
                     placeholder="Title"
-                    error={error?.title as string}
+                    error={error?.title}
                     onChange={onFieldChange}
                 />
                 <Button
@@ -68,7 +70,7 @@ function MajorResponsibilities(props: MajorResponsibilitiesInputProps) {
             <TextArea
                 name="description"
                 value={value.description ?? ''}
-                error={error?.description as string}
+                error={error?.description}
                 placeholder="Description"
                 onChange={onFieldChange}
             />

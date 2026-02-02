@@ -20,6 +20,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -202,7 +203,7 @@ function RadioProgramForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -218,7 +219,7 @@ function RadioProgramForm() {
                         onChange={setFieldValue}
                         accept="audio/*"
                         value={value.audioFile}
-                        error={error?.audioFile as string}
+                        error={getErrorString(error?.audioFile)}
                     />
                 </InputSection>
                 <InputSection
@@ -231,7 +232,7 @@ function RadioProgramForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection

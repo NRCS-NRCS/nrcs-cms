@@ -19,6 +19,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -77,7 +78,7 @@ function ProjectForm() {
     const alert = useAlert();
 
     const [{ data, fetching: projectDetailFetch }] = useProjectDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: departments }] = useDepartmentsQuery();
 
@@ -228,7 +229,7 @@ function ProjectForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -243,7 +244,7 @@ function ProjectForm() {
                         name="coverImage"
                         onChange={setFieldValue}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection

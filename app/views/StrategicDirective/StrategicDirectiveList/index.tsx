@@ -78,7 +78,7 @@ function StrategicDirectiveList() {
     ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
-        navigate('addBlog');
+        navigate('addStrategicDirectives');
     }, [navigate]);
 
     return (

@@ -23,6 +23,7 @@ import {
     ArraySchema,
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -52,16 +53,19 @@ import ActionLinkInputComponent from './actionLinkInput';
 interface ActionLinkFormValue extends ActionLinkType {
     clientId: string;
 }
-type PartialFormType = Omit<PartialForm<HighlightCreateInput>, 'actionLinks'> & {
-    actionLinks?: PartialForm<ActionLinkFormValue>[];
+
+type PartialActionLinkForm = PartialForm<ActionLinkFormValue, 'clientId'>;
+
+type PartialFormType = Omit<PartialForm<HighlightCreateInput>, 'actionLinks'> &
+ { actionLinks?: PartialActionLinkForm[];
 };
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-type ActionLinkSchema = ObjectSchema<PartialForm<ActionLinkFormValue>, PartialFormType>;
+type ActionLinkSchema = ObjectSchema<PartialActionLinkForm, PartialFormType>;
 type ActionLinkSchemaFields = ReturnType<ActionLinkSchema['fields']>;
-type ActionLinksSchema = ArraySchema<PartialForm<ActionLinkFormValue>, PartialFormType>;
+type ActionLinksSchema = ArraySchema<PartialActionLinkForm, PartialFormType>;
 type ActionLinksSchemaMember = ReturnType<ActionLinksSchema['member']>;
 
 const HighlightSchema: FormSchema = {
@@ -78,10 +82,10 @@ const HighlightSchema: FormSchema = {
             required: true,
         },
         actionLinks: {
-            keySelector: (col) => col.clientId ?? '',
+            keySelector: (col) => col.clientId,
             member: (): ActionLinksSchemaMember => ({
                 fields: (): ActionLinkSchemaFields => ({
-                    clientId: {},
+                    clientId: { required: true },
                     id: {},
                     label: {
                         required: true,
@@ -102,9 +106,7 @@ const HighlightSchema: FormSchema = {
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    actionLinks: [{ clientId: randomString() }],
-};
+const defaultEditFormValue: PartialFormType = {};
 
 function HighlightForm() {
     const { id } = useParams();
@@ -112,7 +114,7 @@ function HighlightForm() {
     const alert = useAlert();
 
     const [{ data, fetching: highlightDetailFetch }] = useHighlightDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createHighlightMutate] = useCreateHighlightMutation();
     const [{ fetching: updatePending }, updateHighlightMutate] = useUpdateHighlightMutation();
@@ -132,7 +134,7 @@ function HighlightForm() {
     const {
         setValue: onActionLinkChange,
         removeValue: onActionLinkRemove,
-    } = useFormArray<'actionLinks', PartialForm<ActionLinkFormValue>>('actionLinks', setFieldValue);
+    } = useFormArray<'actionLinks', PartialActionLinkForm>('actionLinks', setFieldValue);
 
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'highlight';
@@ -215,10 +217,16 @@ function HighlightForm() {
         }
         const {
             image,
+            actionLinks,
             ...other
         } = removeNull(data.highlight);
 
-        setValue({ ...other });
+        const actionLinksWithClientId = (actionLinks ?? []).map((link) => ({
+            ...link,
+            clientId: randomString(),
+        }));
+
+        setValue({ ...other, actionLinks: actionLinksWithClientId });
 
         if (image) {
             urlToFile(image.url, image.name).then((file) => {
@@ -233,12 +241,12 @@ function HighlightForm() {
     const handleCollectionAdd = useCallback(
         () => {
             const clientId = randomString();
-            const newActionLink: PartialForm<ActionLinkFormValue> = {
+            const newActionLink: PartialActionLinkForm = {
                 clientId,
             };
 
             setFieldValue(
-                (oldValue: PartialForm<ActionLinkFormValue>[] | undefined) => (
+                (oldValue: PartialActionLinkForm[] | undefined) => (
                     [...(oldValue ?? []), newActionLink]
                 ),
                 'actionLinks',
@@ -287,7 +295,7 @@ function HighlightForm() {
                         name="heading"
                         autoFocus
                         value={value.heading}
-                        error={error?.heading as string}
+                        error={error?.heading}
                         onChange={setFieldValue}
                         placeholder="heading"
                     />
@@ -300,7 +308,7 @@ function HighlightForm() {
                     <TextArea
                         name="description"
                         value={value.description}
-                        error={error?.description as string}
+                        error={error?.description}
                         onChange={setFieldValue}
                         placeholder="description"
 
@@ -327,7 +335,7 @@ function HighlightForm() {
                         name="image"
                         onChange={setFieldValue}
                         value={value.image}
-                        error={error?.image as string}
+                        error={getErrorString(error?.image)}
                     />
                 </InputSection>
                 <InputSection

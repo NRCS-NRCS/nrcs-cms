@@ -19,6 +19,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -73,7 +74,7 @@ function PartnerForm() {
     const alert = useAlert();
 
     const [{ data, fetching: partnerDetailFetch }] = usePartnerDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createPartnerMutate] = useCreatePartnerMutation();
     const [{ fetching: updatePending }, updatePartnerMutate] = useUpdatePartnerMutation();
@@ -196,7 +197,7 @@ function PartnerForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -227,7 +228,7 @@ function PartnerForm() {
                         name="image"
                         onChange={setFieldValue}
                         value={value.image}
-                        error={error?.image as string}
+                        error={getErrorString(error?.image)}
                     />
                 </InputSection>
                 <ListView

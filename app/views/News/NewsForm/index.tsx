@@ -23,6 +23,7 @@ import {
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     ObjectSchema,
     PartialForm,
     removeNull,
@@ -98,7 +99,7 @@ function NewsForm() {
     const [{ data: directives }] = useDirectiveQuery();
 
     const [{ data, fetching: newsDetailFetch }] = useNewsDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createNewsMutate] = useCreateNewsMutation();
     const [{ fetching: updatePending }, updateNewsMutate] = useUpdateNewsMutation();
@@ -246,7 +247,7 @@ function NewsForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         autoFocus
                         placeholder="title"
@@ -262,7 +263,7 @@ function NewsForm() {
                         value={value.publishedDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedDate as string}
+                        error={getErrorString(error?.publishedDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -289,7 +290,7 @@ function NewsForm() {
                         name="coverImage"
                         onChange={setFieldValue}
                         value={value.coverImage}
-                        error={error?.coverImage as string}
+                        error={getErrorString(error?.coverImage)}
                     />
                 </InputSection>
                 <InputSection
@@ -301,7 +302,7 @@ function NewsForm() {
                         name="file"
                         onChange={setFieldValue}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <Activity mode={value.slug ? 'visible' : 'hidden'}>

@@ -23,6 +23,7 @@ import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
+    getErrorString,
     integerCondition,
     ObjectSchema,
     PartialForm,
@@ -97,7 +98,7 @@ function VacancyForm() {
     const alert = useAlert();
 
     const [{ data, fetching: vacancyDetailFetch }] = useVacancyDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ data: departments }] = useDepartmentsQuery();
 
@@ -224,7 +225,7 @@ function VacancyForm() {
                     <TextInput
                         name="title"
                         value={value.title}
-                        error={error?.title as string}
+                        error={error?.title}
                         onChange={setFieldValue}
                         placeholder="title"
                         autoFocus
@@ -239,7 +240,7 @@ function VacancyForm() {
                         name="file"
                         onChange={setFieldValue}
                         value={value.file}
-                        error={error?.file as string}
+                        error={getErrorString(error?.file)}
                     />
                 </InputSection>
                 <InputSection
@@ -250,7 +251,7 @@ function VacancyForm() {
                     <TextInput
                         name="position"
                         value={value.position}
-                        error={error?.position as string}
+                        error={error?.position}
                         onChange={setFieldValue}
                         placeholder="position"
                     />
@@ -263,7 +264,7 @@ function VacancyForm() {
                     <TextArea
                         name="description"
                         value={value.description}
-                        error={error?.description as string}
+                        error={error?.description}
                         onChange={setFieldValue}
                         placeholder="description"
                     />
@@ -276,7 +277,7 @@ function VacancyForm() {
                     <NumberInput
                         name="numberOfVacancies"
                         value={value.numberOfVacancies}
-                        error={error?.numberOfVacancies as string}
+                        error={error?.numberOfVacancies}
                         onChange={setFieldValue}
                         placeholder="numberOfVacancies"
                         min={1}
@@ -292,7 +293,7 @@ function VacancyForm() {
                         value={value.publishedAt}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.publishedAt as string}
+                        error={getErrorString(error?.publishedAt)}
                     />
                 </InputSection>
                 <InputSection
@@ -305,7 +306,7 @@ function VacancyForm() {
                         value={value.expiryDate}
                         onChange={setFieldValue}
                         placeholder="Select Date"
-                        error={error?.expiryDate as string}
+                        error={getErrorString(error?.expiryDate)}
                     />
                 </InputSection>
                 <InputSection
@@ -332,7 +333,7 @@ function VacancyForm() {
                         name="isArchived"
                         value={value.isArchived}
                         onChange={setFieldValue}
-                        error={error?.isArchived as string}
+                        error={error?.isArchived}
                         label="Is Archived"
                     />
                 </InputSection>

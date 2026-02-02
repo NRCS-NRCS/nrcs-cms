@@ -66,7 +66,7 @@ function FAQsForm() {
     const alert = useAlert();
 
     const [{ data, fetching: faqDetailFetch }] = useFaqDetailQuery({
-        variables: { id: id || '' }, pause: !id,
+        variables: { id: (id ?? '') }, pause: !id,
     });
     const [{ fetching: createPending }, createFaqMutate] = useCreateFaqMutation();
     const [{ fetching: updatePending }, updateFaqMutate] = useUpdateFaqMutation();
@@ -170,7 +170,7 @@ function FAQsForm() {
                     <TextArea
                         name="question"
                         value={value.question}
-                        error={error?.question as string}
+                        error={error?.question}
                         onChange={setFieldValue}
                         placeholder="question"
                         autoFocus
@@ -185,7 +185,7 @@ function FAQsForm() {
                         name="answer"
                         value={value.answer}
                         onChange={setFieldValue}
-                        error={error?.answer as string}
+                        error={error?.answer}
                         placeholder="answer"
                     />
                 </InputSection>
