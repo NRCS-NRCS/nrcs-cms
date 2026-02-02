@@ -208,7 +208,7 @@ function DepartmentForm() {
                         value={value.description}
                         placeholder="description"
                         error={error?.description}
-                        onChange={(val) => setFieldValue(val, 'description')}
+                        onChange={setFieldValue}
                     />
                 </InputSection>
                 <InputSection
