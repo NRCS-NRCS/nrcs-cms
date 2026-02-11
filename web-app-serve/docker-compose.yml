@@ -1,0 +1,12 @@
+name: nrcs-cms-serve
+
+services:
+  web-app-serve:
+    build:
+      context: ../
+      target: web-app-serve
+    environment:
+      APPLY_CONFIG__ENABLE_DEBUG: false
+    env_file: .env
+    ports:
+      - '8000:80'
