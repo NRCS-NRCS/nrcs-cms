@@ -2,53 +2,51 @@ FROM node:22-bookworm AS dev
 
 RUN apt-get update -y \
     && apt-get install -y --no-install-recommends \
-        git bash g++ make \
+    git bash g++ make \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN --mount=type=bind,source=package.json,target=package.json \
+    corepack install && corepack enable
 
 WORKDIR /code
 RUN git config --global --add safe.directory /code
 
 
-COPY package.json pnpm-lock.yaml /code/
-RUN corepack prepare --activate
-# RUN npm install -g pnpm
+# -------------------------- Builder --------------------------------
 
-# RUN pnpm install
-
-
-
-# -------------------------- Nginx - Builder --------------------------------
-FROM dev AS nginx-build
+FROM dev AS builder
 
 COPY package.json pnpm-lock.yaml /code/
 
 RUN corepack prepare --activate
 
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
-COPY . .
+COPY . /code/
+
+FROM builder AS web-app-build
+
 
 # # Build variables (Requires backend pulled)
 ENV APP_TITLE=APP_TITLE_PLACEHOLDER
-ENV APP_GRAPHQL_ENDPOINT=APP_GRAPHQL_ENDPOINT_PLACEHOLDER
+ENV APP_GRAPHQL_ENDPOINT=http://localhost:8000
 ENV APP_GRAPHQL_CODEGEN_ENDPOINT=./backend/schema.graphql
 
-RUN pnpm generate:type && pnpm build
-# RUN pnpm build
+RUN pnpm generate:type && WEB_APP_SERVE_ENABLED=true pnpm build
 
 # ---------------------------------------------------------------------------
-FROM nginx:1 AS nginx-serve
+FROM ghcr.io/toggle-corp/web-app-serve:v0.1.2 AS web-app-serve
 
 LABEL maintainer="Togglecorp Dev"
 LABEL org.opencontainers.image.source="https://github.com/ToogleCorp/nrcs-cms"
 
-COPY ./nginx-serve/apply-config.sh /docker-entrypoint.d/
-COPY ./nginx-serve/nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY --from=nginx-build /code/build /code/build
-
 # NOTE: Used by apply-config.sh
 ENV APPLY_CONFIG__SOURCE_DIRECTORY=/code/build/
-ENV APPLY_CONFIG__DESTINATION_DIRECTORY=/usr/share/nginx/html/
-ENV APPLY_CONFIG__OVERWRITE_DESTINATION=true
+
+COPY --from=web-app-build /code/build "$APPLY_CONFIG__SOURCE_DIRECTORY"
+
+RUN echo '{ "files": { "maxSize": 2097152 }, "formatter": { "enabled": true, "formatWithErrors": true, "includes": ["**/*.js", "**/*.html"] } }' > biome.json
