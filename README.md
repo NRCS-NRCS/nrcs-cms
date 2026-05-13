@@ -1,73 +1,51 @@
-# React + TypeScript + Vite
+# NRCS CMS — Content Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React application for managing content on the [Nepal Red Cross Society](https://nrcs.org) website.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Development
 
-## React Compiler
+### Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Before you start, create a `.env.local` file:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+touch .env.local
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Set the following environment variables:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+PORT=3056
+APP_GRAPHQL_ENDPOINT=<api-endpoint>
+APP_GRAPHQL_CODEGEN_ENDPOINT=<graphql-api-endpoint>
+APP_TITLE=<app-title>
+APP_ENVIRONMENT="app-env"
 ```
+
+---
+
+## Local Development (Using Docker, with Backend)
+
+We use a `docker-compose.yml` file located at `./backend/docker-compose.yml`.
+
+To run it, add the following to your `.env.local`:
+
+```env
+# Include the backend services
+COMPOSE_FILE=./backend/docker-compose.yaml:docker-compose.yml
+# Use the same .env file for both backend and web-app
+BACKEND_ENV_FILE=../.env
+```
+
+Then start the full stack:
+
+```bash
+docker compose up
+```
+
+> **Note:** `../` refers to the CMS app folder, relative to `./backend/docker-compose.yml`
+> (the main Docker Compose file).
+
+---
