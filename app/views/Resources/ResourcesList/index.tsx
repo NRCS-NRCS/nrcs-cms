@@ -41,7 +41,7 @@ function ResourceList() {
     const [, deleteResource] = useDeleteResourceMutation();
 
     const tableData = useMemo(
-        () => (data?.resources.results),
+        () => data?.resources.results ?? [],
         [data],
     );
 
@@ -58,6 +58,11 @@ function ResourceList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<ResourceListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<ResourceListItem, string | number>(
             'title',
             'Title',
@@ -90,7 +95,7 @@ function ResourceList() {
                  to: 'editResources',
              }),
          ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addResources');

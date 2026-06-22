@@ -48,8 +48,12 @@ function Navbar() {
                 labelColorVariant="secondary"
                 labelBefore={(
                     <div className={styles.userInitial}>
-                        {user?.firstName.charAt(0)}
-                        {user?.lastName.charAt(0)}
+                        {user?.firstName || user?.lastName.charAt(0) ? (
+                            <>
+                                {user?.firstName.charAt(0)}
+                                {user?.lastName.charAt(0)}
+                            </>
+                        ) : 'Ad' }
                     </div>
                 )}
                 label={(

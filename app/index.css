@@ -1,9 +1,3 @@
-html,
-body {
-    max-width: 100vw;
-    overflow-x: hidden;
-}
-
 body {
     line-height: var(--go-ui-line-height-md);
     color: var(--go-ui-color-text);
@@ -55,4 +49,9 @@ table {
     td {
         background: var(--go-ui-color-white);
     }
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
 }

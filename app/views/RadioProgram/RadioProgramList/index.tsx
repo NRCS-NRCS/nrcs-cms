@@ -41,7 +41,7 @@ function RadioProgramList() {
     const [, deleteRadioProgram] = useDeleteRadioProgramMutation();
 
     const tableData = useMemo(
-        () => (data?.radioProgram.results),
+        () => data?.radioProgram.results ?? [],
         [data],
     );
 
@@ -58,6 +58,11 @@ function RadioProgramList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<RadioProgramListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<RadioProgramListItem, string | number>(
             'title',
             'Title',
@@ -85,7 +90,7 @@ function RadioProgramList() {
                  to: 'editRadioProgram',
              }),
          ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addRadioProgram');

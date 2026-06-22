@@ -51,8 +51,19 @@ function BlogList() {
         },
         [deleteBlog, reExecuteQuery, alert],
     );
+
+    const blogs = useMemo(
+        () => data?.blogs.results ?? [],
+        [data],
+    );
     const columns = useMemo(
         () => ([
+            createStringColumn<BlogListType, string | number>(
+                'sn',
+                'S.N.',
+                (member) => String(blogs.indexOf(member) + 1),
+
+            ),
             createStringColumn<BlogListType, string | number>(
                 'title',
                 'Title',
@@ -91,7 +102,7 @@ function BlogList() {
                  }),
              ),
         ]),
-        [onDelete],
+        [onDelete, blogs],
     );
 
     const handleAddClick = useCallback(() => {
@@ -124,7 +135,7 @@ function BlogList() {
             <Table
                 keySelector={idSelector}
                 columns={columns}
-                data={data?.blogs.results}
+                data={blogs}
                 filtered={false}
                 pending={fetching}
             />

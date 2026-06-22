@@ -1,54 +1,28 @@
 .nav {
-    min-width: 320px;
+    border: none;
+    border-right: 2px solid var(--go-ui-color-gray-20);
     height: 100%;
-    overflow-x: auto;
-
-    a {
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .nav {
+    overflow-y: auto;
+    .group-title {
         border: none;
-        padding-right: 0;
-    }
-
-    .navHeaderContainer {
-        border-right: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
-        border-bottom: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
+        border-bottom: var(--go-ui-width-separator-md) solid var(--go-ui-color-gray-20);
         border-radius: 0;
-        background-color: var(--go-ui-color-gray-10);
-        padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
     }
 
-    .navContent {
-        display: flex;
-        flex-direction: column;
+    .route-link {
+        border-bottom: var(--go-ui-width-separator-md) solid var(--go-ui-color-gray-20);
+        padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
 
-        .routeLink {
-            border-right: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
-            border-bottom: var(--go-ui-spacing-5xs) solid var(--go-ui-color-gray-20);
-            padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
-
-            &:hover {
-                color: var(--go-ui-color-primary-red);
-            }
-        }
-
-        .activeRoute {
-            text-decoration: underline;
-            color: var(--go-ui-color-primary-red);
+        &:hover {
+            border-bottom-color:var(--go-ui-color-primary-red)
         }
     }
 
-    .group {
-        .navHeaderContainer {
-            background: none;
-            font-weight: var(--go-ui-font-weight-normal);
-        }
-
-        .leaf {
-            padding-left: var(--go-ui-spacing-3xl);
-        }
+    .active-route {
+        border-bottom: var(--go-ui-width-separator-md) solid var(--go-ui-color-primary-red)
     }
+}
+
+.route-icon {
+    font-size: 1.25rem; 
 }

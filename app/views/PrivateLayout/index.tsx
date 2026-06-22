@@ -1,109 +1,112 @@
 import { use } from 'react';
 import {
-    FaFileAlt,
-    FaUserAlt,
+    FaHighlighter,
+    FaMoneyCheck,
+    FaProjectDiagram,
+    FaRegFileAlt,
+    FaRegFileAudio,
+    FaRegNewspaper,
+    FaRegQuestionCircle,
+    FaRegWindowMaximize,
+    FaSuitcase,
+    FaThinkPeaks,
+    FaWarehouse,
 } from 'react-icons/fa';
 import {
     Navigate,
     Outlet,
 } from 'react-router';
+import {
+    DashboardLineIcon,
+    LeadershipIcon,
+    ShieldUserLineIcon,
+} from '@ifrc-go/icons';
 
 import Navbar from '#components/Navbar';
-import Navigation from '#components/Navigation';
+import Navigation, { NavigationItem } from '#components/Navigation';
 import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 
-const navigation = [
+const navigationItem : NavigationItem[] = [
     {
-        title: 'Content Management',
-        icon: <FaFileAlt />,
-        variant: 'root' as const,
-        children: [
+        groupTitle: 'User Management',
+        routes: [
             {
-                title: 'Dashboard',
-                to: '/',
-                variant: 'leaf' as const,
-            },
-            {
-                to: '/blog',
-                title: 'Blog',
-                variant: 'leaf' as const,
-            },
-            {
-                to: '/departments',
-                title: 'Department',
-                variant: 'leaf' as const,
-            },
-            {
-                to: '/faqs',
-                title: 'FAQs',
-                variant: 'leaf' as const,
-            },
-            {
-                to: '/highlights',
-                title: 'Highlight',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/news',
-                title: 'News',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/partners',
-                title: 'Partners',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/procurements',
-                title: 'Procurements',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/projects',
-                title: 'Projects',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/radio-programs',
-                title: 'Radio Programs',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/resources',
-                title: 'Resources',
-                variant: 'leaf' as const,
-
-            },
-            {
-                to: '/strategic-directive',
-                title: 'Directives',
-                variant: 'leaf' as const,
-            },
-            {
-                to: '/vacancy',
-                title: 'Vacancy',
-                variant: 'leaf' as const,
-
+                title: 'Users',
+                to: 'users',
+                icon: <ShieldUserLineIcon />,
             },
         ],
     },
     {
-        title: 'User Management',
-        icon: <FaUserAlt />,
-        variant: 'root' as const,
-        children: [
+        groupTitle: 'Content Management',
+        routes: [
             {
-                to: '/users',
-                variant: 'leaf' as const,
-                title: 'Users',
+                title: 'Dashboard',
+                to: 'home',
+                icon: <DashboardLineIcon />,
             },
+            {
+                title: 'Blog',
+                to: 'blog',
+                icon: <FaRegFileAlt />,
+            },
+            {
+                title: 'Department',
+                to: 'department',
+                icon: <FaMoneyCheck />,
+            },
+            {
+                title: 'FAQs',
+                to: 'faqs',
+                icon: <FaRegQuestionCircle />,
+            },
+            {
+                title: 'Highlight',
+                to: 'highlight',
+                icon: <FaHighlighter />,
+            },
+            {
+                to: 'news',
+                title: 'News',
+                icon: <FaRegNewspaper />,
+            },
+            {
+                to: 'partner',
+                title: 'Partners',
+                icon: <LeadershipIcon />,
+            },
+            {
+                to: 'procurements',
+                title: 'Procurements',
+                icon: <FaRegWindowMaximize />,
+            },
+            {
+                to: 'project',
+                title: 'Projects',
+                icon: <FaProjectDiagram />,
+            },
+            {
+                to: 'radioProgram',
+                title: 'Radio Programs',
+                icon: <FaRegFileAudio />,
+            },
+            {
+                to: 'resources',
+                title: 'Resources',
+                icon: <FaWarehouse />,
+            },
+            {
+                to: 'strategicDirectives',
+                title: 'Directives',
+                icon: <FaThinkPeaks />,
+            },
+            {
+                to: 'vacancy',
+                title: 'Vacancy',
+                icon: <FaSuitcase />,
+            },
+
         ],
     },
 ];
@@ -116,7 +119,7 @@ function PrivateLayout() {
     return (
         <>
             <Navbar />
-            <Page leftPaneContent={<Navigation navigationItem={navigation} />}>
+            <Page leftPaneContent={<Navigation navigationItem={navigationItem} />}>
                 <Outlet />
             </Page>
 

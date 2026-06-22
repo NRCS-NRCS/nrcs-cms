@@ -41,7 +41,7 @@ function StrategicDirectiveList() {
     const [, deleteStrategicDirective] = useDeleteStrategicDirectiveMutation();
 
     const tableData = useMemo(
-        () => (data?.strategicDirectives.results),
+        () => data?.strategicDirectives.results ?? [],
         [data],
     );
 
@@ -59,6 +59,11 @@ function StrategicDirectiveList() {
 
     const columns = useMemo(() => [
         createStringColumn<StrategicDirectiveListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
+        createStringColumn<StrategicDirectiveListItem, string | number>(
             'title',
             'Title',
             (dept) => dept.title,
@@ -75,7 +80,7 @@ function StrategicDirectiveList() {
                 to: 'editStrategicDirectives',
             }),
         ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addStrategicDirectives');

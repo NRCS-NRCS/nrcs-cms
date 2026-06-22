@@ -41,7 +41,7 @@ function PartnerList() {
     const [, deletePartner] = useDeletePartnerMutation();
 
     const tableData = useMemo(
-        () => (data?.partners.results),
+        () => data?.partners.results ?? [],
         [data],
     );
 
@@ -58,6 +58,11 @@ function PartnerList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<PartnerListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<PartnerListItem, string | number>(
             'title',
             'Title',
@@ -80,7 +85,7 @@ function PartnerList() {
                  to: 'editPartner',
              }),
          ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addPartner');

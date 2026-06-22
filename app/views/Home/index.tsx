@@ -124,70 +124,68 @@ function Dashboards() {
     );
 
     return (
-        <Page className={styles.page}>
-            <Container
-                className={styles.container}
-                heading="Dashboards"
-                headingLevel={1}
-                headerDescription={(
-                    <>
-                        Welcome back
+        <Container
+            className={styles.container}
+            heading="Dashboards"
+            headingLevel={1}
+            headerDescription={(
+                <>
+                    Welcome back
+                    {' '}
+                    <strong>
+                        {user?.firstName}
                         {' '}
-                        <strong>
-                            {user?.firstName}
-                            {' '}
-                            {user?.lastName}
-                        </strong>
-                        {' '}
-                        to the NRC CMS Dashboard.
-                        <br />
-                        Use the navigation menu to access different sections of the CMS.
-                    </>
-                )}
-            >
-                <div className={styles.content}>
-                    <ListView
-                        layout="grid"
-                        withFullWidth
-                        numPreferredGridColumns={3}
-                    >
-                        {card.map((item) => (
-                            <ListView key={item.title} withPadding withBackground layout="block">
-                                <Heading level={6}>
-                                    {item.title}
-                                </Heading>
-                                <ListView spacing="sm">
-                                    {item.icon}
-                                    {item.count}
-                                </ListView>
+                        {user?.lastName}
+                    </strong>
+                    {' '}
+                    to the NRC CMS Dashboard.
+                    <br />
+                    Use the navigation menu to access different sections of the CMS.
+                </>
+            )}
+        >
+            <div className={styles.content}>
+                <ListView
+                    layout="grid"
+                    withFullWidth
+                    numPreferredGridColumns={3}
+                >
+                    {card.map((item) => (
+                        <ListView key={item.title} withPadding withBackground layout="block">
+                            <Heading level={6}>
+                                {item.title}
+                            </Heading>
+                            <ListView spacing="sm">
+                                {item.icon}
+                                {item.count}
                             </ListView>
-                        ))}
-                    </ListView>
-                    <ListView
-                        withPadding
-                        withBackground
-                        layout="block"
-                        spacing="sm"
-                    >
-                        <Heading level={3}>Quick Action</Heading>
-                        {card.map((item) => (
-                            <div key={item.title}>
-                                <Button
-                                    name={item.redirect}
-                                    styleVariant="outline"
-                                    textSize="sm"
-                                    onClick={handleNavigate}
-                                >
-                                    New
-                                    {' '}
-                                    {item.title}
-                                </Button>
-                            </div>
-                        ))}
-                    </ListView>
-                </div>
-            </Container>
-        </Page>
+                        </ListView>
+                    ))}
+                </ListView>
+                <ListView
+                    withPadding
+                    withBackground
+                    layout="block"
+                    spacing="sm"
+                >
+                    <Heading level={3}>Quick Action</Heading>
+                    {card.map((item) => (
+                        <div key={item.title}>
+                            <Button
+                                name={item.redirect}
+                                styleVariant="outline"
+                                textSize="sm"
+                                onClick={handleNavigate}
+                            >
+                                New
+                                {' '}
+                                {item.title}
+                            </Button>
+                        </div>
+                    ))}
+                </ListView>
+            </div>
+        </Container>
     );
 }
 

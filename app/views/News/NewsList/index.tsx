@@ -41,7 +41,7 @@ function NewsList() {
     const [, deleteNews] = useDeleteNewsMutation();
 
     const tableData = useMemo(
-        () => (data?.news.results),
+        () => data?.news.results ?? [],
         [data],
     );
 
@@ -58,6 +58,11 @@ function NewsList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<NewsListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<NewsListItem, string | number>(
             'title',
             'Title',
@@ -86,7 +91,7 @@ function NewsList() {
                  to: 'editNews',
              }),
          ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addNews');

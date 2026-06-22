@@ -41,7 +41,7 @@ function ProcurementList() {
     const [, deleteProcurement] = useDeleteProcurementMutation();
 
     const tableData = useMemo(
-        () => (data?.procurements?.results),
+        () => data?.procurements?.results ?? [],
         [data],
     );
 
@@ -58,6 +58,11 @@ function ProcurementList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<ProcurementListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<ProcurementListItem, string | number>(
             'title',
             'Title',
@@ -85,7 +90,7 @@ function ProcurementList() {
                 to: 'editProcurements',
             }),
         ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addProcurements');

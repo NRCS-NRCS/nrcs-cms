@@ -41,7 +41,10 @@ function FAQsList() {
     const [{ fetching, data }, reExecuteQuery] = useFaqQuery({ variables });
     const [, deleteFaq] = useDeleteFaqMutation();
 
-    const tableData = data?.faqs.results;
+    const tableData = useMemo(
+        () => data?.faqs.results ?? [],
+        [data],
+    );
 
     const onDelete = useCallback(
         (id: string) => {
@@ -56,6 +59,11 @@ function FAQsList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<FaqListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<FaqListItem, string | number>(
             'question',
             'Question',
@@ -84,7 +92,7 @@ function FAQsList() {
             }),
             { columnWidth: 150 },
         ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addFaq');

@@ -43,7 +43,7 @@ function VacancyList() {
     const [{ fetching: deletePending }, deleteVacancy] = useDeleteVacancyMutation();
 
     const tableData = useMemo(
-        () => (data?.jobVacancies.results),
+        () => data?.jobVacancies.results ?? [],
         [data],
     );
 
@@ -60,6 +60,11 @@ function VacancyList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<VacancyListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<VacancyListItem, string | number>(
             'title',
             'Title',
@@ -108,7 +113,7 @@ function VacancyList() {
                 to: 'editVacancy',
             }),
         ),
-    ], [onDelete, deletePending]);
+    ], [onDelete, deletePending, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addBlog');

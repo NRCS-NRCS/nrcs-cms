@@ -42,7 +42,7 @@ function HighlightList() {
     const [, deleteHighlight] = useDeleteHighlightMutation();
 
     const tableData = useMemo(
-        () => (data?.highlights.results),
+        () => data?.highlights.results ?? [],
         [data],
     );
 
@@ -59,6 +59,11 @@ function HighlightList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<HighlightListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<HighlightListItem, string | number>(
             'heading',
             'Heading',
@@ -86,7 +91,7 @@ function HighlightList() {
                 to: 'editHighlight',
             }),
         ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addHighlight');

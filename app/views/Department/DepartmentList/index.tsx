@@ -40,8 +40,10 @@ function DepartmentList() {
     const [{ fetching, data }, reExecuteQuery] = useDepartmentsQuery({ variables });
     const [, deleteDepartment] = useDeleteDepartmentMutation();
 
-    const tableData = data?.departments.results;
-
+    const departments = useMemo(
+        () => data?.departments.results ?? [],
+        [data],
+    );
     const onDelete = useCallback(
         (id: string) => {
             deleteDepartment({ id }).then((resp) => {
@@ -54,6 +56,12 @@ function DepartmentList() {
         [deleteDepartment, reExecuteQuery, alert],
     );
     const columns = useMemo(() => [
+        createStringColumn<EventListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(departments.indexOf(member) + 1),
+
+        ),
         createStringColumn<EventListItem, string | number>(
             'title',
             'Title',
@@ -88,7 +96,7 @@ function DepartmentList() {
              }),
              { columnWidth: 150 },
          ),
-    ], [onDelete]);
+    ], [onDelete, departments]);
 
     const handleAddClick = useCallback(() => {
         navigate('addDepartment');
@@ -120,7 +128,7 @@ function DepartmentList() {
             <Table
                 keySelector={idSelector}
                 columns={columns}
-                data={tableData}
+                data={departments}
                 filtered={false}
                 pending={fetching}
             />

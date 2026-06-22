@@ -21,13 +21,17 @@ function UsersList() {
 
     const [{ fetching, data }] = useUsersQuery({ variables });
 
-    const tableData = useMemo(
-        () => (data?.users.results),
+    const users = useMemo(
+        () => data?.users.results ?? [],
         [data],
     );
-
     const columns = useMemo(
         () => [
+            createStringColumn<UsersListItem, string | number>(
+                'sn',
+                'S.N.',
+                (member) => String(users.indexOf(member) + 1),
+            ),
             createStringColumn<UsersListItem, string | number>(
                 'firstName',
                 'First Name',
@@ -39,7 +43,7 @@ function UsersList() {
                 (dept) => dept.lastName,
             ),
         ],
-        [],
+        [users],
     );
     return (
         <Container
@@ -57,7 +61,7 @@ function UsersList() {
             <Table
                 keySelector={(item) => item.id}
                 columns={columns}
-                data={tableData}
+                data={users}
                 filtered={false}
                 pending={fetching}
             />

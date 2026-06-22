@@ -1,10 +1,16 @@
 import {
     use,
     useCallback,
+    useMemo,
 } from 'react';
 import {
+    BlockLoading,
     Button,
+    Container,
+    Description,
+    Heading,
     Image,
+    InlineLayout,
     ListView,
     PasswordInput,
     TextInput,
@@ -13,16 +19,17 @@ import {
     createSubmitHandler,
     getErrorObject,
     type ObjectSchema,
+    removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
 import { gql } from 'urql';
 
-import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 import { useLoginMutation } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useRouting from '#hooks/useRouting';
+import background from '#resources/image/aboutUs.jpeg';
 import banner from '#resources/image/redCrossBanner.png';
 import { errorMessage } from '#utils/common';
 
@@ -103,12 +110,7 @@ function Login() {
                 return;
             }
 
-            setUser({
-                id: loginResponse.id,
-                firstName: loginResponse.firstName,
-                lastName: loginResponse.lastName,
-                email: loginResponse.email,
-            });
+            setUser(removeNull(loginResponse));
 
             alert.show('Login successful!', { variant: 'success' });
             navigate('home');
@@ -119,58 +121,103 @@ function Login() {
         }
     }, [alert, navigate, setUser, triggerLogin]);
 
-    const handleFormSubmit = useCallback(
+    const handleFormSubmit = useMemo(
         () => createSubmitHandler(
             validate,
             setError,
             handleMutation,
-        )(),
+        ),
         [validate, setError, handleMutation],
     );
 
-    return (
-        <Page>
-            <main className={styles.loginContainer}>
-                <Image src={banner} size="sm" withContainedFit withoutBackground />
-                <form
-                    className={styles.loginForm}
-                >
-                    <ListView
-                        layout="block"
-                    >
-                        <TextInput
-                            name="email"
-                            label="Email"
-                            value={value.email}
-                            onChange={setFieldValue}
-                            error={error?.email}
-                            autoFocus
-                            withAsterisk
+    if (loginPending) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
 
-                        />
-                        <PasswordInput
-                            name="password"
-                            label="Password"
-                            value={value.password}
-                            error={error?.password}
-                            onChange={setFieldValue}
-                            withAsterisk
-                        />
-                    </ListView>
-                    <ListView layout="block" withCenteredContents>
-                        <Button
-                            name={undefined}
-                            styleVariant="filled"
-                            spacing="sm"
-                            disabled={loginPending}
-                            onClick={handleFormSubmit}
+    return (
+        <ListView
+            layout="grid"
+            className={styles.pageContainer}
+            numPreferredGridColumns={2}
+        >
+            <Image
+                src={background}
+                className={styles.image}
+            />
+            <form onSubmit={handleFormSubmit}>
+                <Container
+                    spacing="4xl"
+                    withCenteredContent
+                    withPadding
+                    className={styles.container}
+                >
+                    <InlineLayout
+                        contentAlignment="center"
+                        contentJustification="center"
+                        className={styles.login}
+                    >
+                        <ListView
+                            layout="block"
+                            spacing="md"
                         >
-                            {loginPending ? 'Logging in...' : 'Login'}
-                        </Button>
-                    </ListView>
-                </form>
-            </main>
-        </Page>
+                            <ListView
+                                layout="block"
+                                spacing="none"
+                            >
+                                <Image
+                                    withoutBackground
+                                    src={banner}
+                                    alt="logo"
+                                />
+                            </ListView>
+                            <ListView
+                                layout="block"
+                                spacing="lg"
+                            >
+                                <TextInput
+                                    name="email"
+                                    label="Email/Username"
+                                    value={value.email}
+                                    onChange={setFieldValue}
+                                    error={error?.email}
+                                    withAsterisk
+                                    disabled={loginPending}
+                                    autoFocus
+                                />
+                                <PasswordInput
+                                    name="password"
+                                    label="Password"
+                                    value={value.password}
+                                    onChange={setFieldValue}
+                                    error={error?.password}
+                                    disabled={loginPending}
+                                    withAsterisk
+                                />
+                            </ListView>
+                            <ListView
+                                layout="block"
+                                withCenteredContents
+                            >
+                                <Button
+                                    name={undefined}
+                                    type="submit"
+                                    styleVariant="filled"
+                                    disabled={loginPending}
+                                >
+                                    Login
+                                </Button>
+                            </ListView>
+                        </ListView>
+                    </InlineLayout>
+                </Container>
+            </form>
+        </ListView>
     );
 }
 

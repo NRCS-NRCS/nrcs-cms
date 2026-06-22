@@ -41,7 +41,7 @@ function ProjectList() {
     const [, deleteProject] = useDeleteProjectMutation();
 
     const tableData = useMemo(
-        () => (data?.projects.results),
+        () => data?.projects.results ?? [],
         [data],
     );
 
@@ -58,6 +58,11 @@ function ProjectList() {
     );
 
     const columns = useMemo(() => [
+        createStringColumn<ProjectListItem, string | number>(
+            'sn',
+            'S.N.',
+            (member) => String(tableData.indexOf(member) + 1),
+        ),
         createStringColumn<ProjectListItem, string | number>(
             'title',
             'Title',
@@ -80,7 +85,7 @@ function ProjectList() {
                  to: 'editProject',
              }),
          ),
-    ], [onDelete]);
+    ], [onDelete, tableData]);
 
     const handleAddClick = useCallback(() => {
         navigate('addProject');
