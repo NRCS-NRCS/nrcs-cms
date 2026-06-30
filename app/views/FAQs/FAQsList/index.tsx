@@ -1,7 +1,8 @@
-import React, {
+import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -13,44 +14,79 @@ import {
     createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     FaqQuery,
     useDeleteFaqMutation,
-    useFaqQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number];
+import FAQsListFilter, { FAQsFilterUIType } from '../FAQsListFilters';
+import { FAQ_QUERY } from '../query';
+
+type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number] & { no: number };
+
+type FAQsQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: { search?: string | null } | null;
+};
+
+const defaultFilter: FAQsFilterUIType = {
+    search: undefined,
+};
 
 function FAQsList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useFaqQuery({ variables });
+    const queryVariables = useMemo<FAQsQueryVariables>(() => ({
+        filters: {
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<FaqQuery, FAQsQueryVariables>({
+        query: FAQ_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deleteFaq] = useDeleteFaqMutation();
 
     const tableData = useMemo(
-        () => data?.faqs.results ?? [],
-        [data],
+        () => (data?.faqs.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteFaq({ id }).then((resp) => {
                 if (resp.data?.deleteFaq) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('FAQ deleted successfully', { variant: 'success' });
                 }
             });
@@ -62,25 +98,24 @@ function FAQsList() {
         createStringColumn<FaqListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<FaqListItem, string | number>(
             'question',
             'Question',
-            (dept) => dept.question,
+            (faq) => faq.question,
         ),
         createStringColumn<FaqListItem, string | number>(
             'answer',
             'Answer',
-            (dept) => dept?.answer,
+            (faq) => faq?.answer,
         ),
         createNumberColumn<FaqListItem, string | number>(
             'orderIndex',
             'Order Index',
-            (dept) => dept.orderIndex,
+            (faq) => faq.orderIndex,
         ),
-        createElementColumn<FaqListItem, string | number,
-        EditDeleteActionsProps>(
+        createElementColumn<FaqListItem, string | number, EditDeleteActionsProps>(
             'actions',
             '',
             EditDeleteActions,
@@ -92,7 +127,7 @@ function FAQsList() {
             }),
             { columnWidth: 150 },
         ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addFaq');
@@ -102,21 +137,28 @@ function FAQsList() {
         <Container
             withPadding
             heading="FAQs"
+            headerDescription="Browse and manage frequently asked questions"
             headerActions={(
                 <Button
-                    name={undefined}
-                    styleVariant="outline"
-                    disabled={false}
+                    name="addFaq"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add FAQs
                 </Button>
             )}
+            filters={(
+                <FAQsListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.faqs.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -125,7 +167,7 @@ function FAQsList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

@@ -1,7 +1,8 @@
-import React, {
+import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -12,44 +13,82 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
+    PartnerFilter,
     PartnerQuery,
     useDeletePartnerMutation,
-    usePartnerQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type PartnerListItem = NonNullable<PartnerQuery['partners']>['results'][number];
+import PartnerListFilter, { PartnerFilterUIType } from '../PartnerListFilters';
+import { PARTNER_QUERY } from '../query';
+
+type PartnerListItem = NonNullable<PartnerQuery['partners']>['results'][number] & { no: number };
+
+type PartnerQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: PartnerFilter | null;
+};
+
+const defaultFilter: PartnerFilterUIType = {
+    scope: undefined,
+    search: undefined,
+};
 
 function PartnerList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = usePartnerQuery({ variables });
+    const queryVariables = useMemo<PartnerQueryVariables>(() => ({
+        filters: {
+            scope: filter.scope !== undefined ? { exact: filter.scope } : undefined,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<PartnerQuery, PartnerQueryVariables>({
+        query: PARTNER_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deletePartner] = useDeletePartnerMutation();
 
     const tableData = useMemo(
-        () => data?.partners.results ?? [],
-        [data],
+        () => (data?.partners.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deletePartner({ id }).then((resp) => {
                 if (resp.data?.deletePartner) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Partner deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,7 +100,7 @@ function PartnerList() {
         createStringColumn<PartnerListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<PartnerListItem, string | number>(
             'title',
@@ -85,7 +124,7 @@ function PartnerList() {
                  to: 'editPartner',
              }),
          ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addPartner');
@@ -95,20 +134,28 @@ function PartnerList() {
         <Container
             withPadding
             heading="Partner"
+            headerDescription="Manage NRCS partner organizations"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addPartner"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Partner
                 </Button>
             )}
+            filters={(
+                <PartnerListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.partners.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -117,7 +164,7 @@ function PartnerList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

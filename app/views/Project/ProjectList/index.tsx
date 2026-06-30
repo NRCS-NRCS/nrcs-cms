@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -12,44 +13,80 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
+    ProjectFilter,
     ProjectQuery,
     useDeleteProjectMutation,
-    useProjectQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type ProjectListItem = NonNullable<ProjectQuery['projects']>['results'][number];
+import ProjectListFilter, { ProjectFilterUIType } from '../ProjectListFilters';
+import { PROJECT_QUERY } from '../query';
+
+type ProjectListItem = NonNullable<ProjectQuery['projects']>['results'][number] & { no: number };
+
+type ProjectQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: ProjectFilter | null;
+};
+
+const defaultFilter: ProjectFilterUIType = {
+    search: undefined,
+};
 
 function ProjectList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useProjectQuery({ variables });
+    const queryVariables = useMemo<ProjectQueryVariables>(() => ({
+        filters: {
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<ProjectQuery, ProjectQueryVariables>({
+        query: PROJECT_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deleteProject] = useDeleteProjectMutation();
 
     const tableData = useMemo(
-        () => data?.projects.results ?? [],
-        [data],
+        () => (data?.projects.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteProject({ id }).then((resp) => {
                 if (resp.data?.deleteProject) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Project deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,7 +98,7 @@ function ProjectList() {
         createStringColumn<ProjectListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<ProjectListItem, string | number>(
             'title',
@@ -85,7 +122,7 @@ function ProjectList() {
                  to: 'editProject',
              }),
          ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addProject');
@@ -95,20 +132,28 @@ function ProjectList() {
         <Container
             withPadding
             heading="Project"
+            headerDescription="Manage NRCS projects and initiatives"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addProject"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Project
                 </Button>
             )}
+            filters={(
+                <ProjectListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.projects.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -117,7 +162,7 @@ function ProjectList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

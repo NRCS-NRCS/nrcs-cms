@@ -174,7 +174,7 @@ function DepartmentForm() {
             <ListView layout="block">
                 <InputSection title={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
                 <Activity mode={data?.department.createdBy && data.department.modifiedBy ? 'visible' : 'hidden'}>
-                    <InputSection title={`Created by: ${data?.department.createdBy.firstName} ${data?.department.createdBy.lastName}`}>
+                    <InputSection title={`Created by: ${data?.department.createdBy.fullName} ${data?.department.createdBy.fullName}`}>
                         <Heading level={6}>
                             Modified by:
                             {' '}

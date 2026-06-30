@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const PARTNER_QUERY = gql`
-    query Partner($pagination: OffsetPaginationInput) {
-        partners(pagination: $pagination) {
+export const PARTNER_QUERY = gql`
+    query Partner($pagination: OffsetPaginationInput, $filters: PartnerFilter) {
+        partners(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

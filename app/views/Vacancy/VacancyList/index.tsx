@@ -14,44 +14,84 @@ import {
     createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
+    JobVacancyFilter,
     useDeleteVacancyMutation,
-    useVacancyQuery,
     VacancyQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number];
+import { VACANCY_QUERY } from '../query';
+import VacancyListFilter, { VacancyFilterUIType } from '../VacancyListFilters';
+
+type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number] & { no: number };
+
+type VacancyQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: JobVacancyFilter | null;
+};
+
+const defaultFilter: VacancyFilterUIType = {
+    isArchived: undefined,
+    search: undefined,
+};
 
 function VacancyList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useVacancyQuery({ variables });
+    const queryVariables = useMemo<VacancyQueryVariables>(() => ({
+        filters: {
+            isArchived: filter.isArchived !== undefined
+                ? filter.isArchived === 'true'
+                : undefined,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<VacancyQuery, VacancyQueryVariables>({
+        query: VACANCY_QUERY,
+        variables: queryVariables,
+    });
+
     const [{ fetching: deletePending }, deleteVacancy] = useDeleteVacancyMutation();
 
     const tableData = useMemo(
-        () => data?.jobVacancies.results ?? [],
-        [data],
+        () => (data?.jobVacancies.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteVacancy({ id }).then((resp) => {
                 if (resp.data?.deleteJobVacancy) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Vacancy deleted successfully', { variant: 'success' });
                 }
             });
@@ -63,7 +103,7 @@ function VacancyList() {
         createStringColumn<VacancyListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<VacancyListItem, string | number>(
             'title',
@@ -88,7 +128,7 @@ function VacancyList() {
         createStringColumn<VacancyListItem, string | number>(
             'expireDate',
             'Expire Date',
-            (dept) => dept?.publishedAt,
+            (dept) => dept?.expiryDate,
         ),
         createBooleanColumn<VacancyListItem, string | number>(
             'archive',
@@ -113,10 +153,10 @@ function VacancyList() {
                 to: 'editVacancy',
             }),
         ),
-    ], [onDelete, deletePending, tableData]);
+    ], [onDelete, deletePending]);
 
     const handleAddClick = useCallback(() => {
-        navigate('addBlog');
+        navigate('addVacancy');
     }, [navigate]);
 
     return (
@@ -132,11 +172,17 @@ function VacancyList() {
                     Add Vacancy
                 </Button>
             )}
+            filters={(
+                <VacancyListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.jobVacancies.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -145,7 +191,7 @@ function VacancyList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

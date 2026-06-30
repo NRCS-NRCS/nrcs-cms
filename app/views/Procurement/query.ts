@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const PROCUREMENT_QUERY = gql`
-    query Procurement($pagination: OffsetPaginationInput) {
-        procurements(pagination: $pagination) {
+export const PROCUREMENT_QUERY = gql`
+    query Procurement($pagination: OffsetPaginationInput, $filters: ProcurementFilter) {
+        procurements(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

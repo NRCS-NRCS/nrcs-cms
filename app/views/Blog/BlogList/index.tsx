@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -14,37 +15,74 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
+    BlogFilter,
     BlogQueryQuery,
-    useBlogQueryQuery,
     useDeleteBlogMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number];
+import BlogListFilter, { BlogFilterUIType } from '../BlogListFilters';
+import { BLOG_QUERY } from '../query';
+
+type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number] & { no: number };
+
+type BlogQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: { status?: BlogFilter['status'] | null; search?: string | null } | null;
+};
+
+const defaultFilter: BlogFilterUIType = {
+    status: undefined,
+    search: undefined,
+};
 
 function BlogList() {
     const navigate = useRouting();
     const alert = useAlert();
+
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
-    const [{ fetching, data }, reExecuteQuery] = useBlogQueryQuery({ variables });
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
+
+    const queryVariables = useMemo<BlogQueryVariables>(() => ({
+        filters: {
+            status: filter.status,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<BlogQueryQuery, BlogQueryVariables>({
+        query: BLOG_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deleteBlog] = useDeleteBlogMutation();
 
     const onDelete = useCallback(
         (id: string) => {
             deleteBlog({ id }).then((resp) => {
                 if (resp.data?.deleteBlog) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Blog deleted successfully', { variant: 'success' });
                 }
             });
@@ -53,16 +91,19 @@ function BlogList() {
     );
 
     const blogs = useMemo(
-        () => data?.blogs.results ?? [],
-        [data],
+        () => (data?.blogs.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
+
     const columns = useMemo(
         () => ([
             createStringColumn<BlogListType, string | number>(
                 'sn',
                 'S.N.',
-                (member) => String(blogs.indexOf(member) + 1),
-
+                (member) => String(member.no),
             ),
             createStringColumn<BlogListType, string | number>(
                 'title',
@@ -102,7 +143,7 @@ function BlogList() {
                  }),
              ),
         ]),
-        [onDelete, blogs],
+        [onDelete],
     );
 
     const handleAddClick = useCallback(() => {
@@ -113,21 +154,28 @@ function BlogList() {
         <Container
             withPadding
             heading="Blog"
+            headerDescription="Manage and publish blog articles"
             headerActions={(
                 <Button
                     name="addBlog"
-                    disabled={false}
-                    styleVariant="outline"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add blogs
                 </Button>
             )}
+            filters={(
+                <BlogListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.blogs.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -136,7 +184,7 @@ function BlogList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={blogs}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

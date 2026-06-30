@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const VACANCY_QUERY = gql`
-    query Vacancy($pagination: OffsetPaginationInput) {
-        jobVacancies(pagination: $pagination) {
+export const VACANCY_QUERY = gql`
+    query Vacancy($pagination: OffsetPaginationInput, $filters: JobVacancyFilter) {
+        jobVacancies(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

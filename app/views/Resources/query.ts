@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const RESOURCES_QUERY = gql`
-    query Resource($pagination: OffsetPaginationInput) {
-        resources(pagination: $pagination) {
+export const RESOURCES_QUERY = gql`
+    query Resource($pagination: OffsetPaginationInput, $filters: ResourceFilter) {
+        resources(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

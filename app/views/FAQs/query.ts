@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const FAQ_QUERY = gql`
-    query FAQ($pagination: OffsetPaginationInput) {
-        faqs(pagination: $pagination) {
+export const FAQ_QUERY = gql`
+    query FAQ($pagination: OffsetPaginationInput, $filters: FaqFilter) {
+        faqs(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

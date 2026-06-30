@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -12,44 +13,82 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
+    ResourceFilter,
     ResourceQuery,
     useDeleteResourceMutation,
-    useResourceQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type ResourceListItem = NonNullable<ResourceQuery['resources']>['results'][number];
+import { RESOURCES_QUERY } from '../query';
+import ResourcesListFilter, { ResourceFilterUIType } from '../ResourcesListFilters';
+
+type ResourceListItem = NonNullable<ResourceQuery['resources']>['results'][number] & { no: number };
+
+type ResourceQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: ResourceFilter | null;
+};
+
+const defaultFilter: ResourceFilterUIType = {
+    type: undefined,
+    search: undefined,
+};
 
 function ResourceList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useResourceQuery({ variables });
+    const queryVariables = useMemo<ResourceQueryVariables>(() => ({
+        filters: {
+            type: filter.type ?? undefined,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<ResourceQuery, ResourceQueryVariables>({
+        query: RESOURCES_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deleteResource] = useDeleteResourceMutation();
 
     const tableData = useMemo(
-        () => data?.resources.results ?? [],
-        [data],
+        () => (data?.resources.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteResource({ id }).then((resp) => {
                 if (resp.data?.deleteResource) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Resource deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,7 +100,7 @@ function ResourceList() {
         createStringColumn<ResourceListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<ResourceListItem, string | number>(
             'title',
@@ -95,7 +134,7 @@ function ResourceList() {
                  to: 'editResources',
              }),
          ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addResources');
@@ -105,20 +144,28 @@ function ResourceList() {
         <Container
             withPadding
             heading="Resource"
+            headerDescription="Manage downloadable resources and documents"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addResources"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Resource
                 </Button>
             )}
+            filters={(
+                <ResourcesListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.resources.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -127,7 +174,7 @@ function ResourceList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

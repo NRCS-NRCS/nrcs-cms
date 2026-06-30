@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const STRATEGIC_DIRECTIVE_QUERY = gql`
-    query StrategicDirective($pagination: OffsetPaginationInput) {
-        strategicDirectives(pagination: $pagination) {
+export const STRATEGIC_DIRECTIVE_QUERY = gql`
+    query StrategicDirective($pagination: OffsetPaginationInput, $filters: StrategicDirectivesFilter) {
+        strategicDirectives(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

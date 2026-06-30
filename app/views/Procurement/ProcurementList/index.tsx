@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -12,44 +13,81 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     ProcurementQuery,
     useDeleteProcurementMutation,
-    useProcurementQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type ProcurementListItem = NonNullable<ProcurementQuery['procurements']>['results'][number];
+import ProcurementListFilter, { ProcurementFilterUIType } from '../ProcurementListFilters';
+import { PROCUREMENT_QUERY } from '../query';
+
+type ProcurementListItem = NonNullable<ProcurementQuery['procurements']>['results'][number] & { no: number };
+
+type ProcurementQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: { search?: string | null } | null;
+};
+
+const defaultFilter: ProcurementFilterUIType = {
+    search: undefined,
+};
 
 function ProcurementList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useProcurementQuery({ variables });
+    const queryVariables = useMemo<ProcurementQueryVariables>(() => ({
+        filters: {
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<
+        ProcurementQuery, ProcurementQueryVariables
+    >({
+        query: PROCUREMENT_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deleteProcurement] = useDeleteProcurementMutation();
 
     const tableData = useMemo(
-        () => data?.procurements?.results ?? [],
-        [data],
+        () => (data?.procurements?.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteProcurement({ id }).then((resp) => {
                 if (resp.data?.deleteProcurement) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Procurement deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,25 +99,24 @@ function ProcurementList() {
         createStringColumn<ProcurementListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<ProcurementListItem, string | number>(
             'title',
             'Title',
-            (dept) => dept.title,
+            (item) => item.title,
         ),
         createStringColumn<ProcurementListItem, string | number>(
             'publishedDate',
             'Published Date',
-            (dept) => dept?.publishedDate,
+            (item) => item?.publishedDate,
         ),
         createStringColumn<ProcurementListItem, string | number>(
             'expireDate',
             'Expire Date',
-            (dept) => dept?.expiryDate,
+            (item) => item?.expiryDate,
         ),
-        createElementColumn<ProcurementListItem, string | number,
-        EditDeleteActionsProps>(
+        createElementColumn<ProcurementListItem, string | number, EditDeleteActionsProps>(
             'actions',
             '',
             EditDeleteActions,
@@ -90,7 +127,7 @@ function ProcurementList() {
                 to: 'editProcurements',
             }),
         ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addProcurements');
@@ -100,20 +137,28 @@ function ProcurementList() {
         <Container
             withPadding
             heading="Procurement"
+            headerDescription="Manage procurement notices and tenders"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addProcurements"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Procurement
                 </Button>
             )}
+            filters={(
+                <ProcurementListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.procurements.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -122,7 +167,7 @@ function ProcurementList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

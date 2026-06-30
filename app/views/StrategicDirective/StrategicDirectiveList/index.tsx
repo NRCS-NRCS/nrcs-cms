@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -12,44 +13,82 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { useQuery } from 'urql';
 
 import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     StrategicDirectiveQuery,
     useDeleteStrategicDirectiveMutation,
-    useStrategicDirectiveQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type StrategicDirectiveListItem = NonNullable<StrategicDirectiveQuery['strategicDirectives']>['results'][number];
+import { STRATEGIC_DIRECTIVE_QUERY } from '../query';
+import StrategicDirectiveListFilter, { StrategicDirectiveFilterUIType } from '../StrategicDirectiveListFilters';
+
+type StrategicDirectiveListItem = NonNullable<StrategicDirectiveQuery['strategicDirectives']>['results'][number] & { no: number };
+
+type StrategicDirectiveQueryVariables = {
+    pagination?: { limit: number; offset: number };
+    filters?: { search?: string | null } | null;
+};
+
+const defaultFilter: StrategicDirectiveFilterUIType = {
+    search: undefined,
+};
 
 function StrategicDirectiveList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useStrategicDirectiveQuery({ variables });
+    const queryVariables = useMemo<StrategicDirectiveQueryVariables>(() => ({
+        filters: {
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useQuery<
+        StrategicDirectiveQuery,
+        StrategicDirectiveQueryVariables
+    >({
+        query: STRATEGIC_DIRECTIVE_QUERY,
+        variables: queryVariables,
+    });
+
     const [, deleteStrategicDirective] = useDeleteStrategicDirectiveMutation();
 
     const tableData = useMemo(
-        () => data?.strategicDirectives.results ?? [],
-        [data],
+        () => (data?.strategicDirectives.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteStrategicDirective({ id }).then((resp) => {
                 if (resp.data?.deleteStrategicDirectives) {
-                    reExecuteQuery();
+                    reExecuteQuery({ requestPolicy: 'network-only' });
                     alert.show('Strategic Directive deleted successfully', { variant: 'success' });
                 }
             });
@@ -61,15 +100,14 @@ function StrategicDirectiveList() {
         createStringColumn<StrategicDirectiveListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<StrategicDirectiveListItem, string | number>(
             'title',
             'Title',
-            (dept) => dept.title,
+            (item) => item.title,
         ),
-        createElementColumn<StrategicDirectiveListItem, string | number,
-        EditDeleteActionsProps>(
+        createElementColumn<StrategicDirectiveListItem, string | number, EditDeleteActionsProps>(
             'actions',
             '',
             EditDeleteActions,
@@ -80,7 +118,7 @@ function StrategicDirectiveList() {
                 to: 'editStrategicDirectives',
             }),
         ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addStrategicDirectives');
@@ -90,20 +128,28 @@ function StrategicDirectiveList() {
         <Container
             withPadding
             heading="Strategic Directive"
+            headerDescription="Manage NRCS strategic directives"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addStrategicDirectives"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Strategic Directive
                 </Button>
             )}
+            filters={(
+                <StrategicDirectiveListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.strategicDirectives.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -112,7 +158,7 @@ function StrategicDirectiveList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

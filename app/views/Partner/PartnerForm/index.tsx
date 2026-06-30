@@ -180,12 +180,12 @@ function PartnerForm() {
                 </InputSection>
                 <Activity mode={data?.partner.createdBy && data?.partner.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
-                        title={`Created by: ${data?.partner.createdBy.firstName}`}
+                        title={`Created by: ${data?.partner.createdBy.fullName}`}
                     >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {data?.partner.createdBy.lastName}
+                            {data?.partner.createdBy.fullName}
                         </Heading>
                     </InputSection>
                 </Activity>

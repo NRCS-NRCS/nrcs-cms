@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -20,29 +21,59 @@ import {
     useRadioProgramQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type RadioProgramListItem = NonNullable<RadioProgramQuery['radioProgram']>['results'][number];
+import RadioProgramListFilter, { RadioProgramFilterUIType } from '../RadioProgramListFilters';
+
+type RadioProgramListItem =
+    NonNullable<RadioProgramQuery['radioProgram']>['results'][number] & { no: number };
+
+const defaultFilter: RadioProgramFilterUIType = {
+    type: undefined,
+    search: undefined,
+};
 
 function RadioProgramList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useRadioProgramQuery({ variables });
+    const queryVariables = useMemo(() => ({
+        filter: {
+            type: filter.type ?? undefined,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useRadioProgramQuery({
+        variables: queryVariables,
+    });
     const [, deleteRadioProgram] = useDeleteRadioProgramMutation();
 
     const tableData = useMemo(
-        () => data?.radioProgram.results ?? [],
-        [data],
+        () => (data?.radioProgram.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
@@ -61,7 +92,7 @@ function RadioProgramList() {
         createStringColumn<RadioProgramListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<RadioProgramListItem, string | number>(
             'title',
@@ -90,7 +121,7 @@ function RadioProgramList() {
                  to: 'editRadioProgram',
              }),
          ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addRadioProgram');
@@ -100,20 +131,28 @@ function RadioProgramList() {
         <Container
             withPadding
             heading="Radio Program"
+            headerDescription="Manage radio program episodes and content"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addRadioProgram"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Radio Program
                 </Button>
             )}
+            filters={(
+                <RadioProgramListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.radioProgram.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -122,7 +161,7 @@ function RadioProgramList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

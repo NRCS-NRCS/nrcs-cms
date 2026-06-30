@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const BLOG_QUERY = gql`
-    query BlogQuery($pagination: OffsetPaginationInput) {
-        blogs(pagination: $pagination) {
+export const BLOG_QUERY = gql`
+    query BlogQuery($pagination: OffsetPaginationInput, $filters: BlogFilter) {
+        blogs(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

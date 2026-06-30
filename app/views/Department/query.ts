@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const DEPARTMENT_QUERY = gql`
-    query Departments($pagination: OffsetPaginationInput) {
-        departments(pagination: $pagination) {
+export const DEPARTMENT_QUERY = gql`
+    query Departments($pagination: OffsetPaginationInput, $filters: DepartmentFilter) {
+        departments(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

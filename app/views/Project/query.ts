@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars, import/prefer-default-export */
 import { gql } from 'urql';
 
-const PROJECT_QUERY = gql`
-    query Project($pagination: OffsetPaginationInput) {
-        projects(pagination: $pagination) {
+export const PROJECT_QUERY = gql`
+    query Project($pagination: OffsetPaginationInput, $filters: ProjectFilter) {
+        projects(pagination: $pagination, filters: $filters) {
             pageInfo {
                 limit
                 offset

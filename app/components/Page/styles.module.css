@@ -1,5 +1,6 @@
 .page {
     background: var(--go-ui-color-gray-10);
+    height: 100%;
     overflow: hidden;
 
     >* {
