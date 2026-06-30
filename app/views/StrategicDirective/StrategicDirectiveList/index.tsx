@@ -22,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -42,6 +43,7 @@ const defaultFilter: StrategicDirectiveFilterUIType = {
 function StrategicDirectiveList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -107,18 +109,20 @@ function StrategicDirectiveList() {
             'Title',
             (item) => item.title,
         ),
-        createElementColumn<StrategicDirectiveListItem, string | number, EditDeleteActionsProps>(
-            'actions',
-            '',
-            EditDeleteActions,
-            (_, datum) => ({
-                id: datum.id,
-                onDelete,
-                itemTitle: datum.title,
-                to: 'editStrategicDirectives',
-            }),
-        ),
-    ], [onDelete]);
+        ...(canEditContent
+            ? [createElementColumn<StrategicDirectiveListItem, string | number,
+                EditDeleteActionsProps>(
+                    'actions',
+                    '',
+                    EditDeleteActions,
+                    (_, datum) => ({
+                        id: datum.id,
+                        onDelete,
+                        itemTitle: datum.title,
+                        to: 'editStrategicDirectives',
+                    }),
+                )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addStrategicDirectives');
@@ -129,7 +133,7 @@ function StrategicDirectiveList() {
             withPadding
             heading="Strategic Directive"
             headerDescription="Manage NRCS strategic directives"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addStrategicDirectives"
                     styleVariant="filled"
@@ -138,7 +142,7 @@ function StrategicDirectiveList() {
                 >
                     Add Strategic Directive
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <StrategicDirectiveListFilter
                     value={rawFilter}

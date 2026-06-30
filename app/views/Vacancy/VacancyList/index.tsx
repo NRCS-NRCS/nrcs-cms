@@ -24,6 +24,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -45,6 +46,7 @@ const defaultFilter: VacancyFilterUIType = {
 function VacancyList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -140,7 +142,7 @@ function VacancyList() {
             'Department',
             (dept) => dept?.department?.title,
         ),
-        createElementColumn<VacancyListItem, string | number,
+        ...(canEditContent ? [createElementColumn<VacancyListItem, string | number,
         EditDeleteActionsProps>(
             'actions',
             '',
@@ -152,8 +154,8 @@ function VacancyList() {
                 itemTitle: datum.title,
                 to: 'editVacancy',
             }),
-        ),
-    ], [onDelete, deletePending]);
+        )] : []),
+    ], [onDelete, deletePending, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addVacancy');
@@ -163,7 +165,7 @@ function VacancyList() {
         <Container
             withPadding
             heading="Vacancy"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name={undefined}
                     disabled={false}
@@ -171,7 +173,7 @@ function VacancyList() {
                 >
                     Add Vacancy
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <VacancyListFilter
                     value={rawFilter}

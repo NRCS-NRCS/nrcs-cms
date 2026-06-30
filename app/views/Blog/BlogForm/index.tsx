@@ -4,7 +4,10 @@ import React, {
     useEffect,
     useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -44,13 +47,13 @@ import {
     useUpdateBlogMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
     labelSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<BlogCreateInput>
 
@@ -103,6 +106,7 @@ function BlogForm() {
     const alert = useAlert();
 
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const [{ data, fetching: blogDetailFetch }] = useBlogDetailQueryQuery({
         variables: { id: (id ?? '') }, pause: !id,
     });
@@ -123,10 +127,16 @@ function BlogForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'blog';
         const alertMessage = `Blog ${id ? 'updated' : 'created'} successfully`;
+        const { coverImage, ...otherMutationData } = mutationData;
+
+        const dataToSubmit = {
+            ...otherMutationData,
+            coverImage: coverImage instanceof File ? coverImage : undefined,
+        };
         if (id) {
             const res = await updateBlogMutate({
                 pk: id,
-                data: mutationData as BlogUpdateInput,
+                data: dataToSubmit as BlogUpdateInput,
             });
             const result = res.data?.updateBlog;
             if (result?.ok) {
@@ -138,7 +148,7 @@ function BlogForm() {
             }
         } else {
             const res = await createBlogMutate({
-                data: mutationData as BlogCreateInput,
+                data: dataToSubmit as BlogCreateInput,
             });
             const result = res.data?.createBlog;
             if (result?.ok) {
@@ -189,7 +199,7 @@ function BlogForm() {
             return;
         }
         const {
-            coverImage, departmentId, directiveId, ...other
+            departmentId, directiveId, ...other
         } = removeNull(data.blog);
 
         setValue({
@@ -197,25 +207,11 @@ function BlogForm() {
             department: departmentId,
             directive: directiveId,
         });
-        if (coverImage) {
-            urlToFile(coverImage.url, coverImage.name).then((file) => {
-                setValue((prev) => ({
-                    ...prev,
-                    coverImage: file,
-                }));
-            });
-        }
     }, [data, setValue]);
 
-    const ContentEditor = useMemo(() => (
-        <MarkdownEditor
-            value={value.content}
-            onChange={(val) => setFieldValue(val, 'content')}
-            error={error?.content}
-            placeholder="Start writing blog here..."
-
-        />
-    ), [value.content, error?.content, setFieldValue]);
+    if (!canEditContent) {
+        return <Navigate to="/blog" replace />;
+    }
 
     if (blogDetailFetch) {
         return (
@@ -299,6 +295,7 @@ function BlogForm() {
                         onChange={setFieldValue}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
+                        accept="image/*"
                     />
                 </InputSection>
                 <InputSection
@@ -376,7 +373,13 @@ function BlogForm() {
                         Write Blogs
                     </Heading>
                 </InputSection>
-                {ContentEditor}
+                <MarkdownEditor
+                    name="content"
+                    value={value.content}
+                    onChange={setFieldValue}
+                    error={error?.content}
+                    placeholder="Start writing blog here..."
+                />
                 <ListView
                     withFullWidth
                     withCenteredContents

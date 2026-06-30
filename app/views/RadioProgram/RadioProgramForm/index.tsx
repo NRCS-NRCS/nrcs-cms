@@ -4,7 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -38,13 +41,13 @@ import {
     useUpdateRadioProgramMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
     labelSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<RadioProgramCreateInput>
 
@@ -74,6 +77,7 @@ const defaultEditFormValue: PartialFormType = {};
 function RadioProgramForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: radioProgramDetailFetch }] = useRadioProgramQuery({
@@ -99,10 +103,15 @@ function RadioProgramForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'radioProgram';
         const alertMessage = `Radio Program ${id ? 'updated' : 'created'} successfully`;
+        const { audioFile, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            audioFile: audioFile instanceof File ? audioFile : undefined,
+        };
         if (id) {
             const res = await updateRadioProgramMutate({
                 pk: id,
-                data: mutationData as RadioProgramUpdateInput,
+                data: dataToSubmit as RadioProgramUpdateInput,
             });
             const result = res.data?.updateRadioProgram;
             if (result?.ok) {
@@ -114,7 +123,7 @@ function RadioProgramForm() {
             }
         } else {
             const res = await createRadioProgramMutate({
-                data: mutationData as RadioProgramCreateInput,
+                data: dataToSubmit as RadioProgramCreateInput,
             });
             const result = res.data?.createRadioProgram;
             if (result?.ok) {
@@ -142,27 +151,17 @@ function RadioProgramForm() {
         if (isNotDefined(radioProgramData)) {
             return;
         }
-        const {
-            audioFile,
-            ...other
-        } = removeNull(radioProgramData);
-        setValue({
-            ...other,
-        });
-        if (audioFile) {
-            urlToFile(audioFile.url, audioFile.name).then((audioFileData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    audioFile: audioFileData,
-                }));
-            });
-        }
+        setValue(removeNull(radioProgramData));
     }, [radioProgramData, setValue]);
 
     const radioType = useMemo(() => Object.values(RadioProgramTypeEnum).map((status) => ({
         key: status,
         label: status,
     })), []);
+
+    if (!canEditContent) {
+        return <Navigate to="/radio-programs" replace />;
+    }
 
     if (radioProgramDetailFetch) {
         return (

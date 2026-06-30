@@ -36,8 +36,8 @@ const CREATE_USER_MUTATION = gql`
 `;
 
 const UPDATE_USER_MUTATION = gql`
-    mutation UpdateUser($data: UserUpdateInput!, $id: ID!) {
-        updateUser(data: $data, id: $id) {
+    mutation UpdateUser($data: UserUpdateInput!) {
+        updateUser(data: $data) {
             ... on UserTypeMutationResponseType {
                 errors
                 ok
@@ -73,9 +73,26 @@ const USER_DETAIL_QUERY = gql`
     }
 `;
 
+const RESET_USER_PASSWORD = gql`
+    mutation ResetUserPassword($data: PasswordResetInput!, $newPassword: String!) {
+        resetUserPassword(data: $data, newPassword: $newPassword) {
+            ... on UserTypeMutationResponseType {
+                ok
+                errors
+            }
+            ... on OperationInfo {
+                __typename
+                messages {
+                    message
+                }
+            }
+        }
+    }
+`;
+
 const DELETE_USER = gql`
-    mutation DeleteUser($id: ID!) {
-        deleteUser(id: $id) {
+    mutation DeleteUser($data: UserDeleteInput!) {
+        deleteUser(data: $data) {
             ... on UserTypeMutationResponseType {
                 errors
                 ok

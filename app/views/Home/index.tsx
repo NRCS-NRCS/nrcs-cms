@@ -61,12 +61,12 @@ function Dashboards() {
             icon: <FaQuestionCircle />,
             redirect: 'addFaq',
         },
-        // {
-        //     title: 'Highlights',
-        //     count: data?.highlights.totalCount || 0,
-        //     icon: <FaHighlighter />,
-        //     redirect: 'addHighlight',
-        // },
+        {
+            title: 'Highlights',
+            count: data?.highlightedBlogs.totalCount || 0,
+            icon: <FaHighlighter />,
+            redirect: 'addNews',
+        },
         {
             title: 'Vacancies',
             count: data?.jobVacancies.totalCount || 0,
@@ -132,7 +132,9 @@ function Dashboards() {
                     Welcome back
                     {' '}
                     <strong>
-                        {user?.fullName}
+                        {user?.firstName}
+                        {' '}
+                        {user?.lastName}
                     </strong>
                     {' '}
                     to the NRCS CMS Dashboard.

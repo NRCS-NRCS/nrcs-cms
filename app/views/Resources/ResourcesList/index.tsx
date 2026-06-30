@@ -23,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -44,6 +45,7 @@ const defaultFilter: ResourceFilterUIType = {
 function ResourceList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -122,7 +124,7 @@ function ResourceList() {
             'Published Date',
             (dept) => dept?.publishedDate,
         ),
-        createElementColumn<ResourceListItem, string | number,
+        ...(canEditContent ? [createElementColumn<ResourceListItem, string | number,
          EditDeleteActionsProps>(
              'actions',
              '',
@@ -133,8 +135,8 @@ function ResourceList() {
                  itemTitle: datum.title,
                  to: 'editResources',
              }),
-         ),
-    ], [onDelete]);
+         )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addResources');
@@ -145,7 +147,7 @@ function ResourceList() {
             withPadding
             heading="Resource"
             headerDescription="Manage downloadable resources and documents"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addResources"
                     styleVariant="filled"
@@ -154,7 +156,7 @@ function ResourceList() {
                 >
                     Add Resource
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <ResourcesListFilter
                     value={rawFilter}

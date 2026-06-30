@@ -4,7 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -42,13 +45,13 @@ import {
     useVacancyDetailQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
     labelSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<JobVacancyCreateInput>
 type FormSchema = ObjectSchema<PartialFormType>;
@@ -95,6 +98,7 @@ const defaultEditFormValue: PartialFormType = {};
 function VacancyForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: vacancyDetailFetch }] = useVacancyDetailQuery({
@@ -118,10 +122,15 @@ function VacancyForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'vacancy';
         const alertMessage = `Vacancy ${id ? 'updated' : 'created'} successfully`;
+        const { file, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            file: file instanceof File ? file : undefined,
+        };
         if (id) {
             const res = await updateVacancyMutate({
                 pk: id,
-                data: mutationData as JobVacancyUpdateInput,
+                data: dataToSubmit as JobVacancyUpdateInput,
             });
             const result = res.data?.updateJobVacancy;
             if (result?.ok) {
@@ -133,7 +142,7 @@ function VacancyForm() {
             }
         } else {
             const res = await createVacancyMutate({
-                data: mutationData as JobVacancyCreateInput,
+                data: dataToSubmit as JobVacancyCreateInput,
             });
             const result = res.data?.createJobVacancy;
             if (result?.ok) {
@@ -161,7 +170,6 @@ function VacancyForm() {
         }
         const {
             departmentId,
-            file,
             ...other
         } = removeNull(data.jobVacancy);
 
@@ -169,14 +177,6 @@ function VacancyForm() {
             ...other,
             department: departmentId,
         });
-        if (file) {
-            urlToFile(file.url, file.name).then((fileData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    file: fileData,
-                }));
-            });
-        }
     }, [data, setValue]);
 
     const departmentOptions = useMemo(() => departments?.departments.results.map(
@@ -185,6 +185,10 @@ function VacancyForm() {
             label: dept.title,
         }),
     ) ?? [], [departments]);
+
+    if (!canEditContent) {
+        return <Navigate to="/vacancy" replace />;
+    }
 
     if (vacancyDetailFetch) {
         return (
@@ -233,7 +237,7 @@ function VacancyForm() {
                 </InputSection>
                 <InputSection
                     title="File"
-                    description="Add a File, which will be attached and shown on Radio Page"
+                    description="Add a File, which will be attached and shown on Vacancy Page"
                     withAsteriskOnTitle
                 >
                     <FileUpload

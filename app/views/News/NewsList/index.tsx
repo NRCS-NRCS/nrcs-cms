@@ -23,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -39,6 +40,7 @@ const defaultFilter: NewsFilterUIType = {
 function NewsList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -117,7 +119,8 @@ function NewsList() {
             'Strategic Directives',
             (dept) => dept?.directive?.title,
         ),
-        createElementColumn<NewsListItem, string | number,
+        ...(canEditContent
+            ? [createElementColumn<NewsListItem, string | number,
          EditDeleteActionsProps>(
              'actions',
              '',
@@ -128,8 +131,8 @@ function NewsList() {
                  itemTitle: datum.title,
                  to: 'editNews',
              }),
-         ),
-    ], [onDelete]);
+         )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addNews');
@@ -140,7 +143,7 @@ function NewsList() {
             withPadding
             heading="News"
             headerDescription="Manage news articles and highlights"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addNews"
                     styleVariant="filled"
@@ -149,7 +152,7 @@ function NewsList() {
                 >
                     Add News
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <NewsListFilter
                     value={rawFilter}

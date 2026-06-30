@@ -3,7 +3,10 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -34,6 +37,7 @@ import {
     useUpdateFaqMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 
 type PartialFormType = PartialForm<FaqCreateInput>
@@ -63,6 +67,7 @@ const defaultEditFormValue: PartialFormType = {};
 function FAQsForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: faqDetailFetch }] = useFaqDetailQuery({
@@ -130,6 +135,10 @@ function FAQsForm() {
         const faqData = removeNull(data.faq);
         setValue({ ...faqData });
     }, [data, setValue]);
+
+    if (!canEditContent) {
+        return <Navigate to="/faqs" replace />;
+    }
 
     if (faqDetailFetch) {
         return (

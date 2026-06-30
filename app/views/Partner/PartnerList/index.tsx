@@ -23,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -44,6 +45,7 @@ const defaultFilter: PartnerFilterUIType = {
 function PartnerList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -112,7 +114,7 @@ function PartnerList() {
             'Scope',
             (dept) => dept?.scope,
         ),
-        createElementColumn<PartnerListItem, string | number,
+        ...(canEditContent ? [createElementColumn<PartnerListItem, string | number,
          EditDeleteActionsProps>(
              'actions',
              '',
@@ -123,8 +125,8 @@ function PartnerList() {
                  itemTitle: datum.title,
                  to: 'editPartner',
              }),
-         ),
-    ], [onDelete]);
+         )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addPartner');
@@ -135,7 +137,7 @@ function PartnerList() {
             withPadding
             heading="Partner"
             headerDescription="Manage NRCS partner organizations"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addPartner"
                     styleVariant="filled"
@@ -144,7 +146,7 @@ function PartnerList() {
                 >
                     Add Partner
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <PartnerListFilter
                     value={rawFilter}

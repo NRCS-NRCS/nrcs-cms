@@ -23,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -43,6 +44,7 @@ const defaultFilter: ProjectFilterUIType = {
 function ProjectList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -110,7 +112,7 @@ function ProjectList() {
             'Department',
             (dept) => dept?.department?.title,
         ),
-        createElementColumn<ProjectListItem, string | number,
+        ...(canEditContent ? [createElementColumn<ProjectListItem, string | number,
          EditDeleteActionsProps>(
              'actions',
              '',
@@ -121,8 +123,8 @@ function ProjectList() {
                  itemTitle: datum.title,
                  to: 'editProject',
              }),
-         ),
-    ], [onDelete]);
+         )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addProject');
@@ -133,7 +135,7 @@ function ProjectList() {
             withPadding
             heading="Project"
             headerDescription="Manage NRCS projects and initiatives"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addProject"
                     styleVariant="filled"
@@ -142,7 +144,7 @@ function ProjectList() {
                 >
                     Add Project
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <ProjectListFilter
                     value={rawFilter}

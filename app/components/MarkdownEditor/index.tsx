@@ -3,6 +3,7 @@ import '@mdxeditor/editor/style.css';
 import {
     Activity,
     memo,
+    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -35,10 +36,12 @@ import useDebounce from '#hooks/useDebounce';
 
 import styles from './styles.module.css';
 
-interface Props{
+interface Props<NAME> {
+    name: NAME;
     value?: string;
     onChange: (
         value: string | undefined,
+        name: NAME,
     ) => void;
     error?: string;
     placeholder?:string
@@ -57,8 +60,9 @@ function ToolbarContents() {
     );
 }
 
-function MarkdownEditor(props: Props) {
+function MarkdownEditor<const NAME>(props: Props<NAME>) {
     const {
+        name,
         value = '',
         onChange,
         placeholder = 'Start writing here...',
@@ -66,14 +70,20 @@ function MarkdownEditor(props: Props) {
     } = props;
 
     const ref = useRef<MDXEditorMethods>(null);
-    const prevValueRef = useRef(value);
+    // MDXEditor is uncontrolled; once the user has typed, the value prop
+    // echoing back through the form must not reset the editor
+    const editorDirtyRef = useRef(false);
 
-    const debouncedSearch = useDebounce(onChange, 300);
+    const debouncedOnChange = useDebounce(onChange, 300);
+
+    const handleEditorChange = useCallback((val: string) => {
+        editorDirtyRef.current = true;
+        debouncedOnChange(val, name);
+    }, [debouncedOnChange, name]);
 
     useEffect(() => {
-        if (ref.current && !prevValueRef.current) {
+        if (ref.current && !editorDirtyRef.current && value) {
             ref.current.setMarkdown(value);
-            prevValueRef.current = value;
         }
     }, [value]);
 
@@ -98,7 +108,7 @@ function MarkdownEditor(props: Props) {
                 <MDXEditor
                     markdown={value}
                     ref={ref}
-                    onChange={debouncedSearch}
+                    onChange={handleEditorChange}
                     placeholder={placeholder}
                     plugins={plugins}
                 />
@@ -112,4 +122,4 @@ function MarkdownEditor(props: Props) {
     );
 }
 
-export default memo(MarkdownEditor);
+export default memo(MarkdownEditor) as typeof MarkdownEditor;

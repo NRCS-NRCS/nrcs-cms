@@ -6,6 +6,9 @@ const COUNTS = gql`
     blogs(filters: { status: PUBLISHED }) {
       totalCount
     }
+    highlightedBlogs: news(filters: { status: PUBLISHED, isHighlighted: true }) {
+      totalCount
+    }
     departments {
       totalCount
     }

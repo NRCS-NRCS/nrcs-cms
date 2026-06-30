@@ -3,7 +3,10 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -36,9 +39,9 @@ import {
     useUpdateProcurementMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<ProcurementCreateInput>
 
@@ -74,6 +77,7 @@ const defaultEditFormValue: PartialFormType = {};
 function ProcurementForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: procurementDetailFetch }] = useProcurementDetailQuery({
@@ -95,10 +99,15 @@ function ProcurementForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'procurements';
         const alertMessage = `Procurement ${id ? 'updated' : 'created'} successfully`;
+        const { file, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            file: file instanceof File ? file : undefined,
+        };
         if (id) {
             const res = await updateProcurementMutate({
                 pk: id,
-                data: mutationData as ProcurementUpdateInput,
+                data: dataToSubmit as ProcurementUpdateInput,
             });
             const result = res.data?.updateProcurement;
             if (result?.ok) {
@@ -110,7 +119,7 @@ function ProcurementForm() {
             }
         } else {
             const res = await createProcurementMutate({
-                data: mutationData as ProcurementCreateInput,
+                data: dataToSubmit as ProcurementCreateInput,
             });
             const result = res.data?.createProcurement;
             if (result?.ok) {
@@ -136,23 +145,12 @@ function ProcurementForm() {
         if (isNotDefined(data?.procurement)) {
             return;
         }
-        const {
-            file,
-            ...other
-        } = removeNull(data.procurement);
-
-        setValue({
-            ...other,
-        });
-        if (file) {
-            urlToFile(file.url, file.name).then((fileData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    file: fileData,
-                }));
-            });
-        }
+        setValue(removeNull(data.procurement));
     }, [data, setValue]);
+
+    if (!canEditContent) {
+        return <Navigate to="/procurements" replace />;
+    }
 
     if (procurementDetailFetch) {
         return (

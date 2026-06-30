@@ -1,6 +1,8 @@
 import {
     Activity,
     useCallback,
+    useEffect,
+    useMemo,
 } from 'react';
 import {
     DeleteBinLineIcon,
@@ -8,6 +10,7 @@ import {
 } from '@ifrc-go/icons';
 import {
     IconButton,
+    Image,
     InputError,
     ListView,
     RawFileInput,
@@ -18,10 +21,21 @@ import {
     isNotDefined,
 } from '@togglecorp/fujs';
 
+import { DjangoFileType } from '#generated/types/graphql';
+
+const IMAGE_EXTENSION_REGEX = /\.(jpe?g|png|gif|webp|svg|bmp)$/i;
+
+function isImageFile(file: File | DjangoFileType) {
+    if (file instanceof File) {
+        return file.type.startsWith('image/');
+    }
+    return IMAGE_EXTENSION_REGEX.test(file.name);
+}
+
 interface Props<NAME> {
     name: NAME;
     label?: string;
-    value?: File;
+    value?: File | DjangoFileType;
     accept?: string;
     error?: string;
     onChange: (value: File | undefined, name: NAME) => void;
@@ -48,6 +62,29 @@ function FileUpload<const NAME>(props: Props<NAME>) {
         onChange(file, name);
     }, [onChange, name]);
 
+    const objectUrl = useMemo(() => {
+        if (value instanceof File && isImageFile(value)) {
+            return URL.createObjectURL(value);
+        }
+        return undefined;
+    }, [value]);
+
+    useEffect(
+        () => () => {
+            if (isDefined(objectUrl)) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        },
+        [objectUrl],
+    );
+
+    let previewUrl: string | undefined;
+    if (value instanceof File) {
+        previewUrl = objectUrl;
+    } else if (isDefined(value) && isImageFile(value)) {
+        previewUrl = value.url ?? undefined;
+    }
+
     return (
         <>
             <ListView withWrap spacing="sm" spacingOffset={-2}>
@@ -63,9 +100,7 @@ function FileUpload<const NAME>(props: Props<NAME>) {
                     {label}
                 </RawFileInput>
                 <p>
-                    {value?.name ? (
-                        value.name
-                    ) : 'No document selected'}
+                    {value?.name ?? 'No document selected'}
                 </p>
                 <Activity mode={isDefined(value) ? 'visible' : 'hidden'}>
                     <IconButton
@@ -79,6 +114,14 @@ function FileUpload<const NAME>(props: Props<NAME>) {
                     </IconButton>
                 </Activity>
             </ListView>
+            <Activity mode={isDefined(previewUrl) ? 'visible' : 'hidden'}>
+                <Image
+                    src={previewUrl}
+                    alt={value?.name ?? 'Preview'}
+                    withContainedFit
+                    size="lg"
+                />
+            </Activity>
             <Activity mode={error ? 'visible' : 'hidden'}>
                 <InputError>
                     {error}

@@ -3,8 +3,12 @@ import React, {
     useCallback,
     useEffect,
     useMemo,
+    useState,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -32,12 +36,14 @@ import {
 import {
     useCreateUserMutation,
     UserCreateInput,
+    useResetUserPasswordMutation,
     UserTypeEnum,
     UserUpdateInput,
     useUpdateUserMutation,
     useUserQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
@@ -92,6 +98,7 @@ function UserForm() {
     const isEditMode = isDefined(id);
     const alert = useAlert();
     const navigate = useRouting();
+    const { canEditUsers } = usePermissions();
 
     const [{ data, fetching: userDetailFetching }] = useUserQuery({
         variables: { id: (id ?? '') },
@@ -99,6 +106,9 @@ function UserForm() {
     });
     const [{ fetching: createPending }, createUserMutate] = useCreateUserMutation();
     const [{ fetching: updatePending }, updateUserMutate] = useUpdateUserMutation();
+    const [{ fetching: resetPending }, resetUserPassword] = useResetUserPasswordMutation();
+
+    const [newPassword, setNewPassword] = useState('');
 
     const userFormSchema = useMemo(
         () => getUserFormSchema(isEditMode),
@@ -148,7 +158,7 @@ function UserForm() {
             Object.entries(removeNull(mutationData)).filter(([key]) => key !== 'email'),
         ) as UserUpdateInput;
 
-        const res = await updateUserMutate({ id, data: updatePayload });
+        const res = await updateUserMutate({ data: { ...updatePayload, id } });
         const result = res.data?.updateUser;
 
         if (isDefined(result) && result.ok) {
@@ -171,6 +181,20 @@ function UserForm() {
         [validate, setError, id, handleUpdate, handleCreate],
     );
 
+    const handleResetPassword = useCallback(async () => {
+        if (isNotDefined(id) || !newPassword.trim()) {
+            return;
+        }
+        const res = await resetUserPassword({ data: { id }, newPassword });
+        const result = res.data?.resetUserPassword;
+        if (isDefined(result) && 'ok' in result && result.ok) {
+            setNewPassword('');
+            alert.show('Password reset successfully', { variant: 'success' });
+        } else {
+            alert.show(errorMessage, { variant: 'danger' });
+        }
+    }, [id, newPassword, resetUserPassword, alert]);
+
     useEffect(() => {
         if (isNotDefined(data?.user)) {
             return;
@@ -182,6 +206,10 @@ function UserForm() {
             username, email, firstName, lastName, userType,
         });
     }, [data, setValue]);
+
+    if (!canEditUsers) {
+        return <Navigate to="/users" replace />;
+    }
 
     if (userDetailFetching) {
         return (
@@ -240,24 +268,47 @@ function UserForm() {
                         error={error?.email}
                         onChange={setFieldValue}
                         placeholder="email"
+                        disabled={isEditMode}
                     />
                 </InputSection>
-                <InputSection
-                    title="Password"
-                    description={isEditMode
-                        ? 'Leave blank to keep the existing password'
-                        : 'Set an initial password for the user'}
-                    withAsteriskOnTitle={!isEditMode}
-                >
-                    <TextInput
-                        name="password"
-                        type="password"
-                        value={value.password}
-                        error={error?.password}
-                        onChange={setFieldValue}
-                        placeholder="password"
-                    />
-                </InputSection>
+                {!isEditMode && (
+                    <InputSection
+                        title="Password"
+                        description="Set an initial password for the user"
+                        withAsteriskOnTitle
+                    >
+                        <TextInput
+                            name="password"
+                            type="password"
+                            value={value.password}
+                            error={error?.password}
+                            onChange={setFieldValue}
+                            placeholder="password"
+                        />
+                    </InputSection>
+                )}
+                {isEditMode && (
+                    <InputSection
+                        title="Reset Password"
+                        description="Set a new password for this user"
+                    >
+                        <TextInput
+                            name="newPassword"
+                            type="password"
+                            value={newPassword}
+                            onChange={(val) => setNewPassword(val ?? '')}
+                            placeholder="new password"
+                        />
+                        <Button
+                            name={undefined}
+                            onClick={handleResetPassword}
+                            disabled={!newPassword.trim() || resetPending}
+                            styleVariant="outline"
+                        >
+                            {resetPending ? 'Resetting...' : 'Reset Password'}
+                        </Button>
+                    </InputSection>
+                )}
                 <InputSection
                     title="First Name"
                     description="First name of the user"

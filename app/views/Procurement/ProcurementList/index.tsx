@@ -22,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -42,6 +43,7 @@ const defaultFilter: ProcurementFilterUIType = {
 function ProcurementList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -116,18 +118,19 @@ function ProcurementList() {
             'Expire Date',
             (item) => item?.expiryDate,
         ),
-        createElementColumn<ProcurementListItem, string | number, EditDeleteActionsProps>(
-            'actions',
-            '',
-            EditDeleteActions,
-            (_, datum) => ({
-                id: datum.id,
-                onDelete,
-                itemTitle: datum.title,
-                to: 'editProcurements',
-            }),
-        ),
-    ], [onDelete]);
+        ...(canEditContent
+            ? [createElementColumn<ProcurementListItem, string | number, EditDeleteActionsProps>(
+                'actions',
+                '',
+                EditDeleteActions,
+                (_, datum) => ({
+                    id: datum.id,
+                    onDelete,
+                    itemTitle: datum.title,
+                    to: 'editProcurements',
+                }),
+            )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addProcurements');
@@ -138,7 +141,7 @@ function ProcurementList() {
             withPadding
             heading="Procurement"
             headerDescription="Manage procurement notices and tenders"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addProcurements"
                     styleVariant="filled"
@@ -147,7 +150,7 @@ function ProcurementList() {
                 >
                     Add Procurement
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <ProcurementListFilter
                     value={rawFilter}

@@ -4,7 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -50,6 +53,7 @@ import {
     useUpdateNewsMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
@@ -58,7 +62,6 @@ import {
     labelSelector,
     nameSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 import ActionLinkInputComponent from './actionLinkInput';
 
@@ -135,6 +138,7 @@ const defaultEditFormValue: PartialFormType = {};
 function NewsForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data: directives }] = useDirectiveQuery();
@@ -167,6 +171,12 @@ function NewsForm() {
         const alertMessage = `News ${id ? 'updated' : 'created'} successfully`;
         const currentLinks = mutationData.actionLinks ?? [];
         const originalLinks = data?.newsItem?.actionLinks ?? [];
+        const { coverImage, file, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            coverImage: coverImage instanceof File ? coverImage : undefined,
+            file: file instanceof File ? file : undefined,
+        };
 
         if (id) {
             const actionLinksMutation: NonNullable<ActionLinkInput[]> = currentLinks
@@ -195,7 +205,7 @@ function NewsForm() {
             const res = await updateNewsMutate({
                 pk: id,
                 data: {
-                    ...mutationData,
+                    ...dataToSubmit,
                     actionLinks: removeNull(actionLinksMutation),
                 } as NewsUpdateInput,
             });
@@ -210,7 +220,7 @@ function NewsForm() {
         } else {
             const res = await createNewsMutate({
                 data: {
-                    ...mutationData,
+                    ...dataToSubmit,
                     actionLinks: currentLinks.map((l) => ({
                         label: l.label ?? '',
                         url: l.url ?? '',
@@ -243,8 +253,6 @@ function NewsForm() {
             return;
         }
         const {
-            coverImage,
-            file,
             directiveId,
             actionLinks,
             ...other
@@ -260,23 +268,6 @@ function NewsForm() {
             directive: directiveId,
             actionLinks: actionLinksWithClientId,
         });
-
-        if (coverImage) {
-            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    coverImage: coverImageData,
-                }));
-            });
-        }
-        if (file) {
-            urlToFile(file.url, file.name).then((fileData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    file: fileData,
-                }));
-            });
-        }
     }, [data, setValue]);
 
     const directiveOptions = useMemo(() => directives?.strategicDirectives.results.map(
@@ -291,14 +282,15 @@ function NewsForm() {
         label: status,
     })), []);
 
-    const ContentEditor = useMemo(() => (
+    const ContentEditor = (
         <MarkdownEditor
+            name="content"
             value={value.content}
-            onChange={(val) => setFieldValue(val, 'content')}
+            onChange={setFieldValue}
             error={error?.content}
             placeholder="Start writing news here..."
         />
-    ), [value.content, error?.content, setFieldValue]);
+    );
 
     const handleCollectionAdd = useCallback(
         () => {
@@ -316,6 +308,10 @@ function NewsForm() {
         },
         [setFieldValue],
     );
+
+    if (!canEditContent) {
+        return <Navigate to="/news" replace />;
+    }
 
     if (newsDetailFetch) {
         return (
@@ -399,6 +395,7 @@ function NewsForm() {
                         onChange={setFieldValue}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
+                        accept="image/*"
                     />
                 </InputSection>
                 <InputSection

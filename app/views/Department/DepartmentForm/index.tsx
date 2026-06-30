@@ -3,7 +3,10 @@ import {
     useCallback,
     useEffect,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -38,6 +41,7 @@ import {
     useUpdateDepartmentMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
@@ -79,6 +83,7 @@ const defaultEditFormValue: PartialFormType = {};
 function DepartmentForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: departmentDetailFetch }] = useDepartmentDetailQuery({
@@ -159,6 +164,10 @@ function DepartmentForm() {
         });
     }, [data, setValue]);
 
+    if (!canEditContent) {
+        return <Navigate to="/departments" replace />;
+    }
+
     if (departmentDetailFetch) {
         return (
             <BlockLoading
@@ -174,7 +183,7 @@ function DepartmentForm() {
             <ListView layout="block">
                 <InputSection title={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
                 <Activity mode={data?.department.createdBy && data.department.modifiedBy ? 'visible' : 'hidden'}>
-                    <InputSection title={`Created by: ${data?.department.createdBy.fullName} ${data?.department.createdBy.fullName}`}>
+                    <InputSection title={`Created by: ${data?.department.createdBy.firstName} ${data?.department.createdBy.lastName}`}>
                         <Heading level={6}>
                             Modified by:
                             {' '}

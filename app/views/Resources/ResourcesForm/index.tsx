@@ -4,7 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -40,6 +43,7 @@ import {
     useUpdateResourceMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
@@ -48,7 +52,6 @@ import {
     labelSelector,
     nameSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<ResourceCreateInput>
 type FormSchema = ObjectSchema<PartialFormType>;
@@ -89,6 +92,7 @@ const defaultEditFormValue: PartialFormType = {};
 function ResourceForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: resourcesDetailFetch }] = useResourceDetailQuery({
@@ -112,10 +116,16 @@ function ResourceForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'resources';
         const alertMessage = `Resources ${id ? 'updated' : 'created'} successfully`;
+        const { file, coverImage, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            file: file instanceof File ? file : undefined,
+            coverImage: coverImage instanceof File ? coverImage : undefined,
+        };
         if (id) {
             const res = await updateResourceMutate({
                 pk: id,
-                data: mutationData as ResourceUpdateInput,
+                data: dataToSubmit as ResourceUpdateInput,
             });
             const result = res.data?.updateResource;
             if (result?.ok) {
@@ -127,7 +137,7 @@ function ResourceForm() {
             }
         } else {
             const res = await createResourceMutate({
-                data: mutationData as ResourceCreateInput,
+                data: dataToSubmit as ResourceCreateInput,
             });
             const result = res.data?.createResource;
             if (result?.ok) {
@@ -154,8 +164,6 @@ function ResourceForm() {
             return;
         }
         const {
-            file,
-            coverImage,
             directiveId,
             ...other
         } = removeNull(data.resource);
@@ -164,23 +172,6 @@ function ResourceForm() {
             ...other,
             directive: directiveId,
         });
-        if (file) {
-            urlToFile(file.url, file.name).then((fileData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    file: fileData,
-                }));
-            });
-        }
-
-        if (coverImage) {
-            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    coverImage: coverImageData,
-                }));
-            });
-        }
     }, [data, setValue]);
 
     const directiveOptions = useMemo(() => directive?.strategicDirectives.results.map(
@@ -195,14 +186,19 @@ function ResourceForm() {
         label: scope,
     })), []);
 
-    const ContentEditor = useMemo(() => (
+    const ContentEditor = (
         <MarkdownEditor
+            name="content"
             value={value.content}
-            onChange={(val) => setFieldValue(val, 'content')}
+            onChange={setFieldValue}
             error={error?.content}
             placeholder="Start writing content here..."
         />
-    ), [value.content, error?.content, setFieldValue]);
+    );
+
+    if (!canEditContent) {
+        return <Navigate to="/resources" replace />;
+    }
 
     if (resourcesDetailFetch) {
         return (
@@ -251,7 +247,7 @@ function ResourceForm() {
                 </InputSection>
                 <InputSection
                     title="File"
-                    description="Add a File, which will be attached and shown on Radio Page"
+                    description="Add a File, which will be attached and shown on Resource Page"
                     withAsteriskOnTitle
                 >
                     <FileUpload
@@ -263,7 +259,7 @@ function ResourceForm() {
                 </InputSection>
                 <InputSection
                     title="Cover Image"
-                    description="Add a File, which will be attached and shown on Radio Page"
+                    description="Add a Cover Image, which will be attached and shown on Resource Page"
                     withAsteriskOnTitle
                 >
                     <FileUpload
@@ -271,6 +267,8 @@ function ResourceForm() {
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
+                        accept="image/*"
+
                     />
                 </InputSection>
                 <InputSection

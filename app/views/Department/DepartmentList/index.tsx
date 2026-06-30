@@ -22,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -42,6 +43,7 @@ const defaultFilter: DepartmentFilterUIType = {
 function DepartmentList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -120,19 +122,20 @@ function DepartmentList() {
             'Contact Person Email',
             (dept) => dept.contactPersonEmail,
         ),
-        createElementColumn<EventListItem, string | number, EditDeleteActionsProps>(
-            'actions',
-            '',
-            EditDeleteActions,
-            (_, datum) => ({
-                id: datum.id,
-                onDelete,
-                itemTitle: datum.title,
-                to: 'editDepartment',
-            }),
-            { columnWidth: 150 },
-        ),
-    ], [onDelete]);
+        ...(canEditContent
+            ? [createElementColumn<EventListItem, string | number, EditDeleteActionsProps>(
+                'actions',
+                '',
+                EditDeleteActions,
+                (_, datum) => ({
+                    id: datum.id,
+                    onDelete,
+                    itemTitle: datum.title,
+                    to: 'editDepartment',
+                }),
+                { columnWidth: 150 },
+            )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addDepartment');
@@ -143,7 +146,7 @@ function DepartmentList() {
             withPadding
             heading="Department"
             headerDescription="Manage NRCS departments and their contact information"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addDepartment"
                     styleVariant="filled"
@@ -152,7 +155,7 @@ function DepartmentList() {
                 >
                     Add Department
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <DepartmentListFilter
                     value={rawFilter}

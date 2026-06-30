@@ -4,7 +4,10 @@ import {
     useEffect,
     useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -37,13 +40,13 @@ import {
     useUpdatePartnerMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     keySelector,
     labelSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<PartnerCreateInput>
 
@@ -71,6 +74,7 @@ const defaultEditFormValue: PartialFormType = {};
 function PartnerForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: partnerDetailFetch }] = usePartnerDetailQuery({
@@ -92,10 +96,15 @@ function PartnerForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'partner';
         const alertMessage = `Partner ${id ? 'updated' : 'created'} successfully`;
+        const { image, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            image: image instanceof File ? image : undefined,
+        };
         if (id) {
             const res = await updatePartnerMutate({
                 pk: id,
-                data: mutationData as PartnerUpdateInput,
+                data: dataToSubmit as PartnerUpdateInput,
             });
             const result = res.data?.updatePartner;
             if (result?.ok) {
@@ -107,7 +116,7 @@ function PartnerForm() {
             }
         } else {
             const res = await createPartnerMutate({
-                data: mutationData as PartnerCreateInput,
+                data: dataToSubmit as PartnerCreateInput,
             });
             const result = res.data?.createPartner;
             if (result?.ok) {
@@ -133,29 +142,17 @@ function PartnerForm() {
         if (isNotDefined(data?.partner)) {
             return;
         }
-        const {
-            image,
-            ...other
-        } = removeNull(data.partner);
-
-        setValue({
-            ...other,
-        });
-
-        if (image) {
-            urlToFile(image.url, image.name).then((file) => {
-                setValue((prev) => ({
-                    ...prev,
-                    image: file,
-                }));
-            });
-        }
+        setValue(removeNull(data.partner));
     }, [data, setValue]);
 
     const scopeOptions = useMemo(() => Object.values(PartnerScopeEnum).map((scope) => ({
         key: scope,
         label: scope,
     })), []);
+
+    if (!canEditContent) {
+        return <Navigate to="/partners" replace />;
+    }
 
     if (partnerDetailFetch) {
         return (
@@ -180,12 +177,12 @@ function PartnerForm() {
                 </InputSection>
                 <Activity mode={data?.partner.createdBy && data?.partner.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
-                        title={`Created by: ${data?.partner.createdBy.fullName}`}
+                        title={`Created by: ${data?.partner.createdBy.firstName}`}
                     >
                         <Heading level={6}>
                             Modified by:
                             {' '}
-                            {data?.partner.createdBy.fullName}
+                            {data?.partner.createdBy.lastName}
                         </Heading>
                     </InputSection>
                 </Activity>
@@ -229,6 +226,7 @@ function PartnerForm() {
                         onChange={setFieldValue}
                         value={value.image}
                         error={getErrorString(error?.image)}
+                        accept="image/*"
                     />
                 </InputSection>
                 <ListView

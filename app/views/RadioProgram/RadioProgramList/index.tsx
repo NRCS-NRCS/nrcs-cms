@@ -22,6 +22,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -38,6 +39,7 @@ const defaultFilter: RadioProgramFilterUIType = {
 function RadioProgramList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -109,7 +111,7 @@ function RadioProgramList() {
             'Type',
             (dept) => dept?.type,
         ),
-        createElementColumn<RadioProgramListItem, string | number,
+        ...(canEditContent ? [createElementColumn<RadioProgramListItem, string | number,
          EditDeleteActionsProps>(
              'actions',
              '',
@@ -120,8 +122,8 @@ function RadioProgramList() {
                  itemTitle: datum.title,
                  to: 'editRadioProgram',
              }),
-         ),
-    ], [onDelete]);
+         )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addRadioProgram');
@@ -132,7 +134,7 @@ function RadioProgramList() {
             withPadding
             heading="Radio Program"
             headerDescription="Manage radio program episodes and content"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addRadioProgram"
                     styleVariant="filled"
@@ -141,7 +143,7 @@ function RadioProgramList() {
                 >
                     Add Radio Program
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <RadioProgramListFilter
                     value={rawFilter}

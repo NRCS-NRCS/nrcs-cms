@@ -62,11 +62,6 @@ const navigationItem : NavigationItem[] = [
                 icon: <FaRegQuestionCircle />,
             },
             {
-                title: 'Highlight',
-                to: 'highlight',
-                icon: <FaHighlighter />,
-            },
-            {
                 to: 'news',
                 title: 'News',
                 icon: <FaRegNewspaper />,

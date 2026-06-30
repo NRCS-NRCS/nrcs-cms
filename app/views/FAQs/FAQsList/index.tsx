@@ -23,6 +23,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -43,6 +44,7 @@ const defaultFilter: FAQsFilterUIType = {
 function FAQsList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -115,19 +117,20 @@ function FAQsList() {
             'Order Index',
             (faq) => faq.orderIndex,
         ),
-        createElementColumn<FaqListItem, string | number, EditDeleteActionsProps>(
-            'actions',
-            '',
-            EditDeleteActions,
-            (_, datum) => ({
-                id: datum.id,
-                onDelete,
-                itemTitle: datum.question,
-                to: 'editFaq',
-            }),
-            { columnWidth: 150 },
-        ),
-    ], [onDelete]);
+        ...(canEditContent
+            ? [createElementColumn<FaqListItem, string | number, EditDeleteActionsProps>(
+                'actions',
+                '',
+                EditDeleteActions,
+                (_, datum) => ({
+                    id: datum.id,
+                    onDelete,
+                    itemTitle: datum.question,
+                    to: 'editFaq',
+                }),
+                { columnWidth: 150 },
+            )] : []),
+    ], [onDelete, canEditContent]);
 
     const handleAddClick = useCallback(() => {
         navigate('addFaq');
@@ -138,7 +141,7 @@ function FAQsList() {
             withPadding
             heading="FAQs"
             headerDescription="Browse and manage frequently asked questions"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addFaq"
                     styleVariant="filled"
@@ -147,7 +150,7 @@ function FAQsList() {
                 >
                     Add FAQs
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <FAQsListFilter
                     value={rawFilter}

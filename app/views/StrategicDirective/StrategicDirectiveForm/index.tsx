@@ -2,9 +2,11 @@ import {
     Activity,
     useCallback,
     useEffect,
-    useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import { AddLineIcon } from '@ifrc-go/icons';
 import {
     BlockLoading,
@@ -42,9 +44,9 @@ import {
     useUpdateStrategicDirectiveMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 import MajorResponsibilities from './majorResponsibilites';
 
@@ -112,6 +114,7 @@ const defaultEditFormValue: ExtendedPartialFormType = {
 function StrategicDirectiveForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: directiveDetailFetch }] = useStrategicDirectiveDetailQuery({
@@ -142,6 +145,11 @@ function StrategicDirectiveForm() {
         const alertMessage = `Strategic Directive ${id ? 'updated' : 'created'} successfully`;
         const currentLinks = mutationData.majorResponsibilities ?? [];
         const originalLinks = data?.strategicDirective.majorResponsibilities ?? [];
+        const { coverImage, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            coverImage: coverImage instanceof File ? coverImage : undefined,
+        };
 
         if (id) {
             const majorResponsibilitiesList:
@@ -170,7 +178,7 @@ function StrategicDirectiveForm() {
             const res = await updateStrategicDirectiveMutate({
                 pk: id,
                 data: {
-                    ...mutationData,
+                    ...dataToSubmit,
                     majorResponsibilities: majorResponsibilitiesList,
                 },
             });
@@ -185,7 +193,7 @@ function StrategicDirectiveForm() {
         } else {
             const res = await createStrategicDirectiveMutate({
                 data: {
-                    ...mutationData,
+                    ...dataToSubmit,
                     majorResponsibilities: mutationData
                         .majorResponsibilities?.map((resp) => ({
                             description: resp.description ?? '',
@@ -224,7 +232,6 @@ function StrategicDirectiveForm() {
             return;
         }
         const {
-            coverImage,
             majorResponsibilities,
             ...other
         } = removeNull(data.strategicDirective);
@@ -236,14 +243,6 @@ function StrategicDirectiveForm() {
                 clientId: randomString(),
             })),
         });
-        if (coverImage) {
-            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    coverImage: coverImageData,
-                }));
-            });
-        }
     }, [data, setValue]);
 
     const handleMRAdd = useCallback(
@@ -264,13 +263,18 @@ function StrategicDirectiveForm() {
         [setFieldValue],
     );
 
-    const ContentEditor = useMemo(() => (
+    const ContentEditor = (
         <MarkdownEditor
+            name="description"
             value={value.description}
-            onChange={(val) => setFieldValue(val, 'description')}
+            onChange={setFieldValue}
             error={error?.description}
         />
-    ), [value.description, error?.description, setFieldValue]);
+    );
+
+    if (!canEditContent) {
+        return <Navigate to="/strategic-directive" replace />;
+    }
 
     if (directiveDetailFetch) {
         return (
@@ -323,6 +327,7 @@ function StrategicDirectiveForm() {
                         onChange={setFieldValue}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
+                        accept="image/*"
                     />
                 </InputSection>
                 <InputSection

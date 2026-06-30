@@ -2,9 +2,11 @@ import {
     Activity,
     useCallback,
     useEffect,
-    useMemo,
 } from 'react';
-import { useParams } from 'react-router';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
 import {
     BlockLoading,
     Button,
@@ -38,13 +40,13 @@ import {
     useUpdateProjectMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
     idSelector,
     nameSelector,
 } from '#utils/common';
-import urlToFile from '#utils/urlToFile';
 
 type PartialFormType = PartialForm<ProjectCreateInput>
 
@@ -75,6 +77,7 @@ const defaultEditFormValue: PartialFormType = {};
 function ProjectForm() {
     const { id } = useParams();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
     const alert = useAlert();
 
     const [{ data, fetching: projectDetailFetch }] = useProjectDetailQuery({
@@ -98,10 +101,15 @@ function ProjectForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'project';
         const alertMessage = `Project ${id ? 'updated' : 'created'} successfully`;
+        const { coverImage, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            coverImage: coverImage instanceof File ? coverImage : undefined,
+        };
         if (id) {
             const res = await updateProjectMutate({
                 pk: id,
-                data: mutationData as ProjectUpdateInput,
+                data: dataToSubmit as ProjectUpdateInput,
             });
             const result = res.data?.updateProject;
             if (result?.ok) {
@@ -113,7 +121,7 @@ function ProjectForm() {
             }
         } else {
             const res = await createProjectMutate({
-                data: mutationData as ProjectCreateInput,
+                data: dataToSubmit as ProjectCreateInput,
             });
             const result = res.data?.createProject;
             if (result?.ok) {
@@ -136,26 +144,10 @@ function ProjectForm() {
     );
 
     useEffect(() => {
-        if (data?.project) {
-            const { project } = data;
-            if (project.coverImage) {
-                urlToFile(project?.coverImage?.url, project?.coverImage?.name)
-                    .then((file) => {
-                        setFieldValue(file, 'coverImage');
-                    });
-            }
-            setFieldValue(project?.title, 'title');
-            setFieldValue(project?.description, 'description');
-            setFieldValue(project?.department?.id, 'department');
-        }
-    }, [data, setFieldValue]);
-
-    useEffect(() => {
         if (isNotDefined(data?.project)) {
             return;
         }
         const {
-            coverImage,
             department,
             ...other
         } = removeNull(data.project);
@@ -164,14 +156,6 @@ function ProjectForm() {
             ...other,
             department: department?.id,
         });
-        if (coverImage) {
-            urlToFile(coverImage.url, coverImage.name).then((coverImageData) => {
-                setValue((prev) => ({
-                    ...prev,
-                    file: coverImageData,
-                }));
-            });
-        }
     }, [data, setValue]);
 
     const departmentOptions = departments?.departments.results.map(
@@ -181,14 +165,19 @@ function ProjectForm() {
         }),
     ) ?? [];
 
-    const ContentEditor = useMemo(() => (
+    const ContentEditor = (
         <MarkdownEditor
+            name="description"
             value={value.description}
-            onChange={(val) => setFieldValue(val, 'description')}
+            onChange={setFieldValue}
             error={error?.description}
             placeholder="Start writing description here..."
         />
-    ), [value.description, error?.description, setFieldValue]);
+    );
+
+    if (!canEditContent) {
+        return <Navigate to="/projects" replace />;
+    }
 
     if (projectDetailFetch) {
         return (
@@ -245,6 +234,7 @@ function ProjectForm() {
                         onChange={setFieldValue}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
+                        accept="image/*"
                     />
                 </InputSection>
                 <InputSection

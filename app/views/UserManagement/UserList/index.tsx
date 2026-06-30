@@ -24,6 +24,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { errorMessage } from '#utils/common';
 
@@ -43,6 +44,7 @@ const defaultFilter: UsersFilterType = {
 function UsersList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditUsers } = usePermissions();
 
     const {
         filter,
@@ -83,7 +85,7 @@ function UsersList() {
 
     const onDelete = useCallback(
         (id: string) => {
-            deleteUser({ id }).then((resp) => {
+            deleteUser({ data: { id } }).then((resp) => {
                 if (resp.data?.deleteUser) {
                     reExecuteQuery();
                     alert.show('User has been deleted successfully', { variant: 'success' });
@@ -136,19 +138,21 @@ function UsersList() {
                 'User Type',
                 (dept) => dept.userType,
             ),
-            createElementColumn<UsersListItem, string | number, EditDeleteActionsProps>(
-                'actions',
-                '',
-                EditDeleteActions,
-                (_, datum) => ({
-                    id: datum.id,
-                    onDelete,
-                    itemTitle: datum.username,
-                    to: 'editUser',
-                }),
-            ),
+            ...(canEditUsers ? [
+                createElementColumn<UsersListItem, string | number, EditDeleteActionsProps>(
+                    'actions',
+                    '',
+                    EditDeleteActions,
+                    (_, datum) => ({
+                        id: datum.id,
+                        onDelete,
+                        itemTitle: datum.username,
+                        to: 'editUser',
+                    }),
+                ),
+            ] : []),
         ],
-        [onDelete],
+        [onDelete, canEditUsers],
     );
     const handleCreateClick = useCallback(() => {
         navigate('addUser');
@@ -164,7 +168,7 @@ function UsersList() {
                 />
             )}
             headerDescription="Manage authenticated users and control access"
-            headerActions={(
+            headerActions={canEditUsers ? (
                 <Button
                     name={undefined}
                     onClick={handleCreateClick}
@@ -173,7 +177,7 @@ function UsersList() {
                 >
                     Create
                 </Button>
-            )}
+            ) : undefined}
             footerActions={(
                 <Pager
                     activePage={page}

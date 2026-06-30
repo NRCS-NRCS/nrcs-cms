@@ -25,6 +25,7 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
@@ -46,6 +47,7 @@ const defaultFilter: BlogFilterUIType = {
 function BlogList() {
     const navigate = useRouting();
     const alert = useAlert();
+    const { canEditContent } = usePermissions();
 
     const {
         filter,
@@ -130,7 +132,7 @@ function BlogList() {
                 'Status',
                 (blog) => blog.status,
             ),
-            createElementColumn<BlogListType, string | number,
+            ...(canEditContent ? [createElementColumn<BlogListType, string | number,
              EditDeleteActionsProps>(
                  'actions',
                  '',
@@ -141,9 +143,9 @@ function BlogList() {
                      itemTitle: datum.title,
                      to: 'editBlog',
                  }),
-             ),
+             )] : []),
         ]),
-        [onDelete],
+        [onDelete, canEditContent],
     );
 
     const handleAddClick = useCallback(() => {
@@ -155,7 +157,7 @@ function BlogList() {
             withPadding
             heading="Blog"
             headerDescription="Manage and publish blog articles"
-            headerActions={(
+            headerActions={canEditContent ? (
                 <Button
                     name="addBlog"
                     styleVariant="filled"
@@ -164,7 +166,7 @@ function BlogList() {
                 >
                     Add blogs
                 </Button>
-            )}
+            ) : undefined}
             filters={(
                 <BlogListFilter
                     value={rawFilter}
