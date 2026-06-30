@@ -1,7 +1,8 @@
-import React, {
+import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -9,6 +10,7 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import {
+    createBooleanColumn,
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
@@ -20,29 +22,60 @@ import {
     useNewsQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
-import usePagination from '#hooks/usePagination';
+import useFilterState from '#hooks/useFilterState';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-type NewsListItem = NonNullable<NewsQuery['news']>['results'][number];
+import NewsListFilter, { NewsFilterUIType } from '../NewsListFilters';
+
+type NewsListItem = NonNullable<NewsQuery['news']>['results'][number] & { no: number };
+
+const defaultFilter: NewsFilterUIType = {
+    status: undefined,
+    isHighlighted: undefined,
+    search: undefined,
+};
 
 function NewsList() {
     const navigate = useRouting();
     const alert = useAlert();
 
     const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
         page,
         setPage,
-        pageSize,
-        variables,
-    } = usePagination();
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const [{ fetching, data }, reExecuteQuery] = useNewsQuery({ variables });
+    const queryVariables = useMemo(() => ({
+        filter: {
+            status: filter.status ?? undefined,
+            isHighlighted: filter.isHighlighted !== undefined
+                ? filter.isHighlighted === 'true'
+                : undefined,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useNewsQuery({ variables: queryVariables });
     const [, deleteNews] = useDeleteNewsMutation();
 
     const tableData = useMemo(
-        () => data?.news.results ?? [],
-        [data],
+        () => (data?.news.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * limit + index + 1,
+        })),
+        [data, page, limit],
     );
 
     const onDelete = useCallback(
@@ -61,7 +94,7 @@ function NewsList() {
         createStringColumn<NewsListItem, string | number>(
             'sn',
             'S.N.',
-            (member) => String(tableData.indexOf(member) + 1),
+            (member) => String(member.no),
         ),
         createStringColumn<NewsListItem, string | number>(
             'title',
@@ -73,9 +106,14 @@ function NewsList() {
             'Published Date',
             (dept) => dept?.publishedDate,
         ),
+
+        createBooleanColumn<NewsListItem, string | number>(
+            'highlighted',
+            'Highlighted',
+            (dept) => dept?.isHighlighted,
+        ),
         createStringColumn<NewsListItem, string | number>(
             'directive',
-
             'Strategic Directives',
             (dept) => dept?.directive?.title,
         ),
@@ -91,7 +129,7 @@ function NewsList() {
                  to: 'editNews',
              }),
          ),
-    ], [onDelete, tableData]);
+    ], [onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addNews');
@@ -101,20 +139,28 @@ function NewsList() {
         <Container
             withPadding
             heading="News"
+            headerDescription="Manage news articles and highlights"
             headerActions={(
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addNews"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add News
                 </Button>
             )}
+            filters={(
+                <NewsListFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
                     itemsCount={data?.news.totalCount ?? 0}
-                    maxItemsPerPage={pageSize}
+                    maxItemsPerPage={limit}
                     onActivePageChange={setPage}
                 />
             )}
@@ -123,7 +169,7 @@ function NewsList() {
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

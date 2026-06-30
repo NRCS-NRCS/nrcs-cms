@@ -15,9 +15,6 @@ const COUNTS = gql`
     jobVacancies {
       totalCount
     }
-    highlights(filters: { isActive: true }) {
-      totalCount
-    }
     majorResponsibilities {
       totalCount
     }

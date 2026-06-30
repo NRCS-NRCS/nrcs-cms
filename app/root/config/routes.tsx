@@ -79,26 +79,6 @@ const addFaq: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
-const highlight: RouteConfig = {
-    index: true,
-    path: 'highlights',
-    load: () => import('#views/Highlight/HighlightList'),
-    visibility: 'is-authenticated',
-};
-
-const editHighlight: RouteConfig = {
-    index: true,
-    path: 'highlights/:id/edit',
-    load: () => import('#views/Highlight/HighlightForm'),
-    visibility: 'is-authenticated',
-};
-
-const addHighlight: RouteConfig = {
-    index: true,
-    path: 'highlights/add',
-    load: () => import('#views/Highlight/HighlightForm'),
-    visibility: 'is-authenticated',
-};
 const partner: RouteConfig = {
     index: true,
     path: 'partners',
@@ -284,9 +264,6 @@ const routes = {
     faqs,
     addFaq,
     editFaq,
-    highlight,
-    addHighlight,
-    editHighlight,
     partner,
     editPartner,
     addPartner,

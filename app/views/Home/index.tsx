@@ -24,7 +24,6 @@ import {
     ListView,
 } from '@ifrc-go/ui';
 
-import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 import { useCountsQuery } from '#generated/types/graphql';
 import useRouting, { RoutesMap } from '#hooks/useRouting';
@@ -62,12 +61,12 @@ function Dashboards() {
             icon: <FaQuestionCircle />,
             redirect: 'addFaq',
         },
-        {
-            title: 'Highlights',
-            count: data?.highlights.totalCount || 0,
-            icon: <FaHighlighter />,
-            redirect: 'addHighlight',
-        },
+        // {
+        //     title: 'Highlights',
+        //     count: data?.highlights.totalCount || 0,
+        //     icon: <FaHighlighter />,
+        //     redirect: 'addHighlight',
+        // },
         {
             title: 'Vacancies',
             count: data?.jobVacancies.totalCount || 0,
@@ -133,12 +132,10 @@ function Dashboards() {
                     Welcome back
                     {' '}
                     <strong>
-                        {user?.firstName}
-                        {' '}
-                        {user?.lastName}
+                        {user?.fullName}
                     </strong>
                     {' '}
-                    to the NRC CMS Dashboard.
+                    to the NRCS CMS Dashboard.
                     <br />
                     Use the navigation menu to access different sections of the CMS.
                 </>

@@ -14,6 +14,7 @@ const NEWS_QUERY = gql`
                 publishedDate
                 status
                 title
+                isHighlighted
                 directive {
                     title
                 }
@@ -46,6 +47,12 @@ const NEWS_DETAIL_QUERY = gql`
             slug
             status
             title
+            isHighlighted
+            actionLinks {
+                id
+                label
+                url
+            }
             modifiedBy {
                 firstName
                 lastName

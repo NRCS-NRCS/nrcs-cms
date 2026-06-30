@@ -8,6 +8,7 @@ import { useParams } from 'react-router';
 import {
     BlockLoading,
     Button,
+    Checkbox,
     Container,
     DateInput,
     Heading,
@@ -19,8 +20,10 @@ import {
 import {
     isNotDefined,
     noOp,
+    randomString,
 } from '@togglecorp/fujs';
 import {
+    ArraySchema,
     createSubmitHandler,
     getErrorObject,
     getErrorString,
@@ -28,12 +31,16 @@ import {
     PartialForm,
     removeNull,
     requiredStringCondition,
+    urlCondition,
     useForm,
+    useFormArray,
 } from '@togglecorp/toggle-form';
 
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
 import {
+    ActionLinkInput,
+    ActionLinkType,
     NewsCreateInput,
     NewsUpdateInput,
     StatusEnum,
@@ -53,10 +60,24 @@ import {
 } from '#utils/common';
 import urlToFile from '#utils/urlToFile';
 
-type PartialFormType = PartialForm<NewsCreateInput>
+import ActionLinkInputComponent from './actionLinkInput';
+
+interface ActionLinkFormValue extends ActionLinkType {
+    clientId: string;
+}
+
+type PartialFormType = Omit<PartialForm<NewsCreateInput>, 'actionLinks'> &
+ { actionLinks?: PartialActionLinkForm[];
+};
+type PartialActionLinkForm = PartialForm<ActionLinkFormValue, 'clientId'>;
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
+
+type ActionLinkSchema = ObjectSchema<PartialActionLinkForm, PartialFormType>;
+type ActionLinkSchemaFields = ReturnType<ActionLinkSchema['fields']>;
+type ActionLinksSchema = ArraySchema<PartialActionLinkForm, PartialFormType>;
+type ActionLinksSchemaMember = ReturnType<ActionLinksSchema['member']>;
 
 const EditNewsSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
@@ -86,6 +107,26 @@ const EditNewsSchema: FormSchema = {
         status: {
             required: true,
         },
+        actionLinks: {
+            keySelector: (col) => col.clientId,
+            member: (): ActionLinksSchemaMember => ({
+                fields: (): ActionLinkSchemaFields => ({
+                    clientId: { required: true },
+                    id: {},
+                    label: {
+                        required: true,
+                        requiredValidation: requiredStringCondition,
+                    },
+                    url: {
+                        required: true,
+                        validations: [urlCondition],
+                        requiredValidation: requiredStringCondition,
+                    },
+                }),
+            }),
+
+        },
+        isHighlighted: {},
     }),
 };
 
@@ -114,13 +155,49 @@ function NewsForm() {
 
     const error = getErrorObject(formError);
 
+    const actionLinkErrors = getErrorObject(error?.actionLinks);
+
+    const {
+        setValue: onActionLinkChange,
+        removeValue: onActionLinkRemove,
+    } = useFormArray<'actionLinks', PartialActionLinkForm>('actionLinks', setFieldValue);
+
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'news';
         const alertMessage = `News ${id ? 'updated' : 'created'} successfully`;
+        const currentLinks = mutationData.actionLinks ?? [];
+        const originalLinks = data?.newsItem?.actionLinks ?? [];
+
         if (id) {
+            const actionLinksMutation: NonNullable<ActionLinkInput[]> = currentLinks
+                .map((link) => {
+                    const label = link.label ?? '';
+                    const url = link.url ?? '';
+                    if (!link.id) {
+                        return {
+                            create: { label, url },
+                        };
+                    }
+                    return {
+                        update: { id: link.id, label, url },
+                    };
+                });
+
+            originalLinks.forEach((orig) => {
+                const exists = currentLinks.find((curr) => curr.id === orig.id);
+                if (!exists) {
+                    actionLinksMutation.push({
+                        delete: { id: orig.id },
+                    });
+                }
+            });
+
             const res = await updateNewsMutate({
                 pk: id,
-                data: mutationData as NewsUpdateInput,
+                data: {
+                    ...mutationData,
+                    actionLinks: removeNull(actionLinksMutation),
+                } as NewsUpdateInput,
             });
             const result = res.data?.updateNews;
             if (result?.ok) {
@@ -132,7 +209,13 @@ function NewsForm() {
             }
         } else {
             const res = await createNewsMutate({
-                data: mutationData as NewsCreateInput,
+                data: {
+                    ...mutationData,
+                    actionLinks: currentLinks.map((l) => ({
+                        label: l.label ?? '',
+                        url: l.url ?? '',
+                    })),
+                } as NewsCreateInput,
             });
             const result = res.data?.createNews;
             if (result?.ok) {
@@ -143,7 +226,8 @@ function NewsForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, updateNewsMutate, id, navigate, setError, createNewsMutate]);
+    }, [id, data?.newsItem?.actionLinks,
+        updateNewsMutate, navigate, alert, setError, createNewsMutate]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -162,12 +246,19 @@ function NewsForm() {
             coverImage,
             file,
             directiveId,
+            actionLinks,
             ...other
         } = removeNull(data.newsItem);
+
+        const actionLinksWithClientId = (actionLinks ?? []).map((link) => ({
+            ...link,
+            clientId: randomString(),
+        }));
 
         setValue({
             ...other,
             directive: directiveId,
+            actionLinks: actionLinksWithClientId,
         });
 
         if (coverImage) {
@@ -208,6 +299,23 @@ function NewsForm() {
             placeholder="Start writing news here..."
         />
     ), [value.content, error?.content, setFieldValue]);
+
+    const handleCollectionAdd = useCallback(
+        () => {
+            const clientId = randomString();
+            const newActionLink: PartialActionLinkForm = {
+                clientId,
+            };
+
+            setFieldValue(
+                (oldValue: PartialActionLinkForm[] | undefined) => (
+                    [...(oldValue ?? []), newActionLink]
+                ),
+                'actionLinks',
+            );
+        },
+        [setFieldValue],
+    );
 
     if (newsDetailFetch) {
         return (
@@ -335,12 +443,45 @@ function NewsForm() {
                         error={error?.status}
                     />
                 </InputSection>
+                <InputSection
+                    title="Highlight"
+                    description="Click on the checkbox if the news is to be Highlighted"
+                    withAsteriskOnTitle
+                >
+                    <Checkbox
+                        name="isHighlighted"
+                        label="Highlighted"
+                        onChange={setFieldValue}
+                        value={value.isHighlighted}
+                        error={error?.isHighlighted}
+                    />
+                </InputSection>
                 <InputSection withoutTitleSection>
                     <Heading level={5}>
                         Write News
                     </Heading>
                 </InputSection>
                 {ContentEditor}
+                <InputSection
+                    title="Action Link"
+                    description="Add link to the highlight and the name to be displayed for the URL"
+                >
+                    <ListView layout="block" spacing="sm">
+                        {(value.actionLinks || []).map((link, index) => (
+                            <ActionLinkInputComponent
+                                key={link.clientId}
+                                index={index}
+                                value={link}
+                                onChange={onActionLinkChange}
+                                onRemove={onActionLinkRemove}
+                                error={actionLinkErrors?.[link.clientId ?? 0]}
+                            />
+                        ))}
+                        <Button name="add-link" onClick={handleCollectionAdd}>
+                            Add Link
+                        </Button>
+                    </ListView>
+                </InputSection>
                 <ListView
                     withPadding
                     withBackground
