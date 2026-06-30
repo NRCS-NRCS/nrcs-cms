@@ -231,6 +231,19 @@ const users: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const addUser: RouteConfig = {
+    index: true,
+    path: 'users/add',
+    load: () => import('#views/UserManagement/UserForm'),
+    visibility: 'is-authenticated',
+};
+const editUser: RouteConfig = {
+    index: true,
+    path: 'users/:id/edit',
+    load: () => import('#views/UserManagement/UserForm'),
+    visibility: 'is-authenticated',
+};
+
 const resources: RouteConfig = {
     index: true,
     path: 'resources',
@@ -286,6 +299,8 @@ const routes = {
     editStrategicDirectives,
     strategicDirectives,
     users,
+    addUser,
+    editUser,
     resources,
     addResources,
     editResources,

@@ -7,8 +7,6 @@ import {
     BlockLoading,
     Button,
     Container,
-    Description,
-    Heading,
     Image,
     InlineLayout,
     ListView,
@@ -39,16 +37,20 @@ import styles from './styles.module.css';
 const LOGIN_MUTATION = gql`
     mutation Login($username: String!, $password: String!) {
         login(username: $username, password: $password) {
-            email
-            firstName
-            id
+            userType
             lastName
+            lastLogin
+            isActive
+            id
+            firstName
+            email
+            createdAt
         }
     }
 `;
 
 interface LoginFormFields {
-    email?: string;
+    username?: string;
     password?: string;
 }
 
@@ -57,7 +59,7 @@ type LoginFormSchemaFields = ReturnType<LoginFormSchema['fields']>
 
 const loginFormSchema: LoginFormSchema = {
     fields: (): LoginFormSchemaFields => ({
-        email: {
+        username: {
             required: true,
             requiredValidation: requiredStringCondition,
         },
@@ -90,7 +92,7 @@ function Login() {
     const handleMutation = useCallback(async (mutationData: LoginFormFields) => {
         try {
             const { data, error: apiError } = await triggerLogin({
-                username: mutationData.email ?? '',
+                username: mutationData.username ?? '',
                 password: mutationData.password ?? '',
             });
 
@@ -181,11 +183,11 @@ function Login() {
                                 spacing="lg"
                             >
                                 <TextInput
-                                    name="email"
-                                    label="Email/Username"
-                                    value={value.email}
+                                    name="username"
+                                    label="Username"
+                                    value={value.username}
                                     onChange={setFieldValue}
-                                    error={error?.email}
+                                    error={error?.username}
                                     withAsterisk
                                     disabled={loginPending}
                                     autoFocus

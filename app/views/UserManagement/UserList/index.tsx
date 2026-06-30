@@ -1,36 +1,106 @@
-import { useMemo } from 'react';
 import {
+    useCallback,
+    useMemo,
+} from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
+import {
+    Button,
     Container,
     Pager,
     Table,
 } from '@ifrc-go/ui';
-import { createStringColumn } from '@ifrc-go/ui/utils';
-
 import {
+    createElementColumn,
+    createStringColumn,
+} from '@ifrc-go/ui/utils';
+
+import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import StatusCell from '#components/StatusCell';
+import {
+    useDeleteUserMutation,
+    UserFilter as UserFilterType,
     UsersQuery,
     useUsersQuery,
 } from '#generated/types/graphql';
-import usePagination from '#hooks/usePagination';
+import useAlert from '#hooks/useAlert';
+import useFilterState from '#hooks/useFilterState';
+import useRouting from '#hooks/useRouting';
+import { errorMessage } from '#utils/common';
 
-type UsersListItem = NonNullable<UsersQuery['users']>['results'][number];
+import UserFilter from '../UserListFilters';
+
+type UsersListItem = NonNullable<UsersQuery['users']>['results'][number] & { no: number };
+
+export interface UsersFilterType extends Omit<UserFilterType, 'isActive'> {
+    isActive: string | undefined;
+}
+
+const defaultFilter: UsersFilterType = {
+    isActive: undefined,
+    search: undefined,
+};
 
 function UsersList() {
-    const {
-        page, setPage, pageSize, variables,
-    } = usePagination();
+    const navigate = useRouting();
+    const alert = useAlert();
 
-    const [{ fetching, data }] = useUsersQuery({ variables });
+    const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
+        page,
+        setPage,
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
+
+    const queryVariables = useMemo(() => ({
+        filters: {
+            isActive: filter.isActive !== undefined ? filter.isActive === 'true' : undefined,
+            search: filter.search || undefined,
+        },
+        pagination: {
+            limit,
+            offset,
+        },
+    }), [limit, offset, filter]);
+
+    const [{ fetching, data }, reExecuteQuery] = useUsersQuery({ variables: queryVariables });
+    const [, deleteUser] = useDeleteUserMutation();
+
+    const pageSize = limit;
 
     const users = useMemo(
-        () => data?.users.results ?? [],
-        [data],
+        () => (data?.users.results ?? []).map((item, index) => ({
+            ...item,
+            no: (page - 1) * pageSize + index + 1,
+        })),
+        [data, page, pageSize],
+    );
+
+    const onDelete = useCallback(
+        (id: string) => {
+            deleteUser({ id }).then((resp) => {
+                if (resp.data?.deleteUser) {
+                    reExecuteQuery();
+                    alert.show('User has been deleted successfully', { variant: 'success' });
+                }
+                if (resp.error) {
+                    alert.show(errorMessage, { variant: 'danger' });
+                }
+            });
+        },
+        [alert, deleteUser, reExecuteQuery],
     );
     const columns = useMemo(
         () => [
             createStringColumn<UsersListItem, string | number>(
                 'sn',
                 'S.N.',
-                (member) => String(users.indexOf(member) + 1),
+                (member) => String(member.no),
             ),
             createStringColumn<UsersListItem, string | number>(
                 'firstName',
@@ -42,13 +112,68 @@ function UsersList() {
                 'Last Name',
                 (dept) => dept.lastName,
             ),
+            createStringColumn<UsersListItem, string | number>(
+                'username',
+                'Username',
+                (dept) => dept.username,
+            ),
+            createStringColumn<UsersListItem, string | number>(
+                'email',
+                'Email',
+                (dept) => dept.email,
+            ),
+            createElementColumn<UsersListItem, string | number,
+            { isActive: boolean }>(
+                'status',
+                'Status',
+                StatusCell,
+                (_, datum) => ({
+                    isActive: datum.isActive ?? false,
+                }),
+            ),
+            createStringColumn<UsersListItem, string | number>(
+                'userType',
+                'User Type',
+                (dept) => dept.userType,
+            ),
+            createElementColumn<UsersListItem, string | number, EditDeleteActionsProps>(
+                'actions',
+                '',
+                EditDeleteActions,
+                (_, datum) => ({
+                    id: datum.id,
+                    onDelete,
+                    itemTitle: datum.username,
+                    to: 'editUser',
+                }),
+            ),
         ],
-        [users],
+        [onDelete],
     );
+    const handleCreateClick = useCallback(() => {
+        navigate('addUser');
+    }, [navigate]);
     return (
         <Container
             withPadding
             heading="Users"
+            filters={(
+                <UserFilter
+                    value={rawFilter}
+                    onChange={setFilterField}
+                />
+            )}
+            headerDescription="Manage authenticated users and control access"
+            headerActions={(
+                <Button
+                    name={undefined}
+                    onClick={handleCreateClick}
+                    before={(<AddFillIcon />)}
+                    styleVariant="filled"
+                >
+                    Create
+                </Button>
+            )}
             footerActions={(
                 <Pager
                     activePage={page}
@@ -62,7 +187,7 @@ function UsersList() {
                 keySelector={(item) => item.id}
                 columns={columns}
                 data={users}
-                filtered={false}
+                filtered={filtered}
                 pending={fetching}
             />
         </Container>

@@ -23,10 +23,14 @@ const fetchHealth = fetch(`${import.meta.env.APP_GRAPHQL_ENDPOINT}/health-check/
 const ME_QUERY = gql`
     query Me {
         me {
-            email
-            firstName
+            userType
+            lastLogin
+            isActive
             id
+            firstName
             lastName
+            email
+            createdAt
         }
     }
 `;
