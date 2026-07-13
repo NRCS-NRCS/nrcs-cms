@@ -4,7 +4,7 @@ import {
 } from '@ifrc-go/ui';
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
-import { RadioProgramFilter } from '#generated/types/graphql';
+import { type RadioProgramFilter } from '#generated/types/graphql';
 import {
     labelSelector,
     typeRadioFilterOptions,

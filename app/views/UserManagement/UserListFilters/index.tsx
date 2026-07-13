@@ -4,7 +4,7 @@ import {
 } from '@ifrc-go/ui';
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
-import { UserFilter as UserFilterType } from '#generated/types/graphql';
+import { type UserFilter as UserFilterType } from '#generated/types/graphql';
 import {
     labelSelector,
     statusFilterOptions,

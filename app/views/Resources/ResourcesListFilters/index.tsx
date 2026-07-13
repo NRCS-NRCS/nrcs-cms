@@ -4,7 +4,7 @@ import {
 } from '@ifrc-go/ui';
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
-import { ResourceFilter } from '#generated/types/graphql';
+import { type ResourceFilter } from '#generated/types/graphql';
 import {
     labelSelector,
     typeFilterOptions,

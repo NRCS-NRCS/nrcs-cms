@@ -1,4 +1,4 @@
-import { UserTypeEnum } from '#generated/types/graphql';
+import { type UserTypeEnum } from '#generated/types/graphql';
 
 export interface User {
     id: string;

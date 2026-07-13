@@ -5,7 +5,7 @@ import {
 } from 'react';
 import {
     AlertContext,
-    AlertType,
+    type AlertType,
 } from '@ifrc-go/ui/contexts';
 import { randomString } from '@togglecorp/fujs';
 

@@ -7,7 +7,7 @@ import {
 } from '@ifrc-go/ui';
 
 import NavigationTab from '#components/NavigationTab';
-import { RouteKeys } from '#root/config/routes';
+import { type RouteKeys } from '#root/config/routes';
 
 import styles from './styles.module.css';
 

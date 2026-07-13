@@ -25,16 +25,16 @@ import {
 import {
     createSubmitHandler,
     getErrorObject,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
 
 import {
-    DepartmentCreateInput,
-    DepartmentUpdateInput,
+    type DepartmentCreateInput,
+    type DepartmentUpdateInput,
     useCreateDepartmentMutation,
     useDepartmentDetailQuery,
     useDirectiveQuery,

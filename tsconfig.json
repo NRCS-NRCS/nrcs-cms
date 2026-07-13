@@ -1,36 +1,7 @@
 {
-    "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "#generated/*": ["./generated/*"],
-            "#views/*": ["app/views/*"],
-            "#utils/*": ["app/utils/*"],
-            "#configs/*": ["app/configs/*"],
-            "#contexts/*": ["app/contexts/*"],
-            "#components/*": ["app/components/*"],
-            "#hooks/*": ["app/hooks/*"],
-            "#assets/*": ["app/assets/*"],
-            "#resources/*": ["app/resources/*"],
-            "#root/*": ["app/root/*"]
-
-        },
-        "target": "ESNext",
-        "lib": ["DOM", "DOM.Iterable", "ESNext"],
-        "module": "ESNext",
-        "skipLibCheck": true,
-
-        "moduleResolution": "bundler",
-        "allowImportingTsExtensions": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "noEmit": true,
-        "jsx": "react-jsx",
-
-        "strict": true,
-        "noUnusedLocals": false,
-        "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true
-    },
-    "include": ["app"],
-    "references": [{ "path": "./tsconfig.node.json" }]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }

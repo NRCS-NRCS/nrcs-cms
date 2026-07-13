@@ -15,9 +15,9 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    NewsQuery,
+    type NewsQuery,
     useDeleteNewsMutation,
     useNewsQuery,
 } from '#generated/types/graphql';
@@ -27,7 +27,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import NewsListFilter, { NewsFilterUIType } from '../NewsListFilters';
+import NewsListFilter, { type NewsFilterUIType } from '../NewsListFilters';
 
 type NewsListItem = NonNullable<NewsQuery['news']>['results'][number] & { no: number };
 

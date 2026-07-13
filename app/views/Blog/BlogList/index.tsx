@@ -17,10 +17,10 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    BlogFilter,
-    BlogQueryQuery,
+    type BlogFilter,
+    type BlogQueryQuery,
     useDeleteBlogMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -29,7 +29,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import BlogListFilter, { BlogFilterUIType } from '../BlogListFilters';
+import BlogListFilter, { type BlogFilterUIType } from '../BlogListFilters';
 import { BLOG_QUERY } from '../query';
 
 type BlogListType = NonNullable<BlogQueryQuery['blogs']>['results'][number] & { no: number };

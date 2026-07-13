@@ -15,10 +15,10 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    PartnerFilter,
-    PartnerQuery,
+    type PartnerFilter,
+    type PartnerQuery,
     useDeletePartnerMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -27,7 +27,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import PartnerListFilter, { PartnerFilterUIType } from '../PartnerListFilters';
+import PartnerListFilter, { type PartnerFilterUIType } from '../PartnerListFilters';
 import { PARTNER_QUERY } from '../query';
 
 type PartnerListItem = NonNullable<PartnerQuery['partners']>['results'][number] & { no: number };

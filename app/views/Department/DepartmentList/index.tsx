@@ -15,9 +15,9 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    DepartmentsQuery,
+    type DepartmentsQuery,
     useDeleteDepartmentMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -26,7 +26,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import DepartmentListFilter, { DepartmentFilterUIType } from '../DepartmentListFilters';
+import DepartmentListFilter, { type DepartmentFilterUIType } from '../DepartmentListFilters';
 import { DEPARTMENT_QUERY } from '../query';
 
 type EventListItem = NonNullable<DepartmentsQuery['departments']>['results'][number] & { no: number };

@@ -14,14 +14,14 @@ import {
     InputError,
     ListView,
     RawFileInput,
-    SingleRawFileInputProps,
+    type SingleRawFileInputProps,
 } from '@ifrc-go/ui';
 import {
     isDefined,
     isNotDefined,
 } from '@togglecorp/fujs';
 
-import { DjangoFileType } from '#generated/types/graphql';
+import { type DjangoFileType } from '#generated/types/graphql';
 
 const IMAGE_EXTENSION_REGEX = /\.(jpe?g|png|gif|webp|svg|bmp)$/i;
 

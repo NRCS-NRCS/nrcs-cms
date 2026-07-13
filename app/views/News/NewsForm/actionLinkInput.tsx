@@ -6,14 +6,14 @@ import {
 } from '@ifrc-go/ui';
 import { randomString } from '@togglecorp/fujs';
 import {
-    Error,
+    type Error,
     getErrorObject,
-    PartialForm,
-    SetValueArg,
+    type PartialForm,
+    type SetValueArg,
     useFormObject,
 } from '@togglecorp/toggle-form';
 
-import { ActionLinkType } from '#generated/types/graphql';
+import { type ActionLinkType } from '#generated/types/graphql';
 
 import styles from './styles.module.css';
 

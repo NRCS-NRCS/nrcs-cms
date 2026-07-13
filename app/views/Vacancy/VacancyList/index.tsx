@@ -16,11 +16,11 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    JobVacancyFilter,
+    type JobVacancyFilter,
     useDeleteVacancyMutation,
-    VacancyQuery,
+    type VacancyQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
@@ -29,7 +29,7 @@ import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 import { VACANCY_QUERY } from '../query';
-import VacancyListFilter, { VacancyFilterUIType } from '../VacancyListFilters';
+import VacancyListFilter, { type VacancyFilterUIType } from '../VacancyListFilters';
 
 type VacancyListItem = NonNullable<VacancyQuery['jobVacancies']>['results'][number] & { no: number };
 

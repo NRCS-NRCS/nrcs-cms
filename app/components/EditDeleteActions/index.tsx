@@ -9,7 +9,7 @@ import {
     TableActions,
 } from '@ifrc-go/ui';
 
-import useRouting, { RoutesMap } from '#hooks/useRouting';
+import useRouting, { type RoutesMap } from '#hooks/useRouting';
 
 export interface EditDeleteActionsProps {
     id: string ;

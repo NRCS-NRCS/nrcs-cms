@@ -15,10 +15,10 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    ResourceFilter,
-    ResourceQuery,
+    type ResourceFilter,
+    type ResourceQuery,
     useDeleteResourceMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -28,7 +28,7 @@ import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 import { RESOURCES_QUERY } from '../query';
-import ResourcesListFilter, { ResourceFilterUIType } from '../ResourcesListFilters';
+import ResourcesListFilter, { type ResourceFilterUIType } from '../ResourcesListFilters';
 
 type ResourceListItem = NonNullable<ResourceQuery['resources']>['results'][number] & { no: number };
 

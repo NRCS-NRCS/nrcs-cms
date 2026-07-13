@@ -22,16 +22,16 @@ import {
     createSubmitHandler,
     getErrorObject,
     integerCondition,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
 } from '@togglecorp/toggle-form';
 
 import {
-    FaqCreateInput,
-    FaqUpdateInput,
+    type FaqCreateInput,
+    type FaqUpdateInput,
     useCreateFaqMutation,
     useFaqDetailQuery,
     useUpdateFaqMutation,

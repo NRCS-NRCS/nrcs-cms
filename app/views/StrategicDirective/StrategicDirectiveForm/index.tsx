@@ -22,12 +22,12 @@ import {
     randomString,
 } from '@togglecorp/fujs';
 import {
-    ArraySchema,
+    type ArraySchema,
     createSubmitHandler,
     getErrorObject,
     getErrorString,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -37,8 +37,8 @@ import {
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
 import {
-    MajorResponsibilitiesInput,
-    StrategicDirectivesCreateInput,
+    type MajorResponsibilitiesInput,
+    type StrategicDirectivesCreateInput,
     useCreateStrategicDirectiveMutation,
     useStrategicDirectiveDetailQuery,
     useUpdateStrategicDirectiveMutation,

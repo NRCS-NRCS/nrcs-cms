@@ -23,8 +23,8 @@ import {
     createSubmitHandler,
     getErrorObject,
     getErrorString,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -32,9 +32,9 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import {
-    PartnerCreateInput,
+    type PartnerCreateInput,
     PartnerScopeEnum,
-    PartnerUpdateInput,
+    type PartnerUpdateInput,
     useCreatePartnerMutation,
     usePartnerDetailQuery,
     useUpdatePartnerMutation,

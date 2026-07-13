@@ -1,7 +1,7 @@
 import { TextInput } from '@ifrc-go/ui';
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
-import { ProjectFilter } from '#generated/types/graphql';
+import { type ProjectFilter } from '#generated/types/graphql';
 
 export type ProjectFilterUIType = ProjectFilter;
 

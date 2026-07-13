@@ -15,10 +15,10 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    ProjectFilter,
-    ProjectQuery,
+    type ProjectFilter,
+    type ProjectQuery,
     useDeleteProjectMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -27,7 +27,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import ProjectListFilter, { ProjectFilterUIType } from '../ProjectListFilters';
+import ProjectListFilter, { type ProjectFilterUIType } from '../ProjectListFilters';
 import { PROJECT_QUERY } from '../query';
 
 type ProjectListItem = NonNullable<ProjectQuery['projects']>['results'][number] & { no: number };

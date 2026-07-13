@@ -26,8 +26,8 @@ import {
 import {
     createSubmitHandler,
     getErrorObject,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -35,10 +35,10 @@ import {
 
 import {
     useCreateUserMutation,
-    UserCreateInput,
+    type UserCreateInput,
     useResetUserPasswordMutation,
     UserTypeEnum,
-    UserUpdateInput,
+    type UserUpdateInput,
     useUpdateUserMutation,
     useUserQuery,
 } from '#generated/types/graphql';

@@ -1,5 +1,5 @@
 import {
-    ReactElement,
+    type ReactElement,
     use,
     useCallback,
 } from 'react';
@@ -26,7 +26,7 @@ import {
 
 import UserContext from '#contexts/UserContext';
 import { useCountsQuery } from '#generated/types/graphql';
-import useRouting, { RoutesMap } from '#hooks/useRouting';
+import useRouting, { type RoutesMap } from '#hooks/useRouting';
 
 import styles from './styles.module.css';
 

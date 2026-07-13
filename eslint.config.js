@@ -50,6 +50,11 @@ const appConfigs = compat.config({
     rules: {
         'react-refresh/only-export-components': 'warn',
 
+        '@typescript-eslint/consistent-type-imports': [
+            'error',
+            { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+        ],
+
         'no-unused-vars': 0,
         '@typescript-eslint/no-unused-vars': 1,
 
@@ -98,6 +103,12 @@ const appConfigs = compat.config({
         'react/jsx-props-no-spreading': 'warn'
     },
     overrides: [
+        {
+            files: ['**/*.d.ts'],
+            rules: {
+                '@typescript-eslint/consistent-type-imports': 'off',
+            },
+        },
         {
             files: ['*.js', '*.jsx', '*.ts', '*.tsx'],
             rules: {

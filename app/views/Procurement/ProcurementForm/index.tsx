@@ -23,8 +23,8 @@ import {
     createSubmitHandler,
     getErrorObject,
     getErrorString,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -32,8 +32,8 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import {
-    ProcurementCreateInput,
-    ProcurementUpdateInput,
+    type ProcurementCreateInput,
+    type ProcurementUpdateInput,
     useCreateProcurementMutation,
     useProcurementDetailQuery,
     useUpdateProcurementMutation,

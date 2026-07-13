@@ -24,8 +24,8 @@ import {
     createSubmitHandler,
     getErrorObject,
     getErrorString,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -33,9 +33,9 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import {
-    RadioProgramCreateInput,
+    type RadioProgramCreateInput,
     RadioProgramTypeEnum,
-    RadioProgramUpdateInput,
+    type RadioProgramUpdateInput,
     useCreateRadioProgramMutation,
     useRadioProgramQuery,
     useUpdateRadioProgramMutation,

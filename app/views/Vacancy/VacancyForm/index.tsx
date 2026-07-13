@@ -28,8 +28,8 @@ import {
     getErrorObject,
     getErrorString,
     integerCondition,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -37,8 +37,8 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import {
-    JobVacancyCreateInput,
-    JobVacancyUpdateInput,
+    type JobVacancyCreateInput,
+    type JobVacancyUpdateInput,
     useCreateVacancyMutation,
     useDepartmentsQuery,
     useUpdateVacancyMutation,

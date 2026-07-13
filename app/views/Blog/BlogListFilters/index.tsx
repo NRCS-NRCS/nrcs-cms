@@ -5,8 +5,8 @@ import {
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
 import {
-    BlogFilter,
-    StatusEnum,
+    type BlogFilter,
+    type StatusEnum,
 } from '#generated/types/graphql';
 import {
     labelSelector,

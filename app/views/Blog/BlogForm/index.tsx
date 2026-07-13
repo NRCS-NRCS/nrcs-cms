@@ -28,8 +28,8 @@ import {
     createSubmitHandler,
     getErrorObject,
     getErrorString,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     useForm,
@@ -38,8 +38,8 @@ import {
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
 import {
-    BlogCreateInput,
-    BlogUpdateInput,
+    type BlogCreateInput,
+    type BlogUpdateInput,
     StatusEnum,
     useBlogDetailQueryQuery,
     useCreateBlogMutation,

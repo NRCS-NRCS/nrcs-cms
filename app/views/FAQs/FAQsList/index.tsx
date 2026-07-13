@@ -16,9 +16,9 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    FaqQuery,
+    type FaqQuery,
     useDeleteFaqMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -27,7 +27,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import FAQsListFilter, { FAQsFilterUIType } from '../FAQsListFilters';
+import FAQsListFilter, { type FAQsFilterUIType } from '../FAQsListFilters';
 import { FAQ_QUERY } from '../query';
 
 type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number] & { no: number };

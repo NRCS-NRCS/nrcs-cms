@@ -16,7 +16,7 @@ import { NavigationTabContext } from '@ifrc-go/ui/contexts';
 import { _cs } from '@togglecorp/fujs';
 
 import type { RouteKeys } from '#root/config/routes';
-import useRouteMatching, { Attrs } from '#root/hooks/useRouteMatching';
+import useRouteMatching, { type Attrs } from '#root/hooks/useRouteMatching';
 
 import styles from './styles.module.css';
 

@@ -5,8 +5,8 @@ import {
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
 import {
-    PartnerFilter,
-    PartnerScopeEnum,
+    type PartnerFilter,
+    type PartnerScopeEnum,
 } from '#generated/types/graphql';
 import {
     labelSelector,

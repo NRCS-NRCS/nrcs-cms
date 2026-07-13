@@ -4,7 +4,7 @@ import {
 } from '@ifrc-go/ui';
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
-import { NewsFilter } from '#generated/types/graphql';
+import { type NewsFilter } from '#generated/types/graphql';
 import {
     highlightedFilterOptions,
     labelSelector,

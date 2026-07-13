@@ -15,9 +15,9 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    ProcurementQuery,
+    type ProcurementQuery,
     useDeleteProcurementMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -26,7 +26,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import ProcurementListFilter, { ProcurementFilterUIType } from '../ProcurementListFilters';
+import ProcurementListFilter, { type ProcurementFilterUIType } from '../ProcurementListFilters';
 import { PROCUREMENT_QUERY } from '../query';
 
 type ProcurementListItem = NonNullable<ProcurementQuery['procurements']>['results'][number] & { no: number };

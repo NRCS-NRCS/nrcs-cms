@@ -14,9 +14,9 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    RadioProgramQuery,
+    type RadioProgramQuery,
     useDeleteRadioProgramMutation,
     useRadioProgramQuery,
 } from '#generated/types/graphql';
@@ -26,7 +26,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import RadioProgramListFilter, { RadioProgramFilterUIType } from '../RadioProgramListFilters';
+import RadioProgramListFilter, { type RadioProgramFilterUIType } from '../RadioProgramListFilters';
 
 type RadioProgramListItem =
     NonNullable<RadioProgramQuery['radioProgram']>['results'][number] & { no: number };

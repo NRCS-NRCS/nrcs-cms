@@ -23,7 +23,7 @@ import {
 } from '@ifrc-go/icons';
 
 import Navbar from '#components/Navbar';
-import Navigation, { NavigationItem } from '#components/Navigation';
+import Navigation, { type NavigationItem } from '#components/Navigation';
 import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 

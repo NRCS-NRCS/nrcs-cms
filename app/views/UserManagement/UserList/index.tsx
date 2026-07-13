@@ -14,12 +14,12 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import StatusCell from '#components/StatusCell';
 import {
     useDeleteUserMutation,
-    UserFilter as UserFilterType,
-    UsersQuery,
+    type UserFilter as UserFilterType,
+    type UsersQuery,
     useUsersQuery,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';

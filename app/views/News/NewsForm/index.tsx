@@ -26,12 +26,12 @@ import {
     randomString,
 } from '@togglecorp/fujs';
 import {
-    ArraySchema,
+    type ArraySchema,
     createSubmitHandler,
     getErrorObject,
     getErrorString,
-    ObjectSchema,
-    PartialForm,
+    type ObjectSchema,
+    type PartialForm,
     removeNull,
     requiredStringCondition,
     urlCondition,
@@ -42,10 +42,10 @@ import {
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
 import {
-    ActionLinkInput,
-    ActionLinkType,
-    NewsCreateInput,
-    NewsUpdateInput,
+    type ActionLinkInput,
+    type ActionLinkType,
+    type NewsCreateInput,
+    type NewsUpdateInput,
     StatusEnum,
     useCreateNewsMutation,
     useDirectiveQuery,

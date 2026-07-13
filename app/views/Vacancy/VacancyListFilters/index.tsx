@@ -4,7 +4,7 @@ import {
 } from '@ifrc-go/ui';
 import { type EntriesAsList } from '@togglecorp/toggle-form';
 
-import { JobVacancyFilter } from '#generated/types/graphql';
+import { type JobVacancyFilter } from '#generated/types/graphql';
 import {
     archivedFilterOptions,
     labelSelector,

@@ -15,9 +15,9 @@ import {
 } from '@ifrc-go/ui/utils';
 import { useQuery } from 'urql';
 
-import EditDeleteActions, { EditDeleteActionsProps } from '#components/EditDeleteActions';
+import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
-    StrategicDirectiveQuery,
+    type StrategicDirectiveQuery,
     useDeleteStrategicDirectiveMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
@@ -27,7 +27,7 @@ import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
 import { STRATEGIC_DIRECTIVE_QUERY } from '../query';
-import StrategicDirectiveListFilter, { StrategicDirectiveFilterUIType } from '../StrategicDirectiveListFilters';
+import StrategicDirectiveListFilter, { type StrategicDirectiveFilterUIType } from '../StrategicDirectiveListFilters';
 
 type StrategicDirectiveListItem = NonNullable<StrategicDirectiveQuery['strategicDirectives']>['results'][number] & { no: number };
 
