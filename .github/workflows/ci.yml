@@ -10,6 +10,7 @@ env:
   APP_GRAPHQL_CODEGEN_ENDPOINT: "./backend/schema.graphql"
   APP_GRAPHQL_ENDPOINT: "http://web:8000/graphql/"
   APP_TITLE: "Nrcs CMS"
+  APP_ENVIRONMENT: "development"
   GITHUB_WORKFLOW: true
 
 jobs:

@@ -4,8 +4,8 @@ import {
     useState,
 } from 'react';
 import {
-    AlertContextProps,
-    AlertParams,
+    type AlertContextProps,
+    type AlertParams,
 } from '@ifrc-go/ui/contexts';
 import { unique } from '@togglecorp/fujs';
 

@@ -1,0 +1,14 @@
+.statusIndicator {
+    display: inline-block;
+    border-radius: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.active {
+    background-color: var(--color-success, #2e7d32);
+}
+
+.inactive {
+    background-color: var(--color-danger, #c62828);
+}

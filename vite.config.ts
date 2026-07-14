@@ -1,4 +1,4 @@
-import { ValidateEnv as validateEnv } from '@julr/vite-plugin-validate-env';
+import { ValidateEnv as validateEnv } from '@togglecorp/vite-plugin-validate-env';
 import reactSwc from '@vitejs/plugin-react-swc';
 // import { execSync } from 'child_process';
 import { defineConfig } from 'vite';
@@ -8,7 +8,6 @@ import svgr from 'vite-plugin-svgr';
 import webfontDownload from 'vite-plugin-webfont-dl';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-import envConfig from './env';
 import { execSync } from 'child_process';
 
 
@@ -51,7 +50,9 @@ export default defineConfig(({ mode }) => {
             reactSwc(),
             tsconfigPaths(),
             webfontDownload(),
-            validateEnv(envConfig),
+            validateEnv({
+                configFile: 'env',
+            }),
             isProd ? compression() : undefined,
         ],
         css: {

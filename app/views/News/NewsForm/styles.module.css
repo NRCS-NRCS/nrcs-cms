@@ -1,0 +1,5 @@
+.actionLinkRow {
+    >* {
+        flex-grow: 1;
+    }
+}

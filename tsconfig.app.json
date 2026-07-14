@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+        "ignoreDeprecations": "6.0",
+        "baseUrl": ".",
+        "paths": {
+            "#generated/*": ["./generated/*"],
+            "#views/*": ["app/views/*"],
+            "#utils/*": ["app/utils/*"],
+            "#configs/*": ["app/configs/*"],
+            "#contexts/*": ["app/contexts/*"],
+            "#components/*": ["app/components/*"],
+            "#hooks/*": ["app/hooks/*"],
+            "#assets/*": ["app/assets/*"],
+            "#resources/*": ["app/resources/*"],
+            "#root/*": ["app/root/*"]
+
+        },
+        "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+        "target": "es2023",
+        "lib": ["ES2023", "DOM", "DOM.Iterable"],
+        "module": "esnext",
+        "types": ["vite/client"],
+        "skipLibCheck": true,
+
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "verbatimModuleSyntax": true,
+        "moduleDetection": "force",
+        "noEmit": true,
+        "jsx": "react-jsx",
+
+        "strict": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": true,
+        "erasableSyntaxOnly": false,
+        "noFallthroughCasesInSwitch": true
+    },
+    "include": ["app"]
+}

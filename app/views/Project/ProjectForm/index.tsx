@@ -1,0 +1,276 @@
+import {
+    Activity,
+    useCallback,
+    useEffect,
+} from 'react';
+import {
+    Navigate,
+    useParams,
+} from 'react-router';
+import {
+    BlockLoading,
+    Button,
+    Container,
+    Heading,
+    InputSection,
+    ListView,
+    SelectInput,
+    TextInput,
+} from '@ifrc-go/ui';
+import { isNotDefined } from '@togglecorp/fujs';
+import {
+    createSubmitHandler,
+    getErrorObject,
+    getErrorString,
+    type ObjectSchema,
+    type PartialForm,
+    removeNull,
+    requiredStringCondition,
+    useForm,
+} from '@togglecorp/toggle-form';
+
+import FileUpload from '#components/FileUpload';
+import MarkdownEditor from '#components/MarkdownEditor';
+import {
+    type ProjectCreateInput,
+    type ProjectUpdateInput,
+    useCreateProjectMutation,
+    useDepartmentsQuery,
+    useProjectDetailQuery,
+    useUpdateProjectMutation,
+} from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
+import usePermissions from '#hooks/usePermissions';
+import useRouting from '#hooks/useRouting';
+import {
+    errorMessage,
+    idSelector,
+    nameSelector,
+} from '#utils/common';
+
+type PartialFormType = PartialForm<ProjectCreateInput>
+
+type FormSchema = ObjectSchema<PartialFormType>;
+type FormSchemaFields = ReturnType<FormSchema['fields']>;
+
+const ProjectSchema: FormSchema = {
+    fields: (): FormSchemaFields => ({
+        title: {
+            required: true,
+            requiredValidation: requiredStringCondition,
+        },
+        description: {
+            required: true,
+            requiredValidation: requiredStringCondition,
+        },
+        department: {
+            required: true,
+        },
+        coverImage: {
+            required: true,
+        },
+    }),
+};
+
+const defaultEditFormValue: PartialFormType = {};
+
+function ProjectForm() {
+    const { id } = useParams();
+    const navigate = useRouting();
+    const { canEditContent } = usePermissions();
+    const alert = useAlert();
+
+    const [{ data, fetching: projectDetailFetch }] = useProjectDetailQuery({
+        variables: { id: (id ?? '') }, pause: !id,
+    });
+    const [{ data: departments }] = useDepartmentsQuery();
+
+    const [{ fetching: createPending }, createProjectMutate] = useCreateProjectMutation();
+    const [{ fetching: updatePending }, updateProjectMutate] = useUpdateProjectMutation();
+    const {
+        setFieldValue,
+        error: formError,
+        value,
+        validate,
+        setError,
+        setValue,
+    } = useForm(ProjectSchema, { value: defaultEditFormValue });
+
+    const error = getErrorObject(formError);
+
+    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
+        const redirectPath = 'project';
+        const alertMessage = `Project ${id ? 'updated' : 'created'} successfully`;
+        const { coverImage, ...otherMutationData } = mutationData;
+        const dataToSubmit = {
+            ...otherMutationData,
+            coverImage: coverImage instanceof File ? coverImage : undefined,
+        };
+        if (id) {
+            const res = await updateProjectMutate({
+                pk: id,
+                data: dataToSubmit as ProjectUpdateInput,
+            });
+            const result = res.data?.updateProject;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        } else {
+            const res = await createProjectMutate({
+                data: dataToSubmit as ProjectCreateInput,
+            });
+            const result = res.data?.createProject;
+            if (result?.ok) {
+                navigate(redirectPath);
+                alert.show(alertMessage, { variant: 'success' });
+            } else if (result?.errors) {
+                setError(result?.errors);
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            }
+        }
+    }, [alert, createProjectMutate, id, navigate, setError, updateProjectMutate]);
+
+    const handleFormSubmit = useCallback(
+        () => createSubmitHandler(
+            validate,
+            setError,
+            handleMutation,
+        )(),
+        [validate, setError, handleMutation],
+    );
+
+    useEffect(() => {
+        if (isNotDefined(data?.project)) {
+            return;
+        }
+        const {
+            department,
+            ...other
+        } = removeNull(data.project);
+
+        setValue({
+            ...other,
+            department: department?.id,
+        });
+    }, [data, setValue]);
+
+    const departmentOptions = departments?.departments.results.map(
+        (dept) => ({
+            id: dept.id,
+            name: dept.title,
+        }),
+    ) ?? [];
+
+    const ContentEditor = (
+        <MarkdownEditor
+            name="description"
+            value={value.description}
+            onChange={setFieldValue}
+            error={error?.description}
+            placeholder="Start writing description here..."
+        />
+    );
+
+    if (!canEditContent) {
+        return <Navigate to="/projects" replace />;
+    }
+
+    if (projectDetailFetch) {
+        return (
+            <BlockLoading
+                withoutBorder
+                compact
+                message="Loading"
+            />
+        );
+    }
+
+    return (
+        <Container withPadding>
+            <ListView layout="block">
+                <InputSection withoutTitleSection>
+                    <Heading level={4}>
+                        {id ? 'PROJECT DETAILS' : 'CREATE PROJECT'}
+                    </Heading>
+                </InputSection>
+                <Activity mode={data?.project.createdBy && data.project.modifiedBy ? 'visible' : 'hidden'}>
+                    <InputSection
+                        title={`Created by: ${data?.project.createdBy.firstName} ${data?.project.createdBy.lastName}`}
+                    >
+                        <Heading level={6}>
+                            Modified by:
+                            {' '}
+                            {data?.project.modifiedBy.firstName}
+                            {' '}
+                            {data?.project.modifiedBy.lastName}
+                        </Heading>
+                    </InputSection>
+                </Activity>
+                <InputSection
+                    title="Title"
+                    description="Enter the Title"
+                    withAsteriskOnTitle
+                >
+                    <TextInput
+                        name="title"
+                        value={value.title}
+                        error={error?.title}
+                        onChange={setFieldValue}
+                        placeholder="title"
+                        autoFocus
+                    />
+                </InputSection>
+                <InputSection
+                    title="Cover Image"
+                    description="Add a Cover Image, which will be attached and shown on Project"
+                    withAsteriskOnTitle
+                >
+                    <FileUpload
+                        name="coverImage"
+                        onChange={setFieldValue}
+                        value={value.coverImage}
+                        error={getErrorString(error?.coverImage)}
+                        accept="image/*"
+                    />
+                </InputSection>
+                <InputSection
+                    title="Type"
+                    description="Add type to either Tuesday Program or Radio Red Cross"
+                    withAsteriskOnTitle
+                >
+                    <SelectInput
+                        name="department"
+                        options={departmentOptions}
+                        value={value.department}
+                        keySelector={idSelector}
+                        labelSelector={nameSelector}
+                        onChange={setFieldValue}
+                        placeholder="Select Status"
+                        error={error?.department}
+                    />
+                </InputSection>
+                <InputSection
+                    title="Write Description"
+                    description="Enter the Description"
+                    withAsteriskOnTitle
+                />
+                {ContentEditor}
+                <ListView
+                    withPadding
+                    withBackground
+                    withCenteredContents
+                >
+                    <Button name="save" onClick={handleFormSubmit}>
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            </ListView>
+        </Container>
+    );
+}
+
+export default ProjectForm;

@@ -6,8 +6,8 @@ import { Cookies } from 'react-cookie';
 import { Outlet } from 'react-router';
 import { AlertContainer } from '@ifrc-go/ui';
 import { AlertContext } from '@ifrc-go/ui/contexts';
+import { cacheExchange } from '@urql/exchange-graphcache';
 import {
-    cacheExchange,
     Client,
     fetchExchange,
     Provider as UrqlProvider,
@@ -25,7 +25,28 @@ const cookies = new Cookies();
 const gqlClient = new Client({
     url: GRAPHQL_ENDPOINT,
     exchanges: [
-        cacheExchange,
+        cacheExchange({
+            keys: {
+                OffsetPaginationInfo: () => null,
+                BlogTypeOffsetPaginated: () => null,
+                DepartmentTypeOffsetPaginated: () => null,
+                FaqTypeOffsetPaginated: () => null,
+                StrategicDirectivesTypeOffsetPaginated: () => null,
+                HighlightTypeOffsetPaginated: () => null,
+                ProcurementTypeOffsetPaginated: () => null,
+                NewsTypeOffsetPaginated: () => null,
+                ProjectTypeOffsetPaginated: () => null,
+                PartnerTypeOffsetPaginated: () => null,
+                RadioProgramTypeOffsetPaginated: () => null,
+                VacancyTypeOffsetPaginated: () => null,
+                DjangoFileType: () => null,
+                ResourceTypeOffsetPaginated: () => null,
+                UserTypeOffsetPaginated: () => null,
+                JobVacancyTypeOffsetPaginated: () => null,
+                MajorResponsibilitiesTypeOffsetPaginated: () => null,
+
+            },
+        }),
         fetchExchange,
     ],
     fetchOptions: () => ({

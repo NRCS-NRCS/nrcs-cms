@@ -2,7 +2,6 @@ import React, {
     use,
     useCallback,
 } from 'react';
-import { useNavigate } from 'react-router';
 import {
     Button,
     DropdownMenu,
@@ -13,6 +12,7 @@ import { gql } from 'urql';
 import UserContext from '#contexts/UserContext';
 import { useLogoutMutation } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
+import useRouting from '#hooks/useRouting';
 
 import styles from './styles.module.css';
 
@@ -26,7 +26,7 @@ const LOGOUT = gql`
 function Navbar() {
     const { user, setUser } = use(UserContext);
     const alert = useAlert();
-    const navigate = useNavigate();
+    const navigate = useRouting();
 
     const [{ fetching: pendingLogout }, triggerLogout] = useLogoutMutation();
 
@@ -35,36 +35,47 @@ function Navbar() {
         const logoutResponse = res.data?.logout;
         if (logoutResponse) {
             setUser(undefined);
-            navigate('/login');
+            navigate('login');
             alert.show('Logout Successful', { variant: 'success' });
         }
     }, [navigate, triggerLogout, setUser, alert]);
 
     return (
         <nav className={styles.navbar}>
-            <Heading className={styles.title}>NRCS</Heading>
+            <Heading className={styles.title} level={2}>NRCS</Heading>
             <DropdownMenu
-                variant="tertiary"
+                labelStyleVariant="action"
+                labelColorVariant="secondary"
+                labelBefore={(
+                    <div className={styles.userInitial}>
+                        {user?.firstName || user?.lastName.charAt(0) ? (
+                            <>
+                                {user?.firstName.charAt(0)}
+                                {user?.lastName.charAt(0)}
+                            </>
+                        ) : 'Ad' }
+                    </div>
+                )}
                 label={(
                     <div className={styles.userInfo}>
-                        <Heading level={5}>
+                        <Heading level={6}>
                             {user?.firstName}
                             {' '}
                             {user?.lastName}
                         </Heading>
-                        <Heading level={6}>
+                        <span>
                             Admin
-                        </Heading>
+                        </span>
                     </div>
                 )}
             >
                 <React.Fragment key=".0">
                     <Button
                         name="logout"
-                        variant="tertiary"
-                        className={styles.dropdownOption}
+                        styleVariant="transparent"
                         onClick={handleLogout}
                         disabled={pendingLogout}
+                        withFullWidth
                     >
                         {pendingLogout ? 'Logging out' : 'Logout'}
                     </Button>

@@ -1,0 +1,37 @@
+.editor {
+    z-index: 0;
+    width: 100%;
+    min-height: var(--go-ui-width-min-modal);
+
+    >* {
+        flex: 1;
+    }
+}
+
+.editor p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: var(--go-ui-spacing-md) 0;
+}
+
+.editor ul,
+.editor ol {
+    padding-left: var(--go-ui-spacing-xl);
+}
+
+.editor li {
+    margin: 4px 0;
+}
+
+.editor a {
+    text-decoration: underline;
+    color: var(--go-ui-color-dark-blue-20);
+
+    &:hover {
+        color: var(--go-ui-color-dark-blue-30);
+    }
+}

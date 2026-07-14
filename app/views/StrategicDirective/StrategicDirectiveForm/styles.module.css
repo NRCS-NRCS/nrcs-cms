@@ -1,0 +1,14 @@
+.majorResponsibilities {
+  margin-bottom: 16px;
+  border: 1px solid var(--go-ui-color-gray-20);
+  border-radius: 8px;
+  padding: var(--go-ui-spacing-sm);
+  .majorResponsibilitiesHeader {
+    display: grid;
+    align-items: center;  
+    margin-bottom: var(--go-ui-spacing-xs);
+    grid-template-columns: 1fr auto;
+    gap: var(--go-ui-spacing-sm);
+
+  }
+}

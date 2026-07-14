@@ -1,100 +1,73 @@
+import { type ReactNode } from 'react';
 import {
-    ReactNode,
-    useCallback,
-    useState,
-} from 'react';
-import {
-    IoChevronDownOutline,
-    IoChevronUpOutline,
-} from 'react-icons/io5';
-import { NavLink } from 'react-router';
-import { Button } from '@ifrc-go/ui';
-import { _cs } from '@togglecorp/fujs';
+    Heading,
+    InlineLayout,
+    ListView,
+    NavigationTabList,
+} from '@ifrc-go/ui';
+
+import NavigationTab from '#components/NavigationTab';
+import { type RouteKeys } from '#root/config/routes';
 
 import styles from './styles.module.css';
 
-export interface NavigationItem {
+interface Routes {
     title: string;
-    to?: string;
+    to: RouteKeys;
     icon?: ReactNode;
-    variant: 'root' | 'group' | 'leaf';
-    children?: NavigationItem[];
+}
 
+export interface NavigationItem {
+    groupTitle: string;
+    routes: Routes[];
 }
 interface NavigationProps {
     navigationItem: NavigationItem[];
 }
 function Navigation({ navigationItem }: NavigationProps) {
-    const [openAccordion, setOpenAccordion] = useState(
-        navigationItem.map((_, i) => i),
-    );
-
-    const toggleAccordion = useCallback((index: number) => {
-        setOpenAccordion((prev) => (prev.includes(index)
-            ? prev.filter((i) => i !== index)
-            : [...prev, index]));
-    }, []);
-
     return (
-        <nav className={styles.nav}>
-            {navigationItem.map((item, index) => {
-                const isOpen = openAccordion.includes(index);
-                return (
-                    <div
-                        key={item.title}
-                        className={_cs(
-                            styles[item.variant ?? 'leaf'],
-                        )}
+        <nav
+            className={styles.nav}
+        >
+            {navigationItem.map((item) => (
+                <div key={item.groupTitle}>
+                    <ListView
+                        withPadding
+                        withDarkBackground
+                        spacing="sm"
+                        className={styles.groupTitle}
                     >
-                        <Button
-                            name={index}
-                            type="button"
-                            className={styles.navHeaderContainer}
-                            childrenContainerClassName={styles.navHeader}
-                            onClick={toggleAccordion}
-                            variant="tertiary"
-                            icons={item.icon}
-                        >
-                            {item.title}
-                            {isOpen ? <IoChevronUpOutline /> : <IoChevronDownOutline />}
-                        </Button>
-                        {isOpen && (
-                            <div
-                                className={_cs(
-                                    styles.navContent,
-                                    styles[item.variant ?? 'leaf'],
-                                )}
+                        <Heading level={6}>
+                            {item.groupTitle}
+                        </Heading>
+                    </ListView>
+                    <NavigationTabList
+                        spacing="none"
+                        styleVariant="vertical-compact"
+                    >
+                        {item.routes.map((route) => (
+                            <NavigationTab
+                                key={route.title}
+                                to={route.to}
+                                activeClassName={styles.activeRoute}
+                                className={styles.routeLink}
                             >
-                                {item.children && item.children.map((child) => {
-                                    if (!child.to && child.children) {
-                                        return (
-                                            <Navigation
-                                                key={child.title}
-                                                navigationItem={[child]}
-                                            />
-                                        );
+                                <InlineLayout
+                                    withPadding
+                                    before={
+                                        route.icon
+                                            ? <span className={styles.routeIcon}>{route.icon}</span>
+                                            : undefined
                                     }
-                                    return (
-                                        <NavLink
-                                            key={child.to}
-                                            to={child.to ?? ''}
-                                            className={({ isActive }) => _cs(
-                                                styles.routeLink,
-                                                isActive && styles.activeRoute,
-                                                styles[child.variant ?? 'leaf'],
-
-                                            )}
-                                        >
-                                            {child.title}
-                                        </NavLink>
-                                    );
-                                })}
-
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
+                                    spacing="xs"
+                                >
+                                    {route.title}
+                                </InlineLayout>
+                            </NavigationTab>
+                        ))}
+                    </NavigationTabList>
+                </div>
+            ))}
         </nav>
     );
 }

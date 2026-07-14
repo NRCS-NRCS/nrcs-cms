@@ -1,13 +1,14 @@
 .page {
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
+    background: var(--go-ui-color-gray-10);
+    height: 100%;
     overflow: hidden;
 
-    .leftPane {
-        display: flex;
-        flex-direction: column;
-        background-color: var(--go-ui-color-white);
-        gap: var(--go-ui-spacing-md);
+    >* {
+        width: 100%;
+        height: 100%
+    }
+
+    .content {
+        overflow-y: auto;
     }
 }

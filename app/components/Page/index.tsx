@@ -1,4 +1,4 @@
-import { RefObject } from 'react';
+import { ListView } from '@ifrc-go/ui';
 import { _cs } from '@togglecorp/fujs';
 
 import styles from './styles.module.css';
@@ -6,7 +6,6 @@ import styles from './styles.module.css';
 interface Props {
     className?: string;
     children?: React.ReactNode;
-    elementRef?: RefObject<HTMLDivElement>
     leftPaneContent?: React.ReactNode;
     leftPaneContainerClassName?: string;
 }
@@ -14,20 +13,34 @@ function Page(props: Props) {
     const {
         className,
         children,
-        elementRef,
         leftPaneContent,
         leftPaneContainerClassName,
     } = props;
 
     return (
-        <div className={_cs(className, styles.page)} ref={elementRef}>
+        <ListView
+            layout="grid"
+            withSidebar
+            sidebarPosition="start"
+            className={_cs(className, styles.page)}
+            spacing="none"
+        >
             {leftPaneContent && (
-                <div className={_cs(leftPaneContainerClassName, styles.leftPane)}>
+                <ListView
+                    layout="block"
+                    withBackground
+                    className={_cs(leftPaneContainerClassName, styles.content)}
+                >
                     {leftPaneContent}
-                </div>
+                </ListView>
             )}
-            {children}
-        </div>
+            <ListView
+                layout="block"
+                className={styles.content}
+            >
+                {children}
+            </ListView>
+        </ListView>
     );
 }
 

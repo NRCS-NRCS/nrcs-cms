@@ -1,9 +1,3 @@
-html,
-body {
-    max-width: 100vw;
-    overflow-x: hidden;
-}
-
 body {
     line-height: var(--go-ui-line-height-md);
     color: var(--go-ui-color-text);
@@ -11,6 +5,7 @@ body {
     font-size: var(--go-ui-font-size-md);
     font-weight: var(--go-ui-font-weight-normal);
 }
+
 h1,
 h2,
 h3,
@@ -26,8 +21,34 @@ h6 {
     padding: 0;
 }
 
-p {
-    line-height: 1.5;
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: var(--go-ui-color-gray-20);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--go-ui-color-gray-30);
+}
+
+
+table {
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+
+    border-bottom: none;
+
+    td {
+        background: var(--go-ui-color-white);
+    }
 }
 
 a {

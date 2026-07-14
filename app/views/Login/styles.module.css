@@ -1,35 +1,30 @@
-.login-container {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--go-ui-spacing-xl);
-    padding: var(--go-ui-spacing-2xl) var(--go-ui-spacing-lg);
+.image {
+    filter: grayscale(100%);
+}
 
-    .login-form {
-        display: flex;
-        flex-direction: column;
-        padding-bottom: var(--go-ui-spacing-xl);
-        width: 100%;
-        max-width: var(--go-ui-width-content-max);
-        gap: var(--go-ui-spacing-xl);
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: var(--go-ui-spacing-xl);
-            width: 100%;
-        }
-        .utilityLinks {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: var(--go-ui-width-separator-thin) solid
-                var(--go-ui-color-separator);
-        }
+.image img {
+    height: 100% !important;
+}
+
+.separator {
+    border-bottom:var(--go-ui-width-separator-sm)  solid  var(--go-ui-color-gray-30);
+}
+
+.container {
+    justify-content: center;
+    height: 100%;
+
+    .login {
+          height: 100%;
+
     }
-    .login-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+}
+
+
+.page-container {
+    height: 100%;
+
+    & >div {
+        height: 100%;
     }
 }

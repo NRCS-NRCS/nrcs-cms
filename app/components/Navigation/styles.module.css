@@ -1,42 +1,28 @@
 .nav {
+    border: none;
     border-right: 2px solid var(--go-ui-color-gray-20);
     height: 100%;
-    .nav {
+    overflow-y: auto;
+    .group-title {
         border: none;
+        border-bottom: var(--go-ui-width-separator-md) solid var(--go-ui-color-gray-20);
+        border-radius: 0;
     }
-    .navHeaderContainer {
-        border-bottom: 2px solid var(--go-ui-color-gray-20);
-        background-color: var(--go-ui-color-gray-10);
-        padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
-        width: 100%;
-        .navHeader {
-            display: flex;
-            justify-content: space-between;
-        }
-    }
-    .navContent {
-        display: flex;
-        flex-direction: column;
-        .routeLink {
-            border-bottom: 2px solid var(--go-ui-color-gray-20);
-            &:hover {
-                color: var(--go-ui-color-primary-red);
-            }
-            padding: var(--go-ui-spacing-lg) var(--go-ui-spacing-2xl);
-        }
 
-        .activeRoute {
-            text-decoration: underline;
-            color: var(--go-ui-color-primary-red);
+    .route-link {
+        border-bottom: var(--go-ui-width-separator-md) solid var(--go-ui-color-gray-20);
+        padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
+
+        &:hover {
+            border-bottom-color:var(--go-ui-color-primary-red)
         }
     }
-    .group {
-        .navHeaderContainer {
-            background: none;
-            font-weight: var(--go-ui-font-weight-normal);
-        }
-        .leaf {
-            padding-left: var(--go-ui-spacing-3xl);
-        }
+
+    .active-route {
+        border-bottom: var(--go-ui-width-separator-md) solid var(--go-ui-color-primary-red)
     }
+}
+
+.route-icon {
+    font-size: 1.25rem; 
 }
