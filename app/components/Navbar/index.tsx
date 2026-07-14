@@ -42,7 +42,12 @@ function Navbar() {
 
     return (
         <nav className={styles.navbar}>
-            <Heading className={styles.title} level={2}>NRCS</Heading>
+            <Heading
+                className={styles.title}
+                level={2}
+            >
+                NRCS
+            </Heading>
             <DropdownMenu
                 labelStyleVariant="action"
                 labelColorVariant="secondary"

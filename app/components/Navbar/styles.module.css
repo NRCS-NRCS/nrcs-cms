@@ -6,17 +6,19 @@
     border-bottom: var(--go-ui-width-separator-thin) solid var(--go-ui-color-primary-red);
     background-color: var(--go-ui-color-white);
     padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
+
     .title {
         text-transform: capitalize;
         color: var(--go-ui-color-red);
     }
-    .userInfo {
+
+    .user-info {
         display: flex;
         align-items: start;
         flex-direction: column;
     }
 
-    .userInitial {
+    .user-initial {
         display: flex;
         align-items: center;
         justify-content: center;

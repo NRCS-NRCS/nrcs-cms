@@ -12,13 +12,15 @@ const cssPaths = [
 /** @type {import('stylelint').Config} */
 const config = {
     extends: [
-        'stylelint-config-recommended',
+        'stylelint-config-standard',
         'stylelint-config-concentric',
     ],
     plugins: [
         'stylelint-value-no-unknown-custom-properties',
+        '@stylistic/stylelint-plugin',
     ],
     rules: {
+        '@stylistic/block-opening-brace-space-before': 'always',
         'csstools/value-no-unknown-custom-properties': [
             true,
             {
