@@ -1,0 +1,7 @@
+app:
+  fullnameOverride: nrcs-cms
+  image:
+    name: SET-BY-CICD-IMAGE
+    tag: SET-BY-CICD-TAG
+  ingress:
+    annotations: {}
