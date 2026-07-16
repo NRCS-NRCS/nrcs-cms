@@ -41,6 +41,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import { errorMessage } from '#utils/common';
 
 type PartialFormType = PartialForm<ProcurementCreateInput>
@@ -92,7 +93,13 @@ function ProcurementForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(ProcurementSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -111,6 +118,7 @@ function ProcurementForm() {
             });
             const result = res.data?.updateProcurement;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -123,6 +131,7 @@ function ProcurementForm() {
             });
             const result = res.data?.createProcurement;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -130,7 +139,15 @@ function ProcurementForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createProcurementMutate, id, navigate, setError, updateProcurementMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createProcurementMutate,
+        id,
+        navigate,
+        setError,
+        updateProcurementMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -233,7 +250,7 @@ function ProcurementForm() {
                 </InputSection>
                 <InputSection
                     title="Expire Date"
-                    description="This date should be the Expire Date of the Procurement"
+                    description="After this date, the Procurement will no longer be visible on the website"
                     withAsteriskOnTitle
                 >
                     <DateInput
@@ -254,6 +271,7 @@ function ProcurementForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

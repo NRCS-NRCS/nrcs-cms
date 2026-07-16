@@ -55,6 +55,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     idSelector,
@@ -155,7 +156,13 @@ function NewsForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(EditNewsSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -211,6 +218,7 @@ function NewsForm() {
             });
             const result = res.data?.updateNews;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -229,6 +237,7 @@ function NewsForm() {
             });
             const result = res.data?.createNews;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -236,7 +245,7 @@ function NewsForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [id, data?.newsItem?.actionLinks,
+    }, [id, data?.newsItem?.actionLinks, bypassUnsavedModal,
         updateNewsMutate, navigate, alert, setError, createNewsMutate]);
 
     const handleFormSubmit = useCallback(
@@ -490,6 +499,7 @@ function NewsForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

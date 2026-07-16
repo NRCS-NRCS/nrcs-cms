@@ -45,6 +45,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     keySelector,
@@ -122,7 +123,13 @@ function UserForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(userFormSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -140,6 +147,7 @@ function UserForm() {
         const result = res.data?.createUser;
 
         if (isDefined(result) && result.ok) {
+            bypassUnsavedModal();
             navigate('users');
             alert.show('User created successfully', { variant: 'success' });
         } else if (isDefined(result) && isDefined(result)) {
@@ -148,7 +156,7 @@ function UserForm() {
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }
-    }, [createUserMutate, navigate, alert, setError]);
+    }, [createUserMutate, navigate, alert, setError, bypassUnsavedModal]);
 
     const handleUpdate = useCallback(async (mutationData: PartialFormType) => {
         if (isNotDefined(id)) {
@@ -162,6 +170,7 @@ function UserForm() {
         const result = res.data?.updateUser;
 
         if (isDefined(result) && result.ok) {
+            bypassUnsavedModal();
             navigate('users');
             alert.show('User updated successfully', { variant: 'success' });
         } else if (isDefined(result) && isDefined(result.errors)) {
@@ -170,7 +179,7 @@ function UserForm() {
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }
-    }, [updateUserMutate, id, navigate, alert, setError]);
+    }, [updateUserMutate, id, navigate, alert, setError, bypassUnsavedModal]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -362,6 +371,7 @@ function UserForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

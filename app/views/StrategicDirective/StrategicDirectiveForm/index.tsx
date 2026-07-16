@@ -46,6 +46,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import { errorMessage } from '#utils/common';
 
 import MajorResponsibilities from './majorResponsibilites';
@@ -131,7 +132,13 @@ function StrategicDirectiveForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(DirectiveSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
     const errorMR = getErrorObject(error?.majorResponsibilities);
@@ -184,6 +191,7 @@ function StrategicDirectiveForm() {
             });
             const result = res.data?.updateStrategicDirectives;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -203,6 +211,7 @@ function StrategicDirectiveForm() {
             });
             const result = res.data?.createStrategicDirectives;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -211,6 +220,7 @@ function StrategicDirectiveForm() {
             }
         }
     }, [alert,
+        bypassUnsavedModal,
         createStrategicDirectiveMutate,
         id,
         navigate,
@@ -369,6 +379,7 @@ function StrategicDirectiveForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

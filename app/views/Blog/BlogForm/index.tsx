@@ -49,6 +49,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     keySelector,
@@ -120,7 +121,13 @@ function BlogForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(EditBlogSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -140,6 +147,7 @@ function BlogForm() {
             });
             const result = res.data?.updateBlog;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -152,6 +160,7 @@ function BlogForm() {
             });
             const result = res.data?.createBlog;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -159,7 +168,15 @@ function BlogForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createBlogMutate, id, navigate, setError, updateBlogMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createBlogMutate,
+        id,
+        navigate,
+        setError,
+        updateBlogMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -391,6 +408,7 @@ function BlogForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

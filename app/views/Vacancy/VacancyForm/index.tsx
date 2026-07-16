@@ -47,6 +47,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     keySelector,
@@ -115,7 +116,13 @@ function VacancyForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(VacancySchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -134,6 +141,7 @@ function VacancyForm() {
             });
             const result = res.data?.updateJobVacancy;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -146,6 +154,7 @@ function VacancyForm() {
             });
             const result = res.data?.createJobVacancy;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -153,7 +162,15 @@ function VacancyForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createVacancyMutate, id, navigate, setError, updateVacancyMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createVacancyMutate,
+        id,
+        navigate,
+        setError,
+        updateVacancyMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -302,7 +319,7 @@ function VacancyForm() {
                 </InputSection>
                 <InputSection
                     title="Expire Date"
-                    description="This date should be the Expire Date of the Vacancy"
+                    description="After this date, the Vacancy will no longer be visible on the website"
                     withAsteriskOnTitle
                 >
                     <DateInput
@@ -351,6 +368,7 @@ function VacancyForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

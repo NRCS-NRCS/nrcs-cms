@@ -42,6 +42,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     keySelector,
@@ -89,7 +90,13 @@ function PartnerForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(PartnerSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -108,6 +115,7 @@ function PartnerForm() {
             });
             const result = res.data?.updatePartner;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -120,6 +128,7 @@ function PartnerForm() {
             });
             const result = res.data?.createPartner;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -127,7 +136,15 @@ function PartnerForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createPartnerMutate, id, navigate, setError, updatePartnerMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createPartnerMutate,
+        id,
+        navigate,
+        setError,
+        updatePartnerMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -240,6 +257,7 @@ function PartnerForm() {
                     </Button>
                 </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }
