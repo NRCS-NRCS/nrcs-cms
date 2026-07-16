@@ -43,7 +43,6 @@ h6 {
 
 table {
     border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
-
     border-bottom: none;
 
     td {
