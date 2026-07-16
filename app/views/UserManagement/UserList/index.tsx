@@ -15,7 +15,6 @@ import {
 } from '@ifrc-go/ui/utils';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
-import StatusCell from '#components/StatusCell';
 import {
     useDeleteUserMutation,
     type UserFilter as UserFilterType,
@@ -32,12 +31,7 @@ import UserFilter from '../UserListFilters';
 
 type UsersListItem = NonNullable<UsersQuery['users']>['results'][number] & { no: number };
 
-export interface UsersFilterType extends Omit<UserFilterType, 'isActive'> {
-    isActive: string | undefined;
-}
-
-const defaultFilter: UsersFilterType = {
-    isActive: undefined,
+const defaultFilter: UserFilterType = {
     search: undefined,
 };
 
@@ -61,7 +55,7 @@ function UsersList() {
 
     const queryVariables = useMemo(() => ({
         filters: {
-            isActive: filter.isActive !== undefined ? filter.isActive === 'true' : undefined,
+            isActive: true,
             search: filter.search || undefined,
         },
         pagination: {
@@ -123,15 +117,6 @@ function UsersList() {
                 'email',
                 'Email',
                 (dept) => dept.email,
-            ),
-            createElementColumn<UsersListItem, string | number,
-            { isActive: boolean }>(
-                'status',
-                'Status',
-                StatusCell,
-                (_, datum) => ({
-                    isActive: datum.isActive ?? false,
-                }),
             ),
             createStringColumn<UsersListItem, string | number>(
                 'userType',

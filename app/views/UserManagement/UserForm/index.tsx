@@ -33,6 +33,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import NonFieldError from '#components/NonFieldError';
 import {
     useCreateUserMutation,
     type UserCreateInput,
@@ -216,6 +217,10 @@ function UserForm() {
         });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('users');
+    }, [navigate]);
+
     if (!canEditUsers) {
         return <Navigate to="/users" replace />;
     }
@@ -231,16 +236,41 @@ function UserForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={isEditMode ? 'USER DETAIL' : 'CREATE USER'}
+            headerDescription={isEditMode ? 'Review and update the details of this user account' : 'Fill in the details below to create a new user account'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView
                 layout="block"
                 spacing="lg"
             >
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {isEditMode ? 'USER DETAIL' : 'CREATE USER'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.user.createdAt ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created: ${data?.user.createdAt}`}
@@ -360,16 +390,6 @@ function UserForm() {
                         error={error?.userType}
                     />
                 </InputSection>
-                <ListView
-                    withFullWidth
-                    withCenteredContents
-                    withBackground
-                    withPadding
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

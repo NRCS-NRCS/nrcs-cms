@@ -32,6 +32,7 @@ import {
 } from '@togglecorp/toggle-form';
 
 import FileUpload from '#components/FileUpload';
+import NonFieldError from '#components/NonFieldError';
 import {
     type RadioProgramCreateInput,
     RadioProgramTypeEnum,
@@ -176,6 +177,10 @@ function RadioProgramForm() {
         label: status,
     })), []);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('radioProgram');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/radio-programs" replace />;
     }
@@ -191,13 +196,38 @@ function RadioProgramForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'RADIO PROGRAM DETAILS' : 'CREATE RADIO PROGRAM'}
+            headerDescription={id ? 'Review and update the details of this radio program' : 'Fill in the details below to create a new radio program'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'RADIO PROGRAM DETAILS' : 'CREATE RADIO PROGRAM'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={radioProgramData?.createdBy && radioProgramData?.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${radioProgramData?.createdBy.firstName} ${radioProgramData?.createdBy.lastName}`}
@@ -267,15 +297,6 @@ function RadioProgramForm() {
                         error={error?.type}
                     />
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit}>
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

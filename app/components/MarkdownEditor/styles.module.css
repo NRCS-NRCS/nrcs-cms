@@ -1,37 +1,35 @@
 .editor {
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     z-index: 0;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-gray-20);
+    border-radius: var(--go-ui-border-radius-lg);
+    background-color: var(--go-ui-color-foreground);
     width: 100%;
     min-height: var(--go-ui-width-min-modal);
+    overflow: hidden;
+
+    &:focus-within {
+        border-bottom:var(--go-ui-width-separator-sm) solid var(--go-ui-color-primary-red);
+    }
 
     >* {
         flex: 1;
     }
 }
 
-.editor p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    margin: var(--go-ui-spacing-md) 0;
+
+.toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: var(--go-ui-width-separator-sm) solid var(--go-ui-color-gray-20);
+    border-radius: 0;
+    background-color: var(--go-ui-color-foreground);
 }
 
-.editor ul,
-.editor ol {
-    padding-left: var(--go-ui-spacing-xl);
-}
-
-.editor li {
-    margin: 4px 0;
-}
-
-.editor a {
-    text-decoration: underline;
-    color: var(--go-ui-color-dark-blue-20);
-
-    &:hover {
-        color: var(--go-ui-color-dark-blue-30);
-    }
+.content {
+    padding: var(--go-ui-spacing-md) var(--go-ui-spacing-lg);
+    line-height: 1.5;
 }

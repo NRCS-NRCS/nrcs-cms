@@ -29,6 +29,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import NonFieldError from '#components/NonFieldError';
 import {
     type FaqCreateInput,
     type FaqUpdateInput,
@@ -153,6 +154,10 @@ function FAQsForm() {
         setValue({ ...faqData });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('faqs');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/faqs" replace />;
     }
@@ -168,13 +173,41 @@ function FAQsForm() {
     }
 
     return (
-        <Container withPadding>
-            <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'FAQs DETAIL' : 'CREATE FAQ'}
-                    </Heading>
-                </InputSection>
+        <Container
+            withPadding
+            heading={id ? 'FAQs DETAIL' : 'CREATE FAQ'}
+            headerDescription={id ? 'Review and update the details of this FAQ' : 'Fill in the details below to create a new FAQ'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
+            <ListView
+                layout="block"
+                spacing="lg"
+            >
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.faq.createdBy && data.faq.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.faq.createdBy.firstName} ${data?.faq.createdBy.lastName}`}
@@ -227,15 +260,6 @@ function FAQsForm() {
                         error={error?.orderIndex}
                     />
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

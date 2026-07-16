@@ -32,6 +32,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import NonFieldError from '#components/NonFieldError';
 import {
     type DepartmentCreateInput,
     type DepartmentUpdateInput,
@@ -181,6 +182,10 @@ function DepartmentForm() {
         });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('department');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/departments" replace />;
     }
@@ -196,9 +201,38 @@ function DepartmentForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'}
+            headerDescription={id ? 'Review and update the details of this department' : 'Fill in the details below to create a new department'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection title={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.department.createdBy && data.department.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection title={`Created by: ${data?.department.createdBy.firstName} ${data?.department.createdBy.lastName}`}>
                         <Heading level={6}>
@@ -291,15 +325,6 @@ function DepartmentForm() {
                         />
                     </InputSection>
                 </Activity>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

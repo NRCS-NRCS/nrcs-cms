@@ -41,6 +41,7 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
+import NonFieldError from '#components/NonFieldError';
 import {
     type ActionLinkInput,
     type ActionLinkType,
@@ -293,6 +294,9 @@ function NewsForm() {
 
     const ContentEditor = (
         <MarkdownEditor
+            heading="Write News"
+            withAsteriskOnHeading
+            headingDescription="Share the story, insights, or updates you'd like readers to know"
             name="content"
             value={value.content}
             onChange={setFieldValue}
@@ -318,6 +322,10 @@ function NewsForm() {
         [setFieldValue],
     );
 
+    const handleCancelClick = useCallback(() => {
+        navigate('news');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/news" replace />;
     }
@@ -332,13 +340,38 @@ function NewsForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'NEWS DETAILS' : 'CREATE NEWS'}
+            headerDescription={id ? 'Review and update the details of this news article' : 'Fill in the details below to create and publish a news article'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading>
-                        {id ? 'NEWS DETAILS' : 'CREATE NEWS'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.newsItem.createdBy && data.newsItem.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.newsItem.createdBy.firstName} ${data?.newsItem.createdBy.lastName}`}
@@ -462,11 +495,6 @@ function NewsForm() {
                         error={error?.isHighlighted}
                     />
                 </InputSection>
-                <InputSection withoutTitleSection>
-                    <Heading level={5}>
-                        Write News
-                    </Heading>
-                </InputSection>
                 {ContentEditor}
                 <InputSection
                     title="Action Link"
@@ -488,16 +516,6 @@ function NewsForm() {
                         </Button>
                     </ListView>
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    {' '}
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

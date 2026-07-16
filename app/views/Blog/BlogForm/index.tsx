@@ -37,6 +37,7 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
+import NonFieldError from '#components/NonFieldError';
 import {
     type BlogCreateInput,
     type BlogUpdateInput,
@@ -72,7 +73,7 @@ const EditBlogSchema: FormSchema = {
             requiredValidation: requiredStringCondition,
         },
         content: {
-            required: false,
+            required: true,
             requiredValidation: requiredStringCondition,
         },
         coverImage: {
@@ -94,7 +95,7 @@ const EditBlogSchema: FormSchema = {
             requiredValidation: requiredStringCondition,
         },
         status: {
-            required: false,
+            required: true,
             requiredValidation: requiredStringCondition,
         },
     }),
@@ -226,6 +227,10 @@ function BlogForm() {
         });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('blog');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/blog" replace />;
     }
@@ -241,16 +246,41 @@ function BlogForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'BLOG DETAIL' : 'CREATE BLOG'}
+            headerDescription={id ? 'Review and update the details of this blog post' : 'Fill in the details below to create and publish a new blog post'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView
                 layout="block"
                 spacing="lg"
             >
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'BLOG DETAIL' : 'CREATE BLOG'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.blog.createdBy && data?.blog.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.blog.createdBy.firstName}`}
@@ -385,28 +415,16 @@ function BlogForm() {
                         error={error?.department}
                     />
                 </InputSection>
-                <InputSection withoutTitleSection>
-                    <Heading level={5}>
-                        Write Blogs
-                    </Heading>
-                </InputSection>
                 <MarkdownEditor
+                    heading="Write Blogs"
+                    withAsteriskOnHeading
+                    headingDescription="Share the story, insights, or updates you'd like readers to know"
                     name="content"
                     value={value.content}
                     onChange={setFieldValue}
                     error={error?.content}
                     placeholder="Start writing blog here..."
                 />
-                <ListView
-                    withFullWidth
-                    withCenteredContents
-                    withBackground
-                    withPadding
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

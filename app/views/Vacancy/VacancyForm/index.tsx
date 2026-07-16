@@ -36,6 +36,7 @@ import {
 } from '@togglecorp/toggle-form';
 
 import FileUpload from '#components/FileUpload';
+import NonFieldError from '#components/NonFieldError';
 import {
     type JobVacancyCreateInput,
     type JobVacancyUpdateInput,
@@ -203,6 +204,10 @@ function VacancyForm() {
         }),
     ) ?? [], [departments]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('vacancy');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/vacancy" replace />;
     }
@@ -218,13 +223,38 @@ function VacancyForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'VACANCY DETAILS' : 'CREATE VACANCY'}
+            headerDescription={id ? 'Review and update the details of this vacancy' : 'Fill in the details below to create a new vacancy posting'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'VACANCY DETAILS' : 'CREATE VACANCY'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.jobVacancy.createdBy && data.jobVacancy.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.jobVacancy.createdBy.firstName} ${data?.jobVacancy.createdBy.lastName}`}
@@ -358,15 +388,6 @@ function VacancyForm() {
                         label="Is Archived"
                     />
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit}>
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>

@@ -31,6 +31,7 @@ import {
 } from '@togglecorp/toggle-form';
 
 import FileUpload from '#components/FileUpload';
+import NonFieldError from '#components/NonFieldError';
 import {
     type PartnerCreateInput,
     PartnerScopeEnum,
@@ -167,6 +168,10 @@ function PartnerForm() {
         label: scope,
     })), []);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('partner');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/partners" replace />;
     }
@@ -182,16 +187,41 @@ function PartnerForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'PARTNER DETAILS' : 'CREATE PARTNER'}
+            headerDescription={id ? 'Review and update the details of this partner' : 'Fill in the details below to create a new partner'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView
                 layout="block"
                 spacing="lg"
             >
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'PARTNER DETAILS' : 'CREATE PARTNER'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.partner.createdBy && data?.partner.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.partner.createdBy.firstName}`}
@@ -246,16 +276,6 @@ function PartnerForm() {
                         accept="image/*"
                     />
                 </InputSection>
-                <ListView
-                    withFullWidth
-                    withCenteredContents
-                    withBackground
-                    withPadding
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
             {unsavedModal}
         </Container>
