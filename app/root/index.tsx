@@ -1,4 +1,5 @@
 import {
+    Suspense,
     useMemo,
     useState,
 } from 'react';
@@ -8,18 +9,24 @@ import { AlertContainer } from '@ifrc-go/ui';
 import { AlertContext } from '@ifrc-go/ui/contexts';
 import { cacheExchange } from '@urql/exchange-graphcache';
 import {
+    api,
+    appTitle,
+    environment,
+} from 'app/config';
+import {
     Client,
     fetchExchange,
     Provider as UrqlProvider,
 } from 'urql';
 
+import PreloadMessage from '#components/PreloadMessage';
 import UserContext, { type UserContextInterface } from '#contexts/UserContext';
 import useAlertContextProviderValue from '#hooks/useAlertContextProviderValue';
 
 import type { User } from './types/user';
 
-const COOKIE_NAME = `NRCS-${import.meta.env.APP_ENVIRONMENT}-CSRFTOKEN`;
-const GRAPHQL_ENDPOINT = `${import.meta.env.APP_GRAPHQL_ENDPOINT}/graphql/`;
+const COOKIE_NAME = `NRCS-${environment}-CSRFTOKEN`;
+const GRAPHQL_ENDPOINT = `${api}/graphql/`;
 
 const cookies = new Cookies();
 const gqlClient = new Client({
@@ -82,7 +89,17 @@ function Root() {
             <UserContext.Provider value={userContext}>
                 <AlertContext.Provider value={alertContextValue}>
                     <AlertContainer />
-                    <Outlet />
+                    <Suspense
+                        fallback={(
+                            <PreloadMessage>
+                                {appTitle}
+                                {' '}
+                                loading...
+                            </PreloadMessage>
+                        )}
+                    >
+                        <Outlet />
+                    </Suspense>
                 </AlertContext.Provider>
             </UserContext.Provider>
         </UrqlProvider>

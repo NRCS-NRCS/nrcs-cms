@@ -73,7 +73,7 @@ const router = createBrowserRouter([{
     // errorElement:
 }]);
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('webapp-root')!).render(
     <StrictMode>
         <RouterProvider router={router} />
     </StrictMode>,
