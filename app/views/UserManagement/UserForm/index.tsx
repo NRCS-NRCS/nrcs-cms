@@ -20,6 +20,7 @@ import {
     TextInput,
 } from '@ifrc-go/ui';
 import {
+    formatDateToString,
     isDefined,
     isNotDefined,
 } from '@togglecorp/fujs';
@@ -52,6 +53,7 @@ import {
     keySelector,
     labelSelector,
     transformToFormError,
+    userTypeLabels,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<UserCreateInput & UserUpdateInput>;
@@ -87,14 +89,11 @@ function getUserFormSchema(isEditMode: boolean): FormSchema {
                 required: true,
                 requiredValidation: requiredStringCondition,
             },
-            isActive: {},
         }),
     };
 }
 
-const defaultEditFormValue: PartialFormType = {
-    isActive: false,
-};
+const defaultEditFormValue: PartialFormType = {};
 function UserForm() {
     const { id } = useParams();
     const isEditMode = isDefined(id);
@@ -137,7 +136,7 @@ function UserForm() {
     const userTypeOptions = useMemo(
         () => Object.values(UserTypeEnum).map((userType) => ({
             key: userType,
-            label: userType,
+            label: userTypeLabels[userType],
         })),
         [],
     );
@@ -273,12 +272,12 @@ function UserForm() {
                 />
                 <Activity mode={data?.user.createdAt ? 'visible' : 'hidden'}>
                     <InputSection
-                        title={`Created: ${data?.user.createdAt}`}
+                        title={`Created: ${formatDateToString(new Date(data?.user.createdAt), 'yyyy-MM-dd')}`}
                     >
                         <Heading level={6}>
                             Last login:
                             {' '}
-                            {data?.user.lastLogin ?? 'Never'}
+                            {formatDateToString(new Date(data?.user.lastLogin), 'yyyy-MM-dd hh:mm:ss aaa') ?? 'Never'}
                         </Heading>
                     </InputSection>
                 </Activity>

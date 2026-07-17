@@ -5,6 +5,7 @@ import {
     RadioProgramTypeEnum,
     ResourceTypeEnum,
     StatusEnum,
+    UserTypeEnum,
 } from '#generated/types/graphql';
 
 export function labelSelector<T>(item: { label: T }) {
@@ -26,11 +27,6 @@ export function nameSelector<T>(item: { name: T }) {
 export function valueSelector<T>(item: { value: T }) {
     return item.value;
 }
-
-export const statusFilterOptions = [
-    { label: 'Active', value: 'true' },
-    { label: 'Inactive', value: 'false' },
-];
 
 export const archivedFilterOptions = [
     { label: 'Active', value: 'false' },
@@ -57,6 +53,12 @@ export const statusOptions = [
     { label: 'Draft', value: StatusEnum.Draft },
     { label: 'Archived', value: StatusEnum.Archived },
 ];
+
+export const userTypeLabels: Record<UserTypeEnum, string> = {
+    [UserTypeEnum.Admin]: 'Admin',
+    [UserTypeEnum.Staff]: 'Staff',
+    [UserTypeEnum.Viewer]: 'Viewer',
+};
 
 export const highlightedFilterOptions = [
     { label: 'Highlighted', value: 'true' },
