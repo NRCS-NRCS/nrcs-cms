@@ -1,6 +1,5 @@
 import { use } from 'react';
 import {
-    FaHighlighter,
     FaMoneyCheck,
     FaProjectDiagram,
     FaRegFileAlt,
@@ -42,7 +41,7 @@ const navigationItem : NavigationItem[] = [
         groupTitle: 'Content Management',
         routes: [
             {
-                title: 'Dashboard',
+                title: 'Home',
                 to: 'home',
                 icon: <DashboardLineIcon />,
             },

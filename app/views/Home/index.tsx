@@ -1,191 +1,319 @@
 import {
-    type ReactElement,
-    use,
     useCallback,
+    useEffect,
+    useMemo,
 } from 'react';
-import {
-    FaFileAlt,
-    FaFileAudio,
-    FaHighlighter,
-    FaMoneyCheck,
-    FaProjectDiagram,
-    FaQuestionCircle,
-    FaRegNewspaper,
-    FaSuitcase,
-    FaThinkPeaks,
-    FaUserFriends,
-    FaWarehouse,
-    FaWindowMaximize,
-} from 'react-icons/fa';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
+    ConfirmButton,
     Container,
-    Heading,
-    ListView,
+    Pager,
+    Table,
+    TextInput,
 } from '@ifrc-go/ui';
+import {
+    createActionColumn,
+    createNumberColumn,
+    createStringColumn,
+} from '@ifrc-go/ui/utils';
+import {
+    isDefined,
+    isNotDefined,
+} from '@togglecorp/fujs';
 
-import UserContext from '#contexts/UserContext';
-import { useCountsQuery } from '#generated/types/graphql';
-import useRouting, { type RoutesMap } from '#hooks/useRouting';
+import {
+    type NewsFilter,
+    type NewsQuery,
+    type NewsQueryVariables,
+    StatusEnum,
+    useNewsQuery,
+    useUpdateNewsMutation,
+} from '#generated/types/graphql';
+import useAlert from '#hooks/useAlert';
+import useFilterState from '#hooks/useFilterState';
+import usePermissions from '#hooks/usePermissions';
+import useRouting from '#hooks/useRouting';
+import {
+    errorMessage,
+    idSelector,
+    transformToFormError,
+} from '#utils/common';
 
-import styles from './styles.module.css';
+const MAX_HIGHLIGHTED_NEWS = 6;
 
-interface CardItem {
-    title: string;
-    count: number;
-    icon: ReactElement;
-    redirect: keyof RoutesMap ;
-}
+type NewsListItem = NonNullable<NewsQuery['news']>['results'][number] & { no: number };
 
-function Dashboards() {
-    const { user } = use(UserContext);
-    const [{ data }] = useCountsQuery();
+const defaultFilter: Pick<NewsFilter, 'search'> = {
+    search: undefined,
+};
+
+function Home() {
+    const alert = useAlert();
     const navigate = useRouting();
+    const { canEditContent } = usePermissions();
 
-    const card : CardItem[] = [
-        {
-            title: 'Blogs',
-            count: data?.blogs.totalCount || 0,
-            icon: <FaFileAlt />,
-            redirect: 'addBlog',
-        },
-        {
-            title: 'Departments',
-            count: data?.departments.totalCount || 0,
-            icon: <FaMoneyCheck />,
-            redirect: 'addDepartment',
-        },
-        {
-            title: 'FAQs',
-            count: data?.faqs.totalCount || 0,
-            icon: <FaQuestionCircle />,
-            redirect: 'addFaq',
-        },
-        {
-            title: 'Highlights',
-            count: data?.highlightedBlogs.totalCount || 0,
-            icon: <FaHighlighter />,
-            redirect: 'addNews',
-        },
-        {
-            title: 'Vacancies',
-            count: data?.jobVacancies.totalCount || 0,
-            icon: <FaSuitcase />,
-            redirect: 'addVacancy',
-        },
-        {
-            title: 'News',
-            count: data?.news.totalCount || 0,
-            icon: <FaRegNewspaper />,
-            redirect: 'addNews',
-        },
-        {
-            title: 'Partners',
-            count: data?.partners.totalCount || 0,
-            icon: <FaUserFriends />,
-            redirect: 'addPartner',
-        },
-        {
-            title: 'Radio Programs',
-            count: data?.radioProgram.totalCount || 0,
-            icon: <FaFileAudio />,
-            redirect: 'addRadioProgram',
-        },
-        {
-            title: 'Strategic Directives',
-            count: data?.strategicDirectives.totalCount || 0,
-            icon: <FaThinkPeaks />,
-            redirect: 'addStrategicDirectives',
-        },
-        {
-            title: 'Resources',
-            count: data?.resources.totalCount || 0,
-            icon: <FaWarehouse />,
-            redirect: 'addResources',
-        },
-        {
-            title: 'Projects',
-            count: data?.projects.totalCount || 0,
-            icon: <FaProjectDiagram />,
-            redirect: 'addProject',
-        },
-        {
-            title: 'Procurements',
-            count: data?.procurements.totalCount || 0,
-            icon: <FaWindowMaximize />,
-            redirect: 'addProcurements',
-        },
-    ];
+    const {
+        filter,
+        rawFilter,
+        filtered,
+        setFilterField,
+        page,
+        setPage,
+        limit,
+        offset,
+    } = useFilterState({
+        filter: defaultFilter,
+    });
 
-    const handleNavigate = useCallback(
-        (redirect:keyof RoutesMap) => navigate(redirect),
-        [navigate],
+    const getQueryVariables = useCallback(
+        (isHighlighted: boolean): NewsQueryVariables => ({
+            pagination: isHighlighted
+                ? { limit: MAX_HIGHLIGHTED_NEWS, offset: 0 }
+                : { limit, offset },
+            filter: {
+                search: !isHighlighted ? filter.search || undefined : undefined,
+                status: StatusEnum.Published,
+                isHighlighted,
+            },
+        }),
+        [limit, offset, filter.search],
     );
+
+    const [
+        { fetching: newsPending, data },
+        reExecuteMainQuery,
+    ] = useNewsQuery({
+        variables: getQueryVariables(false),
+    });
+
+    const [
+        { fetching: highlightsPending, data: highlightsData },
+        reExecuteHighlightsQuery,
+    ] = useNewsQuery({
+        variables: getQueryVariables(true),
+    });
+
+    const [, updateNews] = useUpdateNewsMutation();
+
+    const highlightsResults = highlightsData?.news?.results;
+    const highlightLimitReached = (highlightsData?.news.totalCount ?? 0) >= MAX_HIGHLIGHTED_NEWS;
+
+    const totalCount = data?.news?.totalCount;
+
+    useEffect(() => {
+        if (newsPending || isNotDefined(totalCount)) {
+            return;
+        }
+        const lastPage = Math.max(1, Math.ceil(totalCount / limit));
+        if (page > lastPage) {
+            setPage(lastPage);
+        }
+    }, [totalCount, limit, page, setPage, newsPending]);
+
+    const tableData: NewsListItem[] = useMemo(() => (
+        (data?.news?.results ?? []).map((item, index) => ({
+            ...item,
+            no: offset + index + 1,
+        }))
+    ), [data, offset]);
+
+    const highlightsTableData: NewsListItem[] = useMemo(() => (
+        (highlightsResults ?? []).map((item, index) => ({
+            ...item,
+            no: index + 1,
+        }))
+    ), [highlightsResults]);
+
+    const handleToggleHighlight = useCallback((id: string, isHighlighted: boolean) => {
+        const item = [...tableData, ...highlightsTableData].find((news) => news.id === id);
+        if (!item || !item.directiveId) {
+            alert.show(errorMessage, { variant: 'danger' });
+            return;
+        }
+
+        updateNews({
+            pk: id,
+            data: {
+                content: item.content,
+                directive: item.directiveId,
+                isHighlighted,
+            },
+        }).then((resp) => {
+            const result = resp.data?.updateNews;
+            if (result?.ok) {
+                reExecuteMainQuery({ requestPolicy: 'network-only' });
+                reExecuteHighlightsQuery({ requestPolicy: 'network-only' });
+                alert.show(
+                    isHighlighted ? 'Added to highlights' : 'Removed from highlights',
+                    { variant: 'success' },
+                );
+            } else if (isDefined(result) && isDefined(result.errors)) {
+                const formError = transformToFormError(result.errors);
+                const message = formError?.isHighlighted;
+                alert.show(
+                    typeof message === 'string' && message
+                        ? message
+                        : errorMessage,
+                    { variant: 'danger' },
+                );
+            }
+        }).catch(() => {
+            alert.show(errorMessage, { variant: 'danger' });
+        });
+    }, [
+        tableData,
+        highlightsTableData,
+        updateNews,
+        reExecuteMainQuery,
+        reExecuteHighlightsQuery,
+        alert,
+    ]);
+
+    const handleAddToHighlights = useCallback((id: string) => {
+        handleToggleHighlight(id, true);
+    }, [handleToggleHighlight]);
+
+    const handleRemoveFromHighlights = useCallback((id: string) => {
+        handleToggleHighlight(id, false);
+    }, [handleToggleHighlight]);
+
+    const handleAddNewsClick = useCallback(() => {
+        navigate('addNews');
+    }, [navigate]);
+
+    const highlightsColumns = useMemo(() => [
+        createNumberColumn<NewsListItem, string | number>(
+            'no',
+            'No.',
+            (item) => item.no,
+        ),
+        createStringColumn<NewsListItem, string | number>(
+            'title',
+            'Title',
+            (item) => item.title,
+        ),
+        createStringColumn<NewsListItem, string | number>(
+            'publishedDate',
+            'Published Date',
+            (item) => item.publishedDate,
+        ),
+        ...(canEditContent ? [createActionColumn<NewsListItem, string | number>(
+            'action',
+            (item) => ({
+                children: (
+                    <ConfirmButton
+                        name={item.id}
+                        onConfirm={handleRemoveFromHighlights}
+                        styleVariant="action"
+                    >
+                        Remove
+                    </ConfirmButton>
+                ),
+            }),
+        )] : []),
+    ], [canEditContent, handleRemoveFromHighlights]);
+
+    const columns = useMemo(() => [
+        createNumberColumn<NewsListItem, string | number>(
+            'no',
+            'No.',
+            (item) => item.no,
+        ),
+        createStringColumn<NewsListItem, string | number>(
+            'title',
+            'Title',
+            (item) => item.title,
+        ),
+        createStringColumn<NewsListItem, string | number>(
+            'publishedDate',
+            'Published Date',
+            (item) => item.publishedDate,
+        ),
+        ...(canEditContent ? [createActionColumn<NewsListItem, string | number>(
+            'action',
+            (item) => ({
+                children: (
+                    <Button
+                        name={item.id}
+                        onClick={handleAddToHighlights}
+                        styleVariant="action"
+                        disabled={highlightLimitReached}
+                        title={highlightLimitReached
+                            ? `Highlighted news should not exceed ${MAX_HIGHLIGHTED_NEWS}. Remove one to add another.`
+                            : 'Add news to highlights'}
+                    >
+                        Add to Highlights
+                    </Button>
+                ),
+            }),
+        )] : []),
+    ], [canEditContent, handleAddToHighlights, highlightLimitReached]);
 
     return (
         <Container
-            className={styles.container}
-            heading="Dashboards"
-            headingLevel={1}
-            headerDescription={(
-                <>
-                    Welcome back
-                    {' '}
-                    <strong>
-                        {user?.firstName}
-                        {' '}
-                        {user?.lastName}
-                    </strong>
-                    {' '}
-                    to the NRCS CMS Dashboard.
-                    <br />
-                    Use the navigation menu to access different sections of the CMS.
-                </>
-            )}
+            withPadding
+            heading="Home"
+            headerDescription="Manage the news highlighted on the homepage"
         >
-            <div className={styles.content}>
-                <ListView
-                    layout="grid"
-                    withFullWidth
-                    numPreferredGridColumns={3}
-                >
-                    {card.map((item) => (
-                        <ListView key={item.title} withPadding withBackground layout="block">
-                            <Heading level={6}>
-                                {item.title}
-                            </Heading>
-                            <ListView spacing="sm">
-                                {item.icon}
-                                {item.count}
-                            </ListView>
-                        </ListView>
-                    ))}
-                </ListView>
-                <ListView
-                    withPadding
-                    withBackground
-                    layout="block"
-                    spacing="sm"
-                >
-                    <Heading level={3}>Quick Action</Heading>
-                    {card.map((item) => (
-                        <div key={item.title}>
-                            <Button
-                                name={item.redirect}
-                                styleVariant="outline"
-                                textSize="sm"
-                                onClick={handleNavigate}
-                            >
-                                New
-                                {' '}
-                                {item.title}
-                            </Button>
-                        </div>
-                    ))}
-                </ListView>
-            </div>
+            <Container
+                withPadding
+                heading="Added to Highlights"
+                headerDescription={`A maximum of ${MAX_HIGHLIGHTED_NEWS} highlights can be added`}
+                headingLevel={4}
+                empty={highlightsResults?.length === 0}
+                emptyMessage="No highlights have been added."
+            >
+                <Table
+                    filtered={false}
+                    keySelector={idSelector}
+                    columns={highlightsColumns}
+                    data={highlightsTableData}
+                    pending={highlightsPending}
+                />
+            </Container>
+
+            <Container
+                withPadding
+                heading="News"
+                headerDescription="This section shows only published news. Add and publish news articles on the News Page to display them here"
+                headerActions={canEditContent ? (
+                    <Button
+                        name="addNews"
+                        styleVariant="filled"
+                        before={(<AddFillIcon />)}
+                        onClick={handleAddNewsClick}
+                    >
+                        Add News
+                    </Button>
+                ) : undefined}
+                filters={(
+                    <TextInput
+                        name="search"
+                        placeholder="Search by title"
+                        value={rawFilter.search}
+                        onChange={setFilterField}
+                    />
+                )}
+                footerActions={(
+                    <Pager
+                        activePage={page}
+                        itemsCount={totalCount ?? 0}
+                        maxItemsPerPage={limit}
+                        onActivePageChange={setPage}
+                    />
+                )}
+            >
+                <Table
+                    filtered={filtered}
+                    keySelector={idSelector}
+                    columns={columns}
+                    data={tableData}
+                    pending={newsPending}
+                />
+            </Container>
         </Container>
     );
 }
 
-export default Dashboards;
+export default Home;

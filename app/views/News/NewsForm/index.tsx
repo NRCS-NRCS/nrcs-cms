@@ -11,7 +11,6 @@ import {
 import {
     BlockLoading,
     Button,
-    Checkbox,
     Container,
     DateInput,
     Heading,
@@ -45,9 +44,11 @@ import NonFieldError from '#components/NonFieldError';
 import {
     type ActionLinkInput,
     type ActionLinkType,
+    type CreateNewsMutation,
     type NewsCreateInput,
     type NewsUpdateInput,
     StatusEnum,
+    type UpdateNewsMutation,
     useCreateNewsMutation,
     useDirectiveQuery,
     useNewsDetailQuery,
@@ -131,11 +132,52 @@ const EditNewsSchema: FormSchema = {
             }),
 
         },
-        isHighlighted: {},
     }),
 };
 
 const defaultEditFormValue: PartialFormType = {};
+
+type MutationResponse =
+    | CreateNewsMutation['createNews']
+    | UpdateNewsMutation['updateNews']
+    | undefined;
+
+/** Files are only submitted when freshly picked; URLs from the server are dropped. */
+function getDataToSubmit(formValue: PartialFormType) {
+    const { coverImage, file, ...other } = formValue;
+    return {
+        ...other,
+        coverImage: coverImage instanceof File ? coverImage : undefined,
+        file: file instanceof File ? file : undefined,
+    };
+}
+
+function getActionLinksToCreate(currentLinks: PartialActionLinkForm[]) {
+    return currentLinks.map((link) => ({
+        label: link.label ?? '',
+        url: link.url ?? '',
+    }));
+}
+
+function getActionLinksToUpdate(
+    currentLinks: PartialActionLinkForm[],
+    originalLinks: ActionLinkType[],
+): ActionLinkInput[] {
+    const createdOrUpdated = currentLinks.map((link) => {
+        const label = link.label ?? '';
+        const url = link.url ?? '';
+        if (isNotDefined(link.id)) {
+            return { create: { label, url } };
+        }
+        return { update: { id: link.id, label, url } };
+    });
+
+    const removed = originalLinks
+        .filter((orig) => !currentLinks.some((curr) => curr.id === orig.id))
+        .map((orig) => ({ delete: { id: orig.id } }));
+
+    return [...createdOrUpdated, ...removed];
+}
 
 function NewsForm() {
     const { id } = useParams();
@@ -174,80 +216,53 @@ function NewsForm() {
         removeValue: onActionLinkRemove,
     } = useFormArray<'actionLinks', PartialActionLinkForm>('actionLinks', setFieldValue);
 
-    const handleMutation = useCallback(async (mutationData: PartialFormType) => {
-        const redirectPath = 'news';
-        const alertMessage = `News ${id ? 'updated' : 'created'} successfully`;
-        const currentLinks = mutationData.actionLinks ?? [];
-        const originalLinks = data?.newsItem?.actionLinks ?? [];
-        const { coverImage, file, ...otherMutationData } = mutationData;
-        const dataToSubmit = {
-            ...otherMutationData,
-            coverImage: coverImage instanceof File ? coverImage : undefined,
-            file: file instanceof File ? file : undefined,
-        };
-
-        if (id) {
-            const actionLinksMutation: NonNullable<ActionLinkInput[]> = currentLinks
-                .map((link) => {
-                    const label = link.label ?? '';
-                    const url = link.url ?? '';
-                    if (!link.id) {
-                        return {
-                            create: { label, url },
-                        };
-                    }
-                    return {
-                        update: { id: link.id, label, url },
-                    };
-                });
-
-            originalLinks.forEach((orig) => {
-                const exists = currentLinks.find((curr) => curr.id === orig.id);
-                if (!exists) {
-                    actionLinksMutation.push({
-                        delete: { id: orig.id },
-                    });
-                }
-            });
-
-            const res = await updateNewsMutate({
-                pk: id,
-                data: {
-                    ...dataToSubmit,
-                    actionLinks: removeNull(actionLinksMutation),
-                } as NewsUpdateInput,
-            });
-            const result = res.data?.updateNews;
-            if (result?.ok) {
-                bypassUnsavedModal();
-                navigate(redirectPath);
-                alert.show(alertMessage, { variant: 'success' });
-            } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
-            }
-        } else {
-            const res = await createNewsMutate({
-                data: {
-                    ...dataToSubmit,
-                    actionLinks: currentLinks.map((l) => ({
-                        label: l.label ?? '',
-                        url: l.url ?? '',
-                    })),
-                } as NewsCreateInput,
-            });
-            const result = res.data?.createNews;
-            if (result?.ok) {
-                bypassUnsavedModal();
-                navigate(redirectPath);
-                alert.show(alertMessage, { variant: 'success' });
-            } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
-            }
+    const handleMutationResponse = useCallback((result: MutationResponse) => {
+        if (result?.ok) {
+            bypassUnsavedModal();
+            navigate('news');
+            alert.show(
+                `News ${id ? 'updated' : 'created'} successfully`,
+                { variant: 'success' },
+            );
+        } else if (result?.errors) {
+            setError(result.errors);
+            alert.show(result.errors.message ?? errorMessage, { variant: 'danger' });
         }
-    }, [id, data?.newsItem?.actionLinks, bypassUnsavedModal,
-        updateNewsMutate, navigate, alert, setError, createNewsMutate]);
+    }, [id, navigate, alert, setError, bypassUnsavedModal]);
+
+    const handleUpdate = useCallback(async (
+        newsId: string,
+        mutationData: PartialFormType,
+    ) => {
+        const actionLinks = getActionLinksToUpdate(
+            mutationData.actionLinks ?? [],
+            data?.newsItem?.actionLinks ?? [],
+        );
+        const res = await updateNewsMutate({
+            pk: newsId,
+            data: {
+                ...getDataToSubmit(mutationData),
+                actionLinks: removeNull(actionLinks),
+            } as NewsUpdateInput,
+        });
+        handleMutationResponse(res.data?.updateNews);
+    }, [data?.newsItem?.actionLinks, updateNewsMutate, handleMutationResponse]);
+
+    const handleCreate = useCallback(async (mutationData: PartialFormType) => {
+        const res = await createNewsMutate({
+            data: {
+                ...getDataToSubmit(mutationData),
+                actionLinks: getActionLinksToCreate(mutationData.actionLinks ?? []),
+            } as NewsCreateInput,
+        });
+        handleMutationResponse(res.data?.createNews);
+    }, [createNewsMutate, handleMutationResponse]);
+
+    const handleMutation = useCallback((mutationData: PartialFormType) => (
+        id
+            ? handleUpdate(id, mutationData)
+            : handleCreate(mutationData)
+    ), [id, handleUpdate, handleCreate]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -443,7 +458,6 @@ function NewsForm() {
                 <InputSection
                     title="File"
                     description="Add a file, which will be displayed on the page"
-                    withAsteriskOnTitle
                 >
                     <FileUpload
                         name="file"
@@ -480,19 +494,6 @@ function NewsForm() {
                         onChange={setFieldValue}
                         placeholder="Select Status"
                         error={error?.status}
-                    />
-                </InputSection>
-                <InputSection
-                    title="Highlight"
-                    description="Click on the checkbox if the news is to be Highlighted"
-                    withAsteriskOnTitle
-                >
-                    <Checkbox
-                        name="isHighlighted"
-                        label="Highlighted"
-                        onChange={setFieldValue}
-                        value={value.isHighlighted}
-                        error={error?.isHighlighted}
                     />
                 </InputSection>
                 {ContentEditor}
