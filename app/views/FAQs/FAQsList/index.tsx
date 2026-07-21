@@ -6,34 +6,43 @@ import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
-    Pager,
     Table,
 } from '@ifrc-go/ui';
 import {
     createElementColumn,
-    createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import {
+    isDefined,
+    isNotDefined,
+} from '@togglecorp/fujs';
 import { useQuery } from 'urql';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     type FaqQuery,
     useDeleteFaqMutation,
+    useReorderFaqMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
+import useReorder, { createDragHandleColumn } from '#hooks/useReorder';
 import useRouting from '#hooks/useRouting';
-import { idSelector } from '#utils/common';
+import {
+    errorMessage,
+    idSelector,
+} from '#utils/common';
 
 import FAQsListFilter, { type FAQsFilterUIType } from '../FAQsListFilters';
 import { FAQ_QUERY } from '../query';
 
-type FaqListItem = NonNullable<FaqQuery['faqs']>['results'][number] & { no: number };
+import styles from './styles.module.css';
+
+type FaqItem = NonNullable<FaqQuery['faqs']>['results'][number];
+type FaqListItem = FaqItem & { no: number };
 
 type FAQsQueryVariables = {
-    pagination?: { limit: number; offset: number };
     filters?: { search?: string | null } | null;
 };
 
@@ -47,27 +56,22 @@ function FAQsList() {
     const { canEditContent } = usePermissions();
 
     const {
-        filter,
         rawFilter,
+        filter,
         filtered,
         setFilterField,
-        page,
-        setPage,
-        limit,
-        offset,
     } = useFilterState({
         filter: defaultFilter,
     });
+
+    const isSearching = isDefined(filter.search) && filter.search !== '';
+    const dragEnabled = canEditContent && !isSearching;
 
     const queryVariables = useMemo<FAQsQueryVariables>(() => ({
         filters: {
             search: filter.search || undefined,
         },
-        pagination: {
-            limit,
-            offset,
-        },
-    }), [limit, offset, filter]);
+    }), [filter]);
 
     const [{ fetching, data }, reExecuteQuery] = useQuery<FaqQuery, FAQsQueryVariables>({
         query: FAQ_QUERY,
@@ -75,50 +79,80 @@ function FAQsList() {
     });
 
     const [, deleteFaq] = useDeleteFaqMutation();
+    const [, reorderFaq] = useReorderFaqMutation();
 
-    const tableData = useMemo(
-        () => (data?.faqs.results ?? []).map((item, index) => ({
+    const refetch = useCallback(
+        () => reExecuteQuery({ requestPolicy: 'network-only' }),
+        [reExecuteQuery],
+    );
+    const handleReorder = useCallback(
+        async (nextOrder: FaqItem[]) => {
+            const resp = await reorderFaq({
+                data: { orderedIds: nextOrder.map((item) => item.id) },
+            });
+            const result = resp.data?.reorderFaq;
+            if (result?.ok) {
+                alert.show('FAQ order updated successfully', { variant: 'success' });
+                return true;
+            }
+            alert.show(errorMessage, { variant: 'danger' });
+            return false;
+        },
+        [reorderFaq, alert],
+    );
+
+    const {
+        orderedData,
+        rowModifier,
+    } = useReorder<FaqItem, string>({
+        data: data?.faqs.results,
+        keySelector: idSelector,
+        onReorder: handleReorder,
+        disabled: !dragEnabled,
+        refetch,
+    });
+
+    const tableData = useMemo<FaqListItem[]>(
+        () => orderedData.map((item, index) => ({
             ...item,
-            no: (page - 1) * limit + index + 1,
+            no: index + 1,
         })),
-        [data, page, limit],
+        [orderedData],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteFaq({ id }).then((resp) => {
                 if (resp.data?.deleteFaq) {
-                    reExecuteQuery({ requestPolicy: 'network-only' });
+                    refetch();
                     alert.show('FAQ deleted successfully', { variant: 'success' });
                 }
             });
         },
-        [deleteFaq, reExecuteQuery, alert],
+        [deleteFaq, refetch, alert],
     );
 
     const columns = useMemo(() => [
-        createStringColumn<FaqListItem, string | number>(
+        ...(dragEnabled
+            ? [createDragHandleColumn<FaqListItem, string>()]
+            : []),
+        createStringColumn<FaqListItem, string>(
             'sn',
             'S.N.',
             (member) => String(member.no),
         ),
-        createStringColumn<FaqListItem, string | number>(
+        createStringColumn<FaqListItem, string>(
             'question',
             'Question',
             (faq) => faq.question,
         ),
-        createStringColumn<FaqListItem, string | number>(
+        createStringColumn<FaqListItem, string>(
             'answer',
             'Answer',
             (faq) => faq?.answer,
         ),
-        createNumberColumn<FaqListItem, string | number>(
-            'orderIndex',
-            'Order Index',
-            (faq) => faq.orderIndex,
-        ),
         ...(canEditContent
-            ? [createElementColumn<FaqListItem, string | number, EditDeleteActionsProps>(
+            ? [createElementColumn<FaqListItem, string, EditDeleteActionsProps>(
                 'actions',
                 '',
                 EditDeleteActions,
@@ -128,9 +162,8 @@ function FAQsList() {
                     itemTitle: datum.question,
                     to: 'editFaq',
                 }),
-                { columnWidth: 150 },
             )] : []),
-    ], [onDelete, canEditContent]);
+    ], [onDelete, canEditContent, dragEnabled]);
 
     const handleAddClick = useCallback(() => {
         navigate('addFaq');
@@ -140,7 +173,7 @@ function FAQsList() {
         <Container
             withPadding
             heading="FAQs"
-            headerDescription="Browse and manage frequently asked questions"
+            headerDescription="Browse and manage frequently asked questions. Drag the handle to reorder."
             headerActions={canEditContent ? (
                 <Button
                     name="addFaq"
@@ -157,21 +190,16 @@ function FAQsList() {
                     onChange={setFilterField}
                 />
             )}
-            footerActions={(
-                <Pager
-                    activePage={page}
-                    itemsCount={data?.faqs.totalCount ?? 0}
-                    maxItemsPerPage={limit}
-                    onActivePageChange={setPage}
-                />
-            )}
         >
             <Table
+                cellClassName={styles.cell}
                 keySelector={idSelector}
                 columns={columns}
                 data={tableData}
                 filtered={filtered}
-                pending={fetching}
+                pending={fetching && isNotDefined(data)}
+                rowModifier={rowModifier}
+                resizableColumn
             />
         </Container>
     );
