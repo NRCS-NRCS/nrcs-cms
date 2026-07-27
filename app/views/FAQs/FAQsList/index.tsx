@@ -21,13 +21,17 @@ import { useQuery } from 'urql';
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
     type FaqQuery,
+    FaqReorderPosition,
     useDeleteFaqMutation,
     useReorderFaqMutation,
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
-import useReorder, { createDragHandleColumn } from '#hooks/useReorder';
+import useReorder, {
+    createDragHandleColumn,
+    type ReorderPayload,
+} from '#hooks/useReorder';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
@@ -86,9 +90,15 @@ function FAQsList() {
         [reExecuteQuery],
     );
     const handleReorder = useCallback(
-        async (nextOrder: FaqItem[]) => {
+        async ({ movedItem, targetItem, position }: ReorderPayload<FaqItem>) => {
             const resp = await reorderFaq({
-                data: { orderedIds: nextOrder.map((item) => item.id) },
+                data: {
+                    movedId: movedItem.id,
+                    targetId: targetItem.id,
+                    position: position === 'AFTER'
+                        ? FaqReorderPosition.After
+                        : FaqReorderPosition.Before,
+                },
             });
             const result = resp.data?.reorderFaq;
             if (result?.ok) {

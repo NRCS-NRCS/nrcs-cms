@@ -39,6 +39,7 @@ import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
+import { errorMessage } from '#utils/common';
 
 type PartialFormType = PartialForm<FaqCreateInput>
 
@@ -91,7 +92,6 @@ function FAQsForm() {
     const handleMutation = useCallback(async (mutationData: PartialFormType) => {
         const redirectPath = 'faqs';
         const alertMessage = `FAQ ${id ? 'updated' : 'created'} successfully`;
-        const errorMessage = 'Something Went Wrong! ';
 
         if (id) {
             const res = await updateFaqMutate({

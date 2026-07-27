@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import {
     cloneElement,
     type ComponentProps,
@@ -11,7 +10,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import { DragDropLineIcon } from '@ifrc-go/icons';
 import { createElementColumn } from '@ifrc-go/ui/utils';
 import {
     _cs,
@@ -19,10 +17,11 @@ import {
     isNotDefined,
 } from '@togglecorp/fujs';
 
+import DragHandleCell from './dragHandleCell';
+
 import styles from './styles.module.css';
 
 const EMPTY_LIST: readonly never[] = [];
-const DRAG_TITLE = 'Drag to reorder';
 
 type DraggableRow = ReactElement<ComponentProps<'tr'>>;
 
@@ -59,14 +58,6 @@ function isSameOrder<DATUM, KEY>(
         && a.every((item, index) => keySelector(item) === keySelector(b[index]));
 }
 
-function DragHandleCell() {
-    return (
-        <div className={styles.dragHandle}>
-            <DragDropLineIcon title={DRAG_TITLE} />
-        </div>
-    );
-}
-
 export function createDragHandleColumn<DATUM, KEY extends string | number>(
     id = 'dragHandle',
 ) {
@@ -79,10 +70,49 @@ export function createDragHandleColumn<DATUM, KEY extends string | number>(
     );
 }
 
+export type ReorderPosition = 'BEFORE' | 'AFTER';
+
+export interface ReorderPayload<DATUM> {
+    movedItem: DATUM;
+    targetItem: DATUM;
+    position: ReorderPosition;
+}
+
+function resolveReorder<DATUM>(
+    order: readonly DATUM[],
+    dragIndex: number,
+    targetIndex: number,
+    after: boolean,
+) {
+    const insertionIndex = resolveInsertionIndex(dragIndex, targetIndex, after);
+    if (insertionIndex === dragIndex) {
+        return undefined;
+    }
+
+    const movedItem = order[dragIndex];
+    const rest = order.filter((_, index) => index !== dragIndex);
+
+    const precedingItem = insertionIndex > 0 ? rest[insertionIndex - 1] : undefined;
+    const position: ReorderPosition = isDefined(precedingItem) ? 'AFTER' : 'BEFORE';
+
+    return {
+        nextOrder: [
+            ...rest.slice(0, insertionIndex),
+            movedItem,
+            ...rest.slice(insertionIndex),
+        ],
+        payload: {
+            movedItem,
+            targetItem: precedingItem ?? rest[insertionIndex],
+            position,
+        } satisfies ReorderPayload<DATUM>,
+    };
+}
+
 interface Props<DATUM, KEY extends string | number> {
     data: DATUM[] | undefined;
     keySelector: (item: DATUM) => KEY;
-    onReorder: (orderedData: DATUM[]) => Promise<boolean>;
+    onReorder: (payload: ReorderPayload<DATUM>) => Promise<boolean>;
     disabled?: boolean;
     refetch: () => void;
 }
@@ -93,14 +123,6 @@ interface RowModifierOptions<DATUM, KEY> {
     datum: DATUM;
 }
 
-/**
- * Generic drag-to-reorder for `@ifrc-go/ui` `Table`. Entity-agnostic: pass the
- * fetched list, a key selector, and a persist callback.
- *
- * Returns the drag-reorderable `orderedData` (feed it to the table) and a
- * `rowModifier` to spread onto `<Table rowModifier={...} />`. Reordering is
- * optimistic and rolls back automatically if `onReorder` resolves false/throws.
- */
 function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>) {
     const {
         data,
@@ -111,10 +133,6 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
     } = props;
 
     const dragIndexRef = useRef<number | undefined>(undefined);
-    // Tracks whether the pointer press that precedes a native `dragstart`
-    // landed inside the drag handle. The whole row stays `draggable` (so the
-    // browser can render the row as the drag image), but we cancel any drag
-    // that wasn't initiated from the handle.
     const dragFromHandleRef = useRef(false);
     const [draggingIndex, setDraggingIndex] = useState<number | undefined>(undefined);
     const [dropTarget, setDropTarget] = useState<DropTarget | undefined>(undefined);
@@ -122,21 +140,21 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
 
     const serverData = (data ?? EMPTY_LIST) as DATUM[];
     const [orderedData, setOrderedData] = useState<DATUM[]>(serverData);
-    const [prevServerData, setPrevServerData] = useState<DATUM[]>(serverData);
 
-    // Sync server data into local order during render (the recommended pattern
-    // over an effect). While a reorder is in flight we keep showing the
-    // optimistic order and only adopt server data once it echoes that exact
-    // order — see the success path in `handleDrop` for why.
-    if (serverData !== prevServerData && isNotDefined(draggingIndex)) {
-        setPrevServerData(serverData);
+    (function syncOrderFromServer() {
+        if (serverData === orderedData || isDefined(draggingIndex)) {
+            return;
+        }
         if (!reorderPending) {
             setOrderedData(serverData);
-        } else if (isSameOrder(serverData, orderedData, keySelector)) {
-            setOrderedData(serverData);
-            setReorderPending(false);
+            return;
         }
-    }
+        if (!isSameOrder(serverData, orderedData, keySelector)) {
+            return;
+        }
+        setOrderedData(serverData);
+        setReorderPending(false);
+    }());
 
     const indexByKey = useMemo(() => {
         const map = new Map<KEY, number>();
@@ -144,10 +162,8 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
         return map;
     }, [orderedData, keySelector]);
 
-    // Caches the hovered row's rect so `dragOver` doesn't re-measure on every
-    // mouse move. Measuring is also deliberately sticky per row: once a gap
-    // opens the row grows by the gap size, and re-measuring would flip the
-    // before/after decision back and forth (jitter).
+    // Measured once per hovered row: the gap grows the row, so re-measuring
+    // would flip the before/after decision back and forth.
     const measuredRowRef = useRef<{ index: number; rect: HoverRect } | undefined>(undefined);
     const rowsContainerRef = useRef<HTMLElement | null>(null);
 
@@ -179,24 +195,27 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
             if (isNotDefined(dragIndex)) {
                 return;
             }
-            const insertionIndex = resolveInsertionIndex(dragIndex, targetIndex, insertAfter);
-            if (insertionIndex === dragIndex) {
+
+            const reorder = resolveReorder(
+                orderedData,
+                dragIndex,
+                targetIndex,
+                insertAfter,
+            );
+            if (isNotDefined(reorder)) {
                 return;
             }
 
             const previousOrder = orderedData;
-            const nextOrder = [...orderedData];
-            const [moved] = nextOrder.splice(dragIndex, 1);
-            nextOrder.splice(insertionIndex, 0, moved);
             setReorderPending(true);
-            setOrderedData(nextOrder);
+            setOrderedData(reorder.nextOrder);
 
             const rollback = () => {
                 setReorderPending(false);
                 setOrderedData(previousOrder);
             };
 
-            onReorder(nextOrder).then((ok) => {
+            onReorder(reorder.payload).then((ok) => {
                 if (!ok) {
                     rollback();
                     return;
@@ -207,17 +226,15 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
         [orderedData, onReorder, resetDragState, refetch],
     );
 
-    // While a drag is active, treat the area above the first row and below the
-    // last row (i.e. dragging out of the table) as drops into the first / last
-    // position. Native drag events only fire on the rows themselves, so without
-    // this the intent to move an item to the very top or bottom is lost.
+    // Row events don't fire outside the table, so listen on the document to
+    // catch drops above the first / below the last row as first / last position.
     useEffect(() => {
         const tbody = rowsContainerRef.current;
         if (isNotDefined(draggingIndex) || isNotDefined(tbody)) {
             return undefined;
         }
 
-        const resolveEdge = (clientY: number): DropTarget | undefined => {
+        const resolveEdgeDropTarget = (clientY: number): DropTarget | undefined => {
             const rows = tbody.children;
             if (rows.length === 0) {
                 return undefined;
@@ -232,7 +249,7 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
         };
 
         const handleWindowDragOver = (e: globalThis.DragEvent) => {
-            const edge = resolveEdge(e.clientY);
+            const edge = resolveEdgeDropTarget(e.clientY);
             if (isNotDefined(edge)) {
                 return;
             }
@@ -243,7 +260,7 @@ function useReorder<DATUM, KEY extends string | number>(props: Props<DATUM, KEY>
         };
 
         const handleWindowDrop = (e: globalThis.DragEvent) => {
-            const edge = resolveEdge(e.clientY);
+            const edge = resolveEdgeDropTarget(e.clientY);
             if (isNotDefined(edge)) {
                 return;
             }
