@@ -3,6 +3,7 @@ import {
     useCallback,
     useEffect,
     useMemo,
+    useState,
 } from 'react';
 import {
     DeleteBinLineIcon,
@@ -25,11 +26,32 @@ import { type DjangoFileType } from '#generated/types/graphql';
 
 const IMAGE_EXTENSION_REGEX = /\.(jpe?g|png|gif|webp|svg|bmp)$/i;
 
+const BYTES_PER_MEGA_BYTE = 1024 * 1024;
+
+// NOTE: Keep these in sync with the limits on the server (backend/utils/common.py)
+const MAX_IMAGE_FILE_SIZE_IN_MB = 4;
+const MAX_AUDIO_FILE_SIZE_IN_MB = 40;
+const MAX_FILE_SIZE_IN_MB = 30;
+
 function isImageFile(file: File | DjangoFileType) {
     if (file instanceof File) {
         return file.type.startsWith('image/');
     }
     return IMAGE_EXTENSION_REGEX.test(file.name);
+}
+
+function getMaxFileSizeInMb(file: File, accept: string | undefined) {
+    // NOTE: The browser leaves the type empty for files it cannot resolve,
+    // so we fall back to what the input accepts
+    const type = file.type !== '' ? file.type : accept;
+
+    if (type?.startsWith('image/')) {
+        return MAX_IMAGE_FILE_SIZE_IN_MB;
+    }
+    if (type?.startsWith('audio/')) {
+        return MAX_AUDIO_FILE_SIZE_IN_MB;
+    }
+    return MAX_FILE_SIZE_IN_MB;
 }
 
 interface Props<NAME> {
@@ -38,6 +60,7 @@ interface Props<NAME> {
     value?: File | DjangoFileType;
     accept?: string;
     error?: string;
+    maxFileSizeInMb?: number;
     onChange: (value: File | undefined, name: NAME) => void;
 }
 
@@ -48,10 +71,14 @@ function FileUpload<const NAME>(props: Props<NAME>) {
         name,
         accept,
         error,
+        maxFileSizeInMb,
         label = 'Upload',
     } = props;
 
+    const [fileSizeError, setFileSizeError] = useState<string>();
+
     const handleClearButtonClick = useCallback(() => {
+        setFileSizeError(undefined);
         onChange(undefined, name);
     }, [onChange, name]);
 
@@ -59,8 +86,16 @@ function FileUpload<const NAME>(props: Props<NAME>) {
         if (isNotDefined(file)) {
             return;
         }
+
+        const maxSizeInMb = maxFileSizeInMb ?? getMaxFileSizeInMb(file, accept);
+        if (file.size > maxSizeInMb * BYTES_PER_MEGA_BYTE) {
+            setFileSizeError(`File is too large. Max file size must be less than ${maxSizeInMb} MB.`);
+            return;
+        }
+
+        setFileSizeError(undefined);
         onChange(file, name);
-    }, [onChange, name]);
+    }, [onChange, name, accept, maxFileSizeInMb]);
 
     const objectUrl = useMemo(() => {
         if (value instanceof File && isImageFile(value)) {
@@ -77,6 +112,8 @@ function FileUpload<const NAME>(props: Props<NAME>) {
         },
         [objectUrl],
     );
+
+    const errorMessage = fileSizeError ?? error;
 
     let previewUrl: string | undefined;
     if (value instanceof File) {
@@ -122,9 +159,9 @@ function FileUpload<const NAME>(props: Props<NAME>) {
                     size="lg"
                 />
             </Activity>
-            <Activity mode={error ? 'visible' : 'hidden'}>
+            <Activity mode={errorMessage ? 'visible' : 'hidden'}>
                 <InputError>
-                    {error}
+                    {errorMessage}
                 </InputError>
             </Activity>
         </>
