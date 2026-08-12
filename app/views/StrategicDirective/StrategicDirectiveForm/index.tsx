@@ -36,6 +36,7 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
+import NonFieldError from '#components/NonFieldError';
 import {
     type MajorResponsibilitiesInput,
     type StrategicDirectivesCreateInput,
@@ -46,6 +47,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import { errorMessage } from '#utils/common';
 
 import MajorResponsibilities from './majorResponsibilites';
@@ -131,7 +133,13 @@ function StrategicDirectiveForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(DirectiveSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
     const errorMR = getErrorObject(error?.majorResponsibilities);
@@ -184,6 +192,7 @@ function StrategicDirectiveForm() {
             });
             const result = res.data?.updateStrategicDirectives;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -203,6 +212,7 @@ function StrategicDirectiveForm() {
             });
             const result = res.data?.createStrategicDirectives;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -211,6 +221,7 @@ function StrategicDirectiveForm() {
             }
         }
     }, [alert,
+        bypassUnsavedModal,
         createStrategicDirectiveMutate,
         id,
         navigate,
@@ -263,14 +274,9 @@ function StrategicDirectiveForm() {
         [setFieldValue],
     );
 
-    const ContentEditor = (
-        <MarkdownEditor
-            name="description"
-            value={value.description}
-            onChange={setFieldValue}
-            error={error?.description}
-        />
-    );
+    const handleCancelClick = useCallback(() => {
+        navigate('strategicDirectives');
+    }, [navigate]);
 
     if (!canEditContent) {
         return <Navigate to="/strategic-directive" replace />;
@@ -287,13 +293,38 @@ function StrategicDirectiveForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'STRATEGIC DIRECTIVE DETAILS' : 'CREATE STRATEGIC DIRECTIVE'}
+            headerDescription={id ? 'Review and update the details of this strategic directive' : 'Fill in the details below to create a new strategic directive'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'STRATEGIC DIRECTIVE DETAILS' : 'CREATE STRATEGIC DIRECTIVE'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.strategicDirective.createdBy && data.strategicDirective.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.strategicDirective.createdBy.firstName} ${data?.strategicDirective.createdBy.lastName}`}
@@ -321,7 +352,11 @@ function StrategicDirectiveForm() {
                         placeholder="title"
                     />
                 </InputSection>
-                <InputSection title="Cover Image" description="Add a Cover Image, which will be attached and shown on StrategicDirective" withAsteriskOnTitle>
+                <InputSection
+                    title="Cover Image"
+                    description="Add a Cover Image, which will be attached and shown on StrategicDirective"
+                    withAsteriskOnTitle
+                >
                     <FileUpload
                         name="coverImage"
                         onChange={setFieldValue}
@@ -330,13 +365,15 @@ function StrategicDirectiveForm() {
                         accept="image/*"
                     />
                 </InputSection>
-                <InputSection
-                    title="Description"
-                    description="Provide a detailed description of the strategic directive. This should outline the purpose, goals, and significance of the directive within the broader organizational strategy."
-                    withAsteriskOnTitle
-                >
-                    {ContentEditor}
-                </InputSection>
+                <MarkdownEditor
+                    heading="Description"
+                    withAsteriskOnHeading
+                    headingDescription="Provide a detailed description of the strategic directive. This should outline the purpose, goals, and significance of the directive within the broader organizational strategy."
+                    name="description"
+                    value={value.description}
+                    onChange={setFieldValue}
+                    error={error?.description}
+                />
                 <InputSection
                     title="Major Responsibilities"
                     description="Define the key responsibilities required to implement this strategic directive. Focus on core actions, accountability, and expected outcomes."
@@ -359,16 +396,8 @@ function StrategicDirectiveForm() {
                         </Button>
                     </div>
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit}>
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

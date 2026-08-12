@@ -32,6 +32,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import NonFieldError from '#components/NonFieldError';
 import {
     type DepartmentCreateInput,
     type DepartmentUpdateInput,
@@ -43,6 +44,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     idSelector,
@@ -99,7 +101,13 @@ function DepartmentForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(DepartmentSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -114,6 +122,7 @@ function DepartmentForm() {
             });
             const result = res.data?.updateDepartment;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -126,6 +135,7 @@ function DepartmentForm() {
             });
             const result = res.data?.createDepartment;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -133,7 +143,15 @@ function DepartmentForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, updateDepartmentMutate, id, navigate, setError, createDepartmentMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        updateDepartmentMutate,
+        id,
+        navigate,
+        setError,
+        createDepartmentMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -164,6 +182,10 @@ function DepartmentForm() {
         });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('department');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/departments" replace />;
     }
@@ -179,9 +201,38 @@ function DepartmentForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'}
+            headerDescription={id ? 'Review and update the details of this department' : 'Fill in the details below to create a new department'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection title={id ? 'DEPARTMENT DETAIL' : 'CREATE DEPARTMENT'} />
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.department.createdBy && data.department.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection title={`Created by: ${data?.department.createdBy.firstName} ${data?.department.createdBy.lastName}`}>
                         <Heading level={6}>
@@ -274,16 +325,8 @@ function DepartmentForm() {
                         />
                     </InputSection>
                 </Activity>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

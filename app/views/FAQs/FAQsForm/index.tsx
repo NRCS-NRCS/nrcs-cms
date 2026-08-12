@@ -29,6 +29,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import NonFieldError from '#components/NonFieldError';
 import {
     type FaqCreateInput,
     type FaqUpdateInput,
@@ -39,6 +40,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 
 type PartialFormType = PartialForm<FaqCreateInput>
 
@@ -82,7 +84,13 @@ function FAQsForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(FAQSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -98,6 +106,7 @@ function FAQsForm() {
             });
             const result = res.data?.updateFaq;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -110,6 +119,7 @@ function FAQsForm() {
             });
             const result = res.data?.createFaq;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -117,7 +127,15 @@ function FAQsForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createFaqMutate, id, navigate, setError, updateFaqMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createFaqMutate,
+        id,
+        navigate,
+        setError,
+        updateFaqMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -136,6 +154,10 @@ function FAQsForm() {
         setValue({ ...faqData });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('faqs');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/faqs" replace />;
     }
@@ -151,13 +173,41 @@ function FAQsForm() {
     }
 
     return (
-        <Container withPadding>
-            <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'FAQs DETAIL' : 'CREATE FAQ'}
-                    </Heading>
-                </InputSection>
+        <Container
+            withPadding
+            heading={id ? 'FAQs DETAIL' : 'CREATE FAQ'}
+            headerDescription={id ? 'Review and update the details of this FAQ' : 'Fill in the details below to create a new FAQ'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
+            <ListView
+                layout="block"
+                spacing="lg"
+            >
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.faq.createdBy && data.faq.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.faq.createdBy.firstName} ${data?.faq.createdBy.lastName}`}
@@ -210,16 +260,8 @@ function FAQsForm() {
                         error={error?.orderIndex}
                     />
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

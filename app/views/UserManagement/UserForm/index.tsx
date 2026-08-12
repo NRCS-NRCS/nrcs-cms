@@ -33,6 +33,7 @@ import {
     useForm,
 } from '@togglecorp/toggle-form';
 
+import NonFieldError from '#components/NonFieldError';
 import {
     useCreateUserMutation,
     type UserCreateInput,
@@ -45,6 +46,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     keySelector,
@@ -122,7 +124,13 @@ function UserForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(userFormSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -140,6 +148,7 @@ function UserForm() {
         const result = res.data?.createUser;
 
         if (isDefined(result) && result.ok) {
+            bypassUnsavedModal();
             navigate('users');
             alert.show('User created successfully', { variant: 'success' });
         } else if (isDefined(result) && isDefined(result)) {
@@ -148,7 +157,7 @@ function UserForm() {
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }
-    }, [createUserMutate, navigate, alert, setError]);
+    }, [createUserMutate, navigate, alert, setError, bypassUnsavedModal]);
 
     const handleUpdate = useCallback(async (mutationData: PartialFormType) => {
         if (isNotDefined(id)) {
@@ -162,6 +171,7 @@ function UserForm() {
         const result = res.data?.updateUser;
 
         if (isDefined(result) && result.ok) {
+            bypassUnsavedModal();
             navigate('users');
             alert.show('User updated successfully', { variant: 'success' });
         } else if (isDefined(result) && isDefined(result.errors)) {
@@ -170,7 +180,7 @@ function UserForm() {
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }
-    }, [updateUserMutate, id, navigate, alert, setError]);
+    }, [updateUserMutate, id, navigate, alert, setError, bypassUnsavedModal]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -207,6 +217,10 @@ function UserForm() {
         });
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('users');
+    }, [navigate]);
+
     if (!canEditUsers) {
         return <Navigate to="/users" replace />;
     }
@@ -222,16 +236,41 @@ function UserForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={isEditMode ? 'USER DETAIL' : 'CREATE USER'}
+            headerDescription={isEditMode ? 'Review and update the details of this user account' : 'Fill in the details below to create a new user account'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView
                 layout="block"
                 spacing="lg"
             >
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {isEditMode ? 'USER DETAIL' : 'CREATE USER'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.user.createdAt ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created: ${data?.user.createdAt}`}
@@ -351,17 +390,8 @@ function UserForm() {
                         error={error?.userType}
                     />
                 </InputSection>
-                <ListView
-                    withFullWidth
-                    withCenteredContents
-                    withBackground
-                    withPadding
-                >
-                    <Button name="save" onClick={handleFormSubmit} styleVariant="outline">
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

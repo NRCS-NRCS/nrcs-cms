@@ -31,6 +31,7 @@ import {
 } from '@togglecorp/toggle-form';
 
 import FileUpload from '#components/FileUpload';
+import NonFieldError from '#components/NonFieldError';
 import {
     type ProcurementCreateInput,
     type ProcurementUpdateInput,
@@ -41,6 +42,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import { errorMessage } from '#utils/common';
 
 type PartialFormType = PartialForm<ProcurementCreateInput>
@@ -92,7 +94,13 @@ function ProcurementForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(ProcurementSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -111,6 +119,7 @@ function ProcurementForm() {
             });
             const result = res.data?.updateProcurement;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -123,6 +132,7 @@ function ProcurementForm() {
             });
             const result = res.data?.createProcurement;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -130,7 +140,15 @@ function ProcurementForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createProcurementMutate, id, navigate, setError, updateProcurementMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createProcurementMutate,
+        id,
+        navigate,
+        setError,
+        updateProcurementMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -148,6 +166,10 @@ function ProcurementForm() {
         setValue(removeNull(data.procurement));
     }, [data, setValue]);
 
+    const handleCancelClick = useCallback(() => {
+        navigate('procurements');
+    }, [navigate]);
+
     if (!canEditContent) {
         return <Navigate to="/procurements" replace />;
     }
@@ -163,13 +185,41 @@ function ProcurementForm() {
     }
 
     return (
-        <Container withPadding>
-            <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'PROCUREMENT DETAILS' : 'CREATE PROCUREMENT'}
-                    </Heading>
-                </InputSection>
+        <Container
+            withPadding
+            heading={id ? 'PROCUREMENT DETAILS' : 'CREATE PROCUREMENT'}
+            headerDescription={id ? 'Review and update the details of this procurement notice' : 'Fill in the details below to create a new procurement notice'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
+            <ListView
+                layout="block"
+                spacing="lg"
+            >
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.procurement.createdBy && data.procurement.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.procurement.createdBy.firstName} ${data?.procurement.createdBy.lastName}`}
@@ -233,7 +283,7 @@ function ProcurementForm() {
                 </InputSection>
                 <InputSection
                     title="Expire Date"
-                    description="This date should be the Expire Date of the Procurement"
+                    description="After this date, the Procurement will no longer be visible on the website"
                     withAsteriskOnTitle
                 >
                     <DateInput
@@ -244,16 +294,8 @@ function ProcurementForm() {
                         error={getErrorString(error?.expiryDate)}
                     />
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit}>
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

@@ -33,6 +33,7 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
+import NonFieldError from '#components/NonFieldError';
 import {
     type ResourceCreateInput,
     ResourceTypeEnum,
@@ -45,6 +46,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     idSelector,
@@ -109,7 +111,13 @@ function ResourceForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(ResourceSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -129,6 +137,7 @@ function ResourceForm() {
             });
             const result = res.data?.updateResource;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -141,6 +150,7 @@ function ResourceForm() {
             });
             const result = res.data?.createResource;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -148,7 +158,15 @@ function ResourceForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createResourceMutate, id, navigate, setError, updateResourceMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createResourceMutate,
+        id,
+        navigate,
+        setError,
+        updateResourceMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -188,6 +206,8 @@ function ResourceForm() {
 
     const ContentEditor = (
         <MarkdownEditor
+            heading="Content"
+            headingDescription="Enter the Content"
             name="content"
             value={value.content}
             onChange={setFieldValue}
@@ -195,6 +215,10 @@ function ResourceForm() {
             placeholder="Start writing content here..."
         />
     );
+
+    const handleCancelClick = useCallback(() => {
+        navigate('resources');
+    }, [navigate]);
 
     if (!canEditContent) {
         return <Navigate to="/resources" replace />;
@@ -211,13 +235,38 @@ function ResourceForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'RESOURCE DETAILS' : 'CREATE RESOURCE'}
+            headerDescription={id ? 'Review and update the details of this resource' : 'Fill in the details below to create a new resource'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'RESOURCE DETAILS' : 'CREATE RESOURCE'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.resource.createdBy && data.resource.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.resource.createdBy.firstName} ${data?.resource.createdBy.lastName}`}
@@ -271,11 +320,6 @@ function ResourceForm() {
 
                     />
                 </InputSection>
-                <InputSection
-                    title="Content"
-                    description="Enter the Content"
-                    withAsteriskOnTitle
-                />
                 {ContentEditor}
                 <InputSection
                     title="Published Date"
@@ -322,16 +366,8 @@ function ResourceForm() {
                         error={error?.type}
                     />
                 </InputSection>
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit}>
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }

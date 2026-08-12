@@ -31,6 +31,7 @@ import {
 
 import FileUpload from '#components/FileUpload';
 import MarkdownEditor from '#components/MarkdownEditor';
+import NonFieldError from '#components/NonFieldError';
 import {
     type ProjectCreateInput,
     type ProjectUpdateInput,
@@ -42,6 +43,7 @@ import {
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
+import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
     idSelector,
@@ -94,7 +96,13 @@ function ProjectForm() {
         validate,
         setError,
         setValue,
+        pristine,
     } = useForm(ProjectSchema, { value: defaultEditFormValue });
+
+    const {
+        unsavedModal,
+        bypassUnsavedModal,
+    } = useUnsavedModal(!pristine);
 
     const error = getErrorObject(formError);
 
@@ -113,6 +121,7 @@ function ProjectForm() {
             });
             const result = res.data?.updateProject;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -125,6 +134,7 @@ function ProjectForm() {
             });
             const result = res.data?.createProject;
             if (result?.ok) {
+                bypassUnsavedModal();
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
@@ -132,7 +142,15 @@ function ProjectForm() {
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             }
         }
-    }, [alert, createProjectMutate, id, navigate, setError, updateProjectMutate]);
+    }, [
+        alert,
+        bypassUnsavedModal,
+        createProjectMutate,
+        id,
+        navigate,
+        setError,
+        updateProjectMutate,
+    ]);
 
     const handleFormSubmit = useCallback(
         () => createSubmitHandler(
@@ -165,15 +183,9 @@ function ProjectForm() {
         }),
     ) ?? [];
 
-    const ContentEditor = (
-        <MarkdownEditor
-            name="description"
-            value={value.description}
-            onChange={setFieldValue}
-            error={error?.description}
-            placeholder="Start writing description here..."
-        />
-    );
+    const handleCancelClick = useCallback(() => {
+        navigate('project');
+    }, [navigate]);
 
     if (!canEditContent) {
         return <Navigate to="/projects" replace />;
@@ -190,13 +202,38 @@ function ProjectForm() {
     }
 
     return (
-        <Container withPadding>
+        <Container
+            withPadding
+            heading={id ? 'PROJECT DETAILS' : 'CREATE PROJECT'}
+            headerDescription={id ? 'Review and update the details of this project' : 'Fill in the details below to create a new project'}
+            footer={(
+                <ListView
+                    withFullWidth
+                    withCenteredContents
+                    withBackground
+                    withPadding
+                >
+                    <Button
+                        name={undefined}
+                        onClick={handleCancelClick}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        name="save"
+                        onClick={handleFormSubmit}
+                        styleVariant="filled"
+                    >
+                        {createPending || updatePending ? 'Saving' : 'Save'}
+                    </Button>
+                </ListView>
+            )}
+        >
             <ListView layout="block">
-                <InputSection withoutTitleSection>
-                    <Heading level={4}>
-                        {id ? 'PROJECT DETAILS' : 'CREATE PROJECT'}
-                    </Heading>
-                </InputSection>
+                <NonFieldError
+                    error={formError}
+                    withFallbackError
+                />
                 <Activity mode={data?.project.createdBy && data.project.modifiedBy ? 'visible' : 'hidden'}>
                     <InputSection
                         title={`Created by: ${data?.project.createdBy.firstName} ${data?.project.createdBy.lastName}`}
@@ -253,22 +290,18 @@ function ProjectForm() {
                         error={error?.department}
                     />
                 </InputSection>
-                <InputSection
-                    title="Write Description"
-                    description="Enter the Description"
-                    withAsteriskOnTitle
+                <MarkdownEditor
+                    heading="Write Description"
+                    withAsteriskOnHeading
+                    headingDescription="Enter the Description"
+                    name="description"
+                    value={value.description}
+                    onChange={setFieldValue}
+                    error={error?.description}
+                    placeholder="Start writing description here..."
                 />
-                {ContentEditor}
-                <ListView
-                    withPadding
-                    withBackground
-                    withCenteredContents
-                >
-                    <Button name="save" onClick={handleFormSubmit}>
-                        {createPending || updatePending ? 'Saving' : 'Save'}
-                    </Button>
-                </ListView>
             </ListView>
+            {unsavedModal}
         </Container>
     );
 }
