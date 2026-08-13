@@ -8,7 +8,6 @@
     background-color: var(--go-ui-color-foreground);
     width: 100%;
     min-height: var(--go-ui-width-min-modal);
-    overflow: hidden;
 
     &:focus-within {
         border-bottom:var(--go-ui-width-separator-sm) solid var(--go-ui-color-primary-red);
@@ -25,11 +24,44 @@
     top: 0;
     z-index: 1;
     border-bottom: var(--go-ui-width-separator-sm) solid var(--go-ui-color-gray-20);
-    border-radius: 0;
+    border-radius: var(--go-ui-border-radius-lg) var(--go-ui-border-radius-lg) 0 0;
     background-color: var(--go-ui-color-foreground);
 }
 
 .content {
     padding: var(--go-ui-spacing-md) var(--go-ui-spacing-lg);
     line-height: 1.5;
+}
+
+.editor h1,
+.editor h2,
+.editor h3,
+.editor h4,
+.editor h5,
+.editor h6 {
+    margin: var(--go-ui-spacing-lg) 0 var(--go-ui-spacing-sm);
+}
+
+.editor p {
+    margin: var(--go-ui-spacing-sm) 0;
+}
+
+.editor ul,
+.editor ol {
+    margin: var(--go-ui-spacing-sm) 0;
+    padding-left: var(--go-ui-spacing-xl);
+}
+
+.editor li {
+    margin: var(--go-ui-spacing-2xs) 0;
+}
+
+.editor a {
+    cursor: pointer;
+    text-decoration: underline;
+    color: var(--go-ui-color-dark-blue-20);
+
+    &:hover {
+        color: var(--go-ui-color-dark-blue-30);
+    }
 }

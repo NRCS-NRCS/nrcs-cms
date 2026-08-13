@@ -13,6 +13,10 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import {
+    formatDateToString,
+    isDefined,
+} from '@togglecorp/fujs';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
@@ -25,7 +29,10 @@ import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
-import { errorMessage } from '#utils/common';
+import {
+    errorMessage,
+    userTypeLabels,
+} from '#utils/common';
 
 import UserFilter from '../UserListFilters';
 
@@ -101,27 +108,35 @@ function UsersList() {
             createStringColumn<UsersListItem, string | number>(
                 'firstName',
                 'First Name',
-                (dept) => dept.firstName,
+                (user) => user.firstName,
             ),
             createStringColumn<UsersListItem, string | number>(
                 'lastName',
                 'Last Name',
-                (dept) => dept.lastName,
+                (user) => user.lastName,
             ),
             createStringColumn<UsersListItem, string | number>(
                 'username',
                 'Username',
-                (dept) => dept.username,
+                (user) => user.username,
             ),
             createStringColumn<UsersListItem, string | number>(
                 'email',
                 'Email',
-                (dept) => dept.email,
+                (user) => user.email,
             ),
             createStringColumn<UsersListItem, string | number>(
                 'userType',
-                'User Type',
-                (dept) => dept.userType,
+                'Role',
+                (user) => userTypeLabels[user.userType],
+            ),
+
+            createStringColumn<UsersListItem, string | number>(
+                'lastLogin',
+                'Last Login',
+                (user) => (isDefined(user.lastLogin)
+                    ? formatDateToString(new Date(user.lastLogin), 'yyyy-MM-dd hh:mm:ss aaa')
+                    : undefined),
             ),
             ...(canEditUsers ? [
                 createElementColumn<UsersListItem, string | number, EditDeleteActionsProps>(

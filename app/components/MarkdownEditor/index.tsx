@@ -17,10 +17,18 @@ import {
 import {
     BlockTypeSelect,
     BoldItalicUnderlineToggles,
+    ChangeCodeMirrorLanguage,
+    codeBlockPlugin,
+    CodeMirrorEditor,
+    codeMirrorPlugin,
+    ConditionalContents,
     CreateLink,
+    type EditorInFocus,
     headingsPlugin,
     imagePlugin,
+    InsertCodeBlock,
     InsertImage,
+    InsertTable,
     linkDialogPlugin,
     linkPlugin,
     listsPlugin,
@@ -29,12 +37,14 @@ import {
     MDXEditor,
     type MDXEditorMethods,
     quotePlugin,
+    tablePlugin,
     thematicBreakPlugin,
     toolbarPlugin,
     UndoRedo,
 } from '@mdxeditor/editor';
 import { isDefined } from '@togglecorp/fujs';
 
+import useAlert from '#hooks/useAlert';
 import useDebounce from '#hooks/useDebounce';
 
 import styles from './styles.module.css';
@@ -53,7 +63,11 @@ interface Props<NAME> {
     withAsteriskOnHeading?: boolean
 }
 
-function ToolbarContents() {
+function CodeBlockToolbarContents() {
+    return <ChangeCodeMirrorLanguage />;
+}
+
+function DefaultToolbarContents() {
     return (
         <>
             <UndoRedo />
@@ -62,7 +76,29 @@ function ToolbarContents() {
             <ListsToggle />
             <CreateLink />
             <InsertImage />
+            <InsertTable />
+            <InsertCodeBlock />
         </>
+    );
+}
+
+function isCodeBlockEditor(editor: EditorInFocus | null) {
+    return editor?.editorType === 'codeblock';
+}
+
+function ToolbarContents() {
+    return (
+        <ConditionalContents
+            options={[
+                {
+                    when: isCodeBlockEditor,
+                    contents: CodeBlockToolbarContents,
+                },
+                {
+                    fallback: DefaultToolbarContents,
+                },
+            ]}
+        />
     );
 }
 
@@ -77,7 +113,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
         error,
         withAsteriskOnHeading,
     } = props;
-
+    const alert = useAlert();
     const ref = useRef<MDXEditorMethods>(null);
     // MDXEditor is uncontrolled; once the user has typed, the value prop
     // echoing back through the form must not reset the editor
@@ -89,6 +125,34 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
         editorDirtyRef.current = true;
         debouncedOnChange(val, name);
     }, [debouncedOnChange, name]);
+
+    const handlePasteCapture = useCallback((event: React.ClipboardEvent<HTMLDivElement>) => {
+        const { clipboardData } = event;
+        if (!clipboardData) {
+            return;
+        }
+        const hasFiles = clipboardData.files.length > 0;
+        const isInternalPaste = clipboardData.types.includes('application/x-lexical-editor');
+        if (hasFiles || isInternalPaste) {
+            return;
+        }
+
+        const text = clipboardData.getData('text/plain');
+        if (text) {
+            event.preventDefault();
+            event.stopPropagation();
+            ref.current?.insertMarkdown(text);
+        }
+    }, []);
+
+    const handleEditorError = useCallback(() => (
+        alert.show(
+            'Some content could not be displayed',
+            {
+                variant: 'danger',
+                description: 'Part of the content could not be parsed and may be missing from the editor.',
+            },
+        )), [alert]);
 
     useEffect(() => {
         if (ref.current && !editorDirtyRef.current && value) {
@@ -104,6 +168,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
         linkDialogPlugin(),
         quotePlugin(),
         thematicBreakPlugin(),
+        tablePlugin(),
         markdownShortcutPlugin(),
         toolbarPlugin({
             toolbarClassName: styles.toolbar,
@@ -137,11 +202,15 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
                 withCenteredContents
                 spacing="xs"
             >
-                <div className={styles.editor}>
+                <div
+                    className={styles.editor}
+                    onPasteCapture={handlePasteCapture}
+                >
                     <MDXEditor
                         markdown={value}
                         ref={ref}
                         onChange={handleEditorChange}
+                        onError={handleEditorError}
                         placeholder={placeholder}
                         plugins={plugins}
                         contentEditableClassName={styles.content}
