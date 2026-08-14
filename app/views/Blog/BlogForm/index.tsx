@@ -52,6 +52,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
+    ACCEPTED_IMAGE_TYPES,
     errorMessage,
     keySelector,
     labelSelector,
@@ -342,7 +343,7 @@ function BlogForm() {
                         onChange={setFieldValue}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_TYPES}
                     />
                 </InputSection>
                 <InputSection

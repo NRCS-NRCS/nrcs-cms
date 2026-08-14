@@ -43,7 +43,10 @@ import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
-import { errorMessage } from '#utils/common';
+import {
+    ACCEPTED_FILE_TYPES,
+    errorMessage,
+} from '#utils/common';
 
 type PartialFormType = PartialForm<ProcurementCreateInput>
 
@@ -266,6 +269,7 @@ function ProcurementForm() {
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
                         error={getErrorString(error?.file)}
+                        accept={ACCEPTED_FILE_TYPES}
                     />
                 </InputSection>
                 <InputSection

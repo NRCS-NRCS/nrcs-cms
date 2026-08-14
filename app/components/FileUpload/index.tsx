@@ -23,15 +23,14 @@ import {
 } from '@togglecorp/fujs';
 
 import { type DjangoFileType } from '#generated/types/graphql';
+import {
+    BYTES_PER_MEGA_BYTE,
+    MAX_AUDIO_FILE_SIZE_IN_MB,
+    MAX_FILE_SIZE_IN_MB,
+    MAX_IMAGE_FILE_SIZE_IN_MB,
+} from '#utils/common';
 
 const IMAGE_EXTENSION_REGEX = /\.(jpe?g|png|gif|webp|svg|bmp)$/i;
-
-const BYTES_PER_MEGA_BYTE = 1024 * 1024;
-
-// NOTE: Keep these in sync with the limits on the server (backend/utils/common.py)
-const MAX_IMAGE_FILE_SIZE_IN_MB = 4;
-const MAX_AUDIO_FILE_SIZE_IN_MB = 40;
-const MAX_FILE_SIZE_IN_MB = 30;
 
 function isImageFile(file: File | DjangoFileType) {
     if (file instanceof File) {

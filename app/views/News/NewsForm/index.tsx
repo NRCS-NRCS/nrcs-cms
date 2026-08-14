@@ -59,6 +59,8 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
+    ACCEPTED_FILE_TYPES,
+    ACCEPTED_IMAGE_TYPES,
     errorMessage,
     idSelector,
     keySelector,
@@ -452,7 +454,7 @@ function NewsForm() {
                         onChange={setFieldValue}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_TYPES}
                     />
                 </InputSection>
                 <InputSection
@@ -464,6 +466,7 @@ function NewsForm() {
                         onChange={setFieldValue}
                         value={value.file}
                         error={getErrorString(error?.file)}
+                        accept={ACCEPTED_FILE_TYPES}
                     />
                 </InputSection>
                 <Activity mode={value.slug ? 'visible' : 'hidden'}>

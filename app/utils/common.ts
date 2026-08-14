@@ -90,3 +90,12 @@ export function transformToFormError(
         {} as Record<string | symbol, unknown>,
     );
 }
+
+export const ACCEPTED_FILE_TYPES = '.pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xlsm';
+export const ACCEPTED_IMAGE_TYPES = 'image/*';
+export const BYTES_PER_MEGA_BYTE = 1024 * 1024;
+
+// NOTE: Keep these in sync with the limits on the server (backend/utils/common.py)
+export const MAX_IMAGE_FILE_SIZE_IN_MB = 4;
+export const MAX_AUDIO_FILE_SIZE_IN_MB = 40;
+export const MAX_FILE_SIZE_IN_MB = 30;

@@ -50,6 +50,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
+    ACCEPTED_FILE_TYPES,
     errorMessage,
     keySelector,
     labelSelector,
@@ -292,6 +293,7 @@ function VacancyForm() {
                         onChange={setFieldValue}
                         value={value.file}
                         error={getErrorString(error?.file)}
+                        accept={ACCEPTED_FILE_TYPES}
                     />
                 </InputSection>
                 <InputSection
