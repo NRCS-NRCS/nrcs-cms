@@ -1,0 +1,23 @@
+.dragging-row {
+    opacity: 0.35;
+}
+
+.draggable-row.gap-before > * {
+    border-top: 2.5rem solid transparent;
+    box-shadow: inset 0 2px 0 0 var(--go-ui-color-primary-red);
+}
+
+.draggable-row.gap-after > * {
+    border-bottom: 2.5rem solid transparent;
+    box-shadow: inset 0 -2px 0 0 var(--go-ui-color-primary-red);
+}
+
+.drag-handle {
+    display: flex;
+    cursor: grab;
+    color: var(--go-ui-color-text-light);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}

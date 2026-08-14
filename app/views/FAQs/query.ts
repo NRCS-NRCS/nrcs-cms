@@ -2,12 +2,8 @@
 import { gql } from 'urql';
 
 export const FAQ_QUERY = gql`
-    query FAQ($pagination: OffsetPaginationInput, $filters: FaqFilter) {
-        faqs(pagination: $pagination, filters: $filters) {
-            pageInfo {
-                limit
-                offset
-            }
+    query FAQ( $filters: FaqFilter) {
+        faqs(pagination: {limit: 100} filters: $filters, order: { orderIndex: ASC }) {
             totalCount
             results {
                 question
@@ -72,6 +68,22 @@ const DELETE_FAQ = gql`
             }
             ... on FaqType {
                 id
+            }
+        }
+    }
+`;
+
+const REORDER_FAQ_MUTATION = gql`
+    mutation ReorderFAQ($data: FaqReorderInput!) {
+        reorderFaq(data: $data) {
+            ... on FaqTypeListMutationResponseType {
+                __typename
+                errors
+                ok
+                result {
+                    id
+                    orderIndex
+                }
             }
         }
     }
