@@ -10,14 +10,15 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import {
-    createBooleanColumn,
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
+    type NewsFilter,
     type NewsQuery,
+    StatusEnum,
     useDeleteNewsMutation,
     useNewsQuery,
 } from '#generated/types/graphql';
@@ -27,13 +28,12 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import { idSelector } from '#utils/common';
 
-import NewsListFilter, { type NewsFilterUIType } from '../NewsListFilters';
+import NewsListFilter from '../NewsListFilters';
 
 type NewsListItem = NonNullable<NewsQuery['news']>['results'][number] & { no: number };
 
-const defaultFilter: NewsFilterUIType = {
+const defaultFilter: NewsFilter = {
     status: undefined,
-    isHighlighted: undefined,
     search: undefined,
 };
 
@@ -58,9 +58,6 @@ function NewsList() {
     const queryVariables = useMemo(() => ({
         filter: {
             status: filter.status ?? undefined,
-            isHighlighted: filter.isHighlighted !== undefined
-                ? filter.isHighlighted === 'true'
-                : undefined,
             search: filter.search || undefined,
         },
         pagination: {
@@ -87,52 +84,61 @@ function NewsList() {
                     reExecuteQuery();
                     alert.show('News deleted successfully', { variant: 'success' });
                 }
+            }).catch(() => {
+                alert.show('Failed to delete news', { variant: 'danger' });
             });
         },
         [deleteNews, reExecuteQuery, alert],
     );
 
-    const columns = useMemo(() => [
-        createStringColumn<NewsListItem, string | number>(
-            'sn',
-            'S.N.',
-            (member) => String(member.no),
-        ),
-        createStringColumn<NewsListItem, string | number>(
-            'title',
-            'Title',
-            (dept) => dept.title,
-        ),
-        createStringColumn<NewsListItem, string | number>(
-            'publishedDate',
-            'Published Date',
-            (dept) => dept?.publishedDate,
-        ),
+    const columns = useMemo(() => {
+        const status: Record<StatusEnum, string> = {
+            [StatusEnum.Draft]: 'Draft',
+            [StatusEnum.Archived]: 'Archived',
+            [StatusEnum.Published]: 'Published',
+        };
 
-        createBooleanColumn<NewsListItem, string | number>(
-            'highlighted',
-            'Highlighted',
-            (dept) => dept?.isHighlighted,
-        ),
-        createStringColumn<NewsListItem, string | number>(
-            'directive',
-            'Strategic Directives',
-            (dept) => dept?.directive?.title,
-        ),
-        ...(canEditContent
-            ? [createElementColumn<NewsListItem, string | number,
-         EditDeleteActionsProps>(
-             'actions',
-             '',
-             EditDeleteActions,
-             (_, datum) => ({
-                 id: datum.id,
-                 onDelete,
-                 itemTitle: datum.title,
-                 to: 'editNews',
-             }),
-         )] : []),
-    ], [onDelete, canEditContent]);
+        return [
+            createStringColumn<NewsListItem, string | number>(
+                'sn',
+                'S.N.',
+                (member) => String(member.no),
+            ),
+            createStringColumn<NewsListItem, string | number>(
+                'title',
+                'Title',
+                (dept) => dept.title,
+            ),
+            createStringColumn<NewsListItem, string | number>(
+                'publishedDate',
+                'Published Date',
+                (dept) => dept?.publishedDate,
+            ),
+            createStringColumn<NewsListItem, string | number>(
+                'status',
+                'Status',
+                (dept) => status[dept.status],
+            ),
+            createStringColumn<NewsListItem, string | number>(
+                'directive',
+                'Strategic Directives',
+                (dept) => dept?.directive?.title,
+            ),
+            ...(canEditContent
+                ? [createElementColumn<NewsListItem, string | number,
+             EditDeleteActionsProps>(
+                 'actions',
+                 '',
+                 EditDeleteActions,
+                 (_, datum) => ({
+                     id: datum.id,
+                     onDelete,
+                     itemTitle: datum.title,
+                     to: 'editNews',
+                 }),
+             )] : []),
+        ];
+    }, [canEditContent, onDelete]);
 
     const handleAddClick = useCallback(() => {
         navigate('addNews');

@@ -8,11 +8,11 @@ import {
 
 import NavigationTab from '#components/NavigationTab';
 import { type RouteKeys } from '#root/config/routes';
+import routes from '#root/config/routes';
 
 import styles from './styles.module.css';
 
 interface Routes {
-    title: string;
     to: RouteKeys;
     icon?: ReactNode;
 }
@@ -47,7 +47,7 @@ function Navigation({ navigationItem }: NavigationProps) {
                     >
                         {item.routes.map((route) => (
                             <NavigationTab
-                                key={route.title}
+                                key={route.to}
                                 to={route.to}
                                 activeClassName={styles.activeRoute}
                                 className={styles.routeLink}
@@ -61,7 +61,7 @@ function Navigation({ navigationItem }: NavigationProps) {
                                     }
                                     spacing="xs"
                                 >
-                                    {route.title}
+                                    {routes[route.to].label}
                                 </InlineLayout>
                             </NavigationTab>
                         ))}

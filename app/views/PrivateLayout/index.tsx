@@ -1,6 +1,5 @@
 import { use } from 'react';
 import {
-    FaHighlighter,
     FaMoneyCheck,
     FaProjectDiagram,
     FaRegFileAlt,
@@ -22,6 +21,7 @@ import {
     ShieldUserLineIcon,
 } from '@ifrc-go/icons';
 
+import Breadcrumbs from '#components/Breadcrumbs';
 import Navbar from '#components/Navbar';
 import Navigation, { type NavigationItem } from '#components/Navigation';
 import Page from '#components/Page';
@@ -32,7 +32,6 @@ const navigationItem : NavigationItem[] = [
         groupTitle: 'User Management',
         routes: [
             {
-                title: 'Users',
                 to: 'users',
                 icon: <ShieldUserLineIcon />,
             },
@@ -42,63 +41,51 @@ const navigationItem : NavigationItem[] = [
         groupTitle: 'Content Management',
         routes: [
             {
-                title: 'Dashboard',
                 to: 'home',
                 icon: <DashboardLineIcon />,
             },
             {
-                title: 'Blog',
                 to: 'blog',
                 icon: <FaRegFileAlt />,
             },
             {
-                title: 'Department',
                 to: 'department',
                 icon: <FaMoneyCheck />,
             },
             {
-                title: 'FAQs',
                 to: 'faqs',
                 icon: <FaRegQuestionCircle />,
             },
             {
                 to: 'news',
-                title: 'News',
                 icon: <FaRegNewspaper />,
             },
             {
                 to: 'partner',
-                title: 'Partners',
                 icon: <LeadershipIcon />,
             },
             {
                 to: 'procurements',
-                title: 'Procurements',
                 icon: <FaRegWindowMaximize />,
             },
             {
                 to: 'project',
-                title: 'Projects',
                 icon: <FaProjectDiagram />,
             },
             {
                 to: 'radioProgram',
-                title: 'Radio Programs',
                 icon: <FaRegFileAudio />,
             },
             {
                 to: 'resources',
-                title: 'Resources',
                 icon: <FaWarehouse />,
             },
             {
                 to: 'strategicDirectives',
-                title: 'Directives',
                 icon: <FaThinkPeaks />,
             },
             {
                 to: 'vacancy',
-                title: 'Vacancy',
                 icon: <FaSuitcase />,
             },
 
@@ -114,7 +101,14 @@ function PrivateLayout() {
     return (
         <>
             <Navbar />
-            <Page leftPaneContent={<Navigation navigationItem={navigationItem} />}>
+            <Page
+                leftPaneContent={(
+                    <Navigation
+                        navigationItem={navigationItem}
+                    />
+                )}
+                topContent={<Breadcrumbs />}
+            >
                 <Outlet />
             </Page>
 

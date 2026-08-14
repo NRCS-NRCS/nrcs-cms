@@ -45,6 +45,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
+    ACCEPTED_IMAGE_TYPES,
     errorMessage,
     keySelector,
     labelSelector,
@@ -273,7 +274,7 @@ function PartnerForm() {
                         onChange={setFieldValue}
                         value={value.image}
                         error={getErrorString(error?.image)}
-                        accept="image/*"
+                        accept={ACCEPTED_IMAGE_TYPES}
                     />
                 </InputSection>
             </ListView>

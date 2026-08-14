@@ -48,6 +48,8 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
+    ACCEPTED_FILE_TYPES,
+    ACCEPTED_IMAGE_TYPES,
     errorMessage,
     idSelector,
     keySelector,
@@ -304,6 +306,7 @@ function ResourceForm() {
                         onChange={(files) => setFieldValue(files, 'file')}
                         value={value.file}
                         error={getErrorString(error?.file)}
+                        accept={ACCEPTED_FILE_TYPES}
                     />
                 </InputSection>
                 <InputSection
@@ -316,8 +319,7 @@ function ResourceForm() {
                         onChange={(files) => setFieldValue(files, 'coverImage')}
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
-                        accept="image/*"
-
+                        accept={ACCEPTED_IMAGE_TYPES}
                     />
                 </InputSection>
                 {ContentEditor}

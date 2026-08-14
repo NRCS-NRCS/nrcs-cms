@@ -9,9 +9,7 @@ export interface Attrs {
     [key: string]: string | undefined;
 }
 
-function useRouteMatching(routeKey: RouteKeys, attrs?: Attrs) {
-    const { authenticated } = use(UserContext);
-
+export function resolveRoute(routeKey: RouteKeys, authenticated: boolean, attrs?: Attrs) {
     const to = routes[routeKey];
 
     if (!to) {
@@ -34,6 +32,12 @@ function useRouteMatching(routeKey: RouteKeys, attrs?: Attrs) {
     return {
         to: generatePath(path ?? '/', { ...attrs }),
     };
+}
+
+function useRouteMatching(routeKey: RouteKeys, attrs?: Attrs) {
+    const { authenticated } = use(UserContext);
+
+    return resolveRoute(routeKey, authenticated, attrs);
 }
 
 export default useRouteMatching;

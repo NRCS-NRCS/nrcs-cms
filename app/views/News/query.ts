@@ -3,7 +3,7 @@ import { gql } from 'urql';
 
 const NEWS_QUERY = gql`
     query News($pagination: OffsetPaginationInput, $filter: NewsFilter) {
-        news(pagination: $pagination, filters: $filter) {
+        news(pagination: $pagination, filters: $filter, order: { id: DESC }) {
             pageInfo {
                 limit
                 offset
@@ -14,6 +14,8 @@ const NEWS_QUERY = gql`
                 publishedDate
                 status
                 title
+                content
+                directiveId
                 isHighlighted
                 directive {
                     title

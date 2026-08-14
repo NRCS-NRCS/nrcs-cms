@@ -6,19 +6,14 @@ import { type EntriesAsList } from '@togglecorp/toggle-form';
 
 import { type NewsFilter } from '#generated/types/graphql';
 import {
-    highlightedFilterOptions,
     labelSelector,
     statusOptions,
     valueSelector,
 } from '#utils/common';
 
-export interface NewsFilterUIType extends Omit<NewsFilter, 'isHighlighted'> {
-    isHighlighted: string | undefined;
-}
-
 export interface Props {
-    value: NewsFilterUIType;
-    onChange: (...args: EntriesAsList<NewsFilterUIType>) => void;
+    value: NewsFilter;
+    onChange: (...args: EntriesAsList<NewsFilter>) => void;
 }
 
 function NewsListFilter({ value, onChange }: Props) {
@@ -30,15 +25,6 @@ function NewsListFilter({ value, onChange }: Props) {
                 value={value.status}
                 onChange={onChange}
                 options={statusOptions}
-                keySelector={valueSelector}
-                labelSelector={labelSelector}
-            />
-            <SelectInput
-                name="isHighlighted"
-                placeholder="Highlighted"
-                value={value.isHighlighted}
-                onChange={onChange}
-                options={highlightedFilterOptions}
                 keySelector={valueSelector}
                 labelSelector={labelSelector}
             />
