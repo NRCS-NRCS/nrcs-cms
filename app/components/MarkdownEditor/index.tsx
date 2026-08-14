@@ -1,4 +1,5 @@
 import '@mdxeditor/editor/style.css';
+import './prism.ts';
 
 import {
     Activity,
@@ -18,9 +19,6 @@ import {
     BlockTypeSelect,
     BoldItalicUnderlineToggles,
     ChangeCodeMirrorLanguage,
-    codeBlockPlugin,
-    CodeMirrorEditor,
-    codeMirrorPlugin,
     ConditionalContents,
     CreateLink,
     type EditorInFocus,
