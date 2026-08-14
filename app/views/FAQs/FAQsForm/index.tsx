@@ -14,14 +14,12 @@ import {
     Heading,
     InputSection,
     ListView,
-    NumberInput,
     TextArea,
 } from '@ifrc-go/ui';
 import { isNotDefined } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
     getErrorObject,
-    integerCondition,
     type ObjectSchema,
     type PartialForm,
     removeNull,
@@ -56,10 +54,6 @@ const FAQSchema: FormSchema = {
         answer: {
             required: true,
             requiredValidation: requiredStringCondition,
-        },
-        orderIndex: {
-            required: true,
-            requiredValidation: integerCondition,
         },
     }),
 };
@@ -246,18 +240,6 @@ function FAQsForm() {
                         onChange={setFieldValue}
                         error={error?.answer}
                         placeholder="answer"
-                    />
-                </InputSection>
-                <InputSection
-                    title="Order Index"
-                    description="Write the question number in numeric"
-                    withAsteriskOnTitle
-                >
-                    <NumberInput
-                        name="orderIndex"
-                        value={value.orderIndex ?? 0}
-                        onChange={setFieldValue}
-                        error={error?.orderIndex}
                     />
                 </InputSection>
             </ListView>

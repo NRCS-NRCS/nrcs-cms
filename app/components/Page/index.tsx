@@ -6,6 +6,7 @@ import styles from './styles.module.css';
 interface Props {
     className?: string;
     children?: React.ReactNode;
+    topContent?: React.ReactNode;
     leftPaneContent?: React.ReactNode;
     leftPaneContainerClassName?: string;
 }
@@ -13,6 +14,7 @@ function Page(props: Props) {
     const {
         className,
         children,
+        topContent,
         leftPaneContent,
         leftPaneContainerClassName,
     } = props;
@@ -37,7 +39,9 @@ function Page(props: Props) {
             <ListView
                 layout="block"
                 className={styles.content}
+                spacing="none"
             >
+                {topContent}
                 {children}
             </ListView>
         </ListView>

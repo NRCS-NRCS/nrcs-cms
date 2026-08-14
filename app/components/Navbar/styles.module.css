@@ -7,15 +7,24 @@
     background-color: var(--go-ui-color-white);
     padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
 
-    .title {
-        text-transform: capitalize;
-        color: var(--go-ui-color-red);
+    .logo {
+        flex-shrink: 0;
+
+        .logo-image {
+            width: auto;
+            height: var(--go-ui-height-brand-icon);
+            object-fit: contain;
+        }
     }
 
     .user-info {
         display: flex;
         align-items: start;
         flex-direction: column;
+
+        > span {
+            text-transform: capitalize;
+        }
     }
 
     .user-initial {

@@ -6,13 +6,16 @@ import {
     Button,
     DropdownMenu,
     Heading,
+    Image,
 } from '@ifrc-go/ui';
 import { gql } from 'urql';
 
+import Link from '#components/Link';
 import UserContext from '#contexts/UserContext';
 import { useLogoutMutation } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import useRouting from '#hooks/useRouting';
+import logo from '#resources/image/redCrossBanner.png';
 
 import styles from './styles.module.css';
 
@@ -42,12 +45,18 @@ function Navbar() {
 
     return (
         <nav className={styles.navbar}>
-            <Heading
-                className={styles.title}
-                level={2}
+            <Link
+                to="home"
             >
-                NRCS
-            </Heading>
+                <Image
+                    className={styles.logo}
+                    imgElementClassName={styles.logoImage}
+                    src={logo}
+                    alt="Nepal Red Cross Society"
+                    withoutBackground
+                    withoutCaption
+                />
+            </Link>
             <DropdownMenu
                 labelStyleVariant="action"
                 labelColorVariant="secondary"
@@ -69,7 +78,7 @@ function Navbar() {
                             {user?.lastName}
                         </Heading>
                         <span>
-                            Admin
+                            {user?.userType.toLocaleLowerCase()}
                         </span>
                     </div>
                 )}

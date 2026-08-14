@@ -11,22 +11,23 @@ import {
 import routes, { type RouteConfig } from './root/config/routes.tsx';
 import PageError from './views/PageError/index.tsx';
 
-const privateRoutes = Object.values(routes).filter(
-    ({ visibility }) => visibility === 'is-authenticated',
+const privateRoutes = Object.entries(routes).filter(
+    ([, { visibility }]) => visibility === 'is-authenticated',
 );
 
-const publicRoutes = Object.values(routes).filter(
-    ({ visibility }) => visibility === 'is-anything',
+const publicRoutes = Object.entries(routes).filter(
+    ([, { visibility }]) => visibility === 'is-anything',
 );
 
-const guestRoutes = Object.values(routes).filter(
-    ({ visibility }) => visibility === 'is-not-authenticated',
+const guestRoutes = Object.entries(routes).filter(
+    ([, { visibility }]) => visibility === 'is-not-authenticated',
 );
 
-function mapRoute(routeConfig: RouteConfig) {
+function mapRoute([routeKey, routeConfig]: [string, RouteConfig]) {
     return {
         index: routeConfig.index,
         path: routeConfig.path,
+        handle: { routeKey },
         lazy: async () => {
             const { default: Component } = await routeConfig.load();
             return { Component };
