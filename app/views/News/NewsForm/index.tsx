@@ -8,6 +8,7 @@ import {
     Navigate,
     useParams,
 } from 'react-router';
+import { UploadFillIcon } from '@ifrc-go/icons';
 import {
     BlockLoading,
     Button,
@@ -16,6 +17,7 @@ import {
     Heading,
     InputSection,
     ListView,
+    RawFileInput,
     SelectInput,
     TextInput,
 } from '@ifrc-go/ui';
@@ -45,7 +47,11 @@ import {
     type ActionLinkInput,
     type ActionLinkType,
     type CreateNewsMutation,
+    type KeyStatInput,
+    type KeyStatType,
+    type NewsAttachmentInput,
     type NewsCreateInput,
+    type NewsDetailQuery,
     type NewsUpdateInput,
     StatusEnum,
     type UpdateNewsMutation,
@@ -61,23 +67,34 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_FILE_TYPES,
     ACCEPTED_IMAGE_TYPES,
+    BYTES_PER_MEGA_BYTE,
     errorMessage,
     idSelector,
     keySelector,
     labelSelector,
+    MAX_FEATURED_KEY_STATS,
+    MAX_NEWS_ATTACHMENT_SIZE_IN_MB,
+    MAX_NEWS_ATTACHMENTS,
     nameSelector,
 } from '#utils/common';
 
 import ActionLinkInputComponent from './actionLinkInput';
+import AttachmentInputComponent, { type PartialAttachmentForm } from './attachmentInput';
+import KeyStatInputComponent, { type PartialKeyStatForm } from './keyStatInput';
 
 interface ActionLinkFormValue extends ActionLinkType {
     clientId: string;
 }
 
-type PartialFormType = Omit<PartialForm<NewsCreateInput>, 'actionLinks'> &
+type PartialFormType = Omit<PartialForm<NewsCreateInput>, 'actionLinks' | 'keyStats' | 'attachments'> &
  { actionLinks?: PartialActionLinkForm[];
+     keyStats?: PartialKeyStatForm[];
+     attachments?: PartialAttachmentForm[];
 };
 type PartialActionLinkForm = PartialForm<ActionLinkFormValue, 'clientId'>;
+
+type NewsDetail = NonNullable<NewsDetailQuery['newsItem']>;
+type AttachmentDetail = NonNullable<NewsDetail['attachments']>[number];
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -87,14 +104,21 @@ type ActionLinkSchemaFields = ReturnType<ActionLinkSchema['fields']>;
 type ActionLinksSchema = ArraySchema<PartialActionLinkForm, PartialFormType>;
 type ActionLinksSchemaMember = ReturnType<ActionLinksSchema['member']>;
 
+type KeyStatSchema = ObjectSchema<PartialKeyStatForm, PartialFormType>;
+type KeyStatSchemaFields = ReturnType<KeyStatSchema['fields']>;
+type KeyStatsSchema = ArraySchema<PartialKeyStatForm, PartialFormType>;
+type KeyStatsSchemaMember = ReturnType<KeyStatsSchema['member']>;
+
+type AttachmentSchema = ObjectSchema<PartialAttachmentForm, PartialFormType>;
+type AttachmentSchemaFields = ReturnType<AttachmentSchema['fields']>;
+type AttachmentsSchema = ArraySchema<PartialAttachmentForm, PartialFormType>;
+type AttachmentsSchemaMember = ReturnType<AttachmentsSchema['member']>;
+
 const EditNewsSchema: FormSchema = {
     fields: (): FormSchemaFields => ({
         title: {
             required: true,
             requiredValidation: requiredStringCondition,
-        },
-        file: {
-            required: false,
         },
         publishedDate: {
             required: true,
@@ -134,6 +158,51 @@ const EditNewsSchema: FormSchema = {
             }),
 
         },
+        keyStats: {
+            keySelector: (col) => col.clientId,
+            validation: (stats) => {
+                const featured = (stats ?? []).filter((stat) => stat.featured).length;
+                if (featured > MAX_FEATURED_KEY_STATS) {
+                    return `At most ${MAX_FEATURED_KEY_STATS} key stats can be featured.`;
+                }
+                return undefined;
+            },
+            member: (): KeyStatsSchemaMember => ({
+                fields: (): KeyStatSchemaFields => ({
+                    clientId: { required: true },
+                    id: {},
+                    order: {},
+                    featured: {},
+                    title: {
+                        required: true,
+                        requiredValidation: requiredStringCondition,
+                    },
+                    stat: {
+                        required: true,
+                    },
+                }),
+            }),
+        },
+        attachments: {
+            keySelector: (col) => col.clientId,
+            validation: (attachments) => {
+                if ((attachments ?? []).length > MAX_NEWS_ATTACHMENTS) {
+                    return `At most ${MAX_NEWS_ATTACHMENTS} attachments can be added.`;
+                }
+                return undefined;
+            },
+            member: (): AttachmentsSchemaMember => ({
+                fields: (): AttachmentSchemaFields => ({
+                    clientId: { required: true },
+                    id: {},
+                    order: {},
+                    label: {},
+                    file: {
+                        required: true,
+                    },
+                }),
+            }),
+        },
     }),
 };
 
@@ -144,13 +213,11 @@ type MutationResponse =
     | UpdateNewsMutation['updateNews']
     | undefined;
 
-/** Files are only submitted when freshly picked; URLs from the server are dropped. */
 function getDataToSubmit(formValue: PartialFormType) {
-    const { coverImage, file, ...other } = formValue;
+    const { coverImage, ...other } = formValue;
     return {
         ...other,
         coverImage: coverImage instanceof File ? coverImage : undefined,
-        file: file instanceof File ? file : undefined,
     };
 }
 
@@ -159,6 +226,82 @@ function getActionLinksToCreate(currentLinks: PartialActionLinkForm[]) {
         label: link.label ?? '',
         url: link.url ?? '',
     }));
+}
+
+function getKeyStatsToCreate(currentStats: PartialKeyStatForm[]) {
+    return currentStats.map((stat, index) => ({
+        order: index + 1,
+        title: stat.title ?? '',
+        stat: stat.stat ?? 0,
+        featured: stat.featured ?? false,
+    }));
+}
+
+function getKeyStatsToUpdate(
+    currentStats: PartialKeyStatForm[],
+    originalStats: KeyStatType[],
+): KeyStatInput[] {
+    const createdOrUpdated = currentStats.map<KeyStatInput>((stat, index) => {
+        const payload = {
+            order: index + 1,
+            title: stat.title ?? '',
+            stat: stat.stat ?? 0,
+            featured: stat.featured ?? false,
+        };
+        if (isNotDefined(stat.id)) {
+            return { create: payload };
+        }
+        return { update: { id: stat.id, ...payload } };
+    });
+
+    const removed = originalStats
+        .filter((orig) => !currentStats.some((curr) => curr.id === orig.id))
+        .map<KeyStatInput>((orig) => ({ delete: { id: orig.id } }));
+
+    return [...createdOrUpdated, ...removed];
+}
+
+function getAttachmentsToCreate(current: PartialAttachmentForm[]) {
+    return current
+        .map((row, index) => ({ row, order: index + 1 }))
+        .filter(({ row }) => row.file instanceof File)
+        .map(({ row, order }) => ({
+            order,
+            label: row.label ?? '',
+            file: row.file as File,
+        }));
+}
+
+function getAttachmentsToUpdate(
+    current: PartialAttachmentForm[],
+    original: AttachmentDetail[],
+): NewsAttachmentInput[] {
+    const createdOrUpdated = current.flatMap<NewsAttachmentInput>((row, index) => {
+        const order = index + 1;
+        const label = row.label ?? '';
+
+        if (isNotDefined(row.id)) {
+            if (!(row.file instanceof File)) {
+                return [];
+            }
+            return [{ create: { order, label, file: row.file } }];
+        }
+
+        return [{
+            update: {
+                id: row.id,
+                order,
+                label,
+                ...(row.file instanceof File ? { file: row.file } : {}),
+            },
+        }];
+    });
+
+    const removed = original
+        .filter((orig) => !current.some((curr) => curr.id === orig.id))
+        .map<NewsAttachmentInput>((orig) => ({ delete: { id: orig.id } }));
+
+    return [...createdOrUpdated, ...removed];
 }
 
 function getActionLinksToUpdate(
@@ -212,11 +355,23 @@ function NewsForm() {
     const error = getErrorObject(formError);
 
     const actionLinkErrors = getErrorObject(error?.actionLinks);
+    const keyStatErrors = getErrorObject(error?.keyStats);
+    const attachmentErrors = getErrorObject(error?.attachments);
 
     const {
         setValue: onActionLinkChange,
         removeValue: onActionLinkRemove,
     } = useFormArray<'actionLinks', PartialActionLinkForm>('actionLinks', setFieldValue);
+
+    const {
+        setValue: onKeyStatChange,
+        removeValue: onKeyStatRemove,
+    } = useFormArray<'keyStats', PartialKeyStatForm>('keyStats', setFieldValue);
+
+    const {
+        setValue: onAttachmentChange,
+        removeValue: onAttachmentRemove,
+    } = useFormArray<'attachments', PartialAttachmentForm>('attachments', setFieldValue);
 
     const handleMutationResponse = useCallback((result: MutationResponse) => {
         if (result?.ok) {
@@ -240,21 +395,39 @@ function NewsForm() {
             mutationData.actionLinks ?? [],
             data?.newsItem?.actionLinks ?? [],
         );
+        const keyStats = getKeyStatsToUpdate(
+            mutationData.keyStats ?? [],
+            data?.newsItem?.keyStats ?? [],
+        );
+        const attachments = getAttachmentsToUpdate(
+            mutationData.attachments ?? [],
+            data?.newsItem?.attachments ?? [],
+        );
         const res = await updateNewsMutate({
             pk: newsId,
             data: {
                 ...getDataToSubmit(mutationData),
                 actionLinks: removeNull(actionLinks),
+                keyStats,
+                attachments,
             } as NewsUpdateInput,
         });
         handleMutationResponse(res.data?.updateNews);
-    }, [data?.newsItem?.actionLinks, updateNewsMutate, handleMutationResponse]);
+    }, [
+        data?.newsItem?.actionLinks,
+        data?.newsItem?.keyStats,
+        data?.newsItem?.attachments,
+        updateNewsMutate,
+        handleMutationResponse,
+    ]);
 
     const handleCreate = useCallback(async (mutationData: PartialFormType) => {
         const res = await createNewsMutate({
             data: {
                 ...getDataToSubmit(mutationData),
                 actionLinks: getActionLinksToCreate(mutationData.actionLinks ?? []),
+                keyStats: getKeyStatsToCreate(mutationData.keyStats ?? []),
+                attachments: getAttachmentsToCreate(mutationData.attachments ?? []),
             } as NewsCreateInput,
         });
         handleMutationResponse(res.data?.createNews);
@@ -282,6 +455,8 @@ function NewsForm() {
         const {
             directiveId,
             actionLinks,
+            keyStats,
+            attachments,
             ...other
         } = removeNull(data.newsItem);
 
@@ -290,10 +465,25 @@ function NewsForm() {
             clientId: randomString(),
         }));
 
+        const keyStatsWithClientId = (keyStats ?? []).map((stat) => ({
+            ...stat,
+            clientId: randomString(),
+        }));
+
+        const attachmentsWithClientId = (attachments ?? []).map((row) => ({
+            id: row.id,
+            order: row.order,
+            label: row.label,
+            file: row.file,
+            clientId: randomString(),
+        }));
+
         setValue({
             ...other,
             directive: directiveId,
             actionLinks: actionLinksWithClientId,
+            keyStats: keyStatsWithClientId,
+            attachments: attachmentsWithClientId,
         });
     }, [data, setValue]);
 
@@ -338,6 +528,69 @@ function NewsForm() {
         },
         [setFieldValue],
     );
+
+    const handleKeyStatAdd = useCallback(
+        () => {
+            const newKeyStat: PartialKeyStatForm = { clientId: randomString() };
+            setFieldValue(
+                (oldValue: PartialKeyStatForm[] | undefined) => (
+                    [...(oldValue ?? []), newKeyStat]
+                ),
+                'keyStats',
+            );
+        },
+        [setFieldValue],
+    );
+
+    const handleAttachmentsSelect = useCallback(
+        (selected: File[] | undefined) => {
+            if (isNotDefined(selected) || selected.length === 0) {
+                return;
+            }
+
+            const maxBytes = MAX_NEWS_ATTACHMENT_SIZE_IN_MB * BYTES_PER_MEGA_BYTE;
+            const tooLarge = selected.filter((each) => each.size > maxBytes);
+            const withinSize = selected.filter((each) => each.size <= maxBytes);
+
+            if (tooLarge.length > 0) {
+                alert.show(
+                    `Some files are larger than ${MAX_NEWS_ATTACHMENT_SIZE_IN_MB} MB and were skipped.`,
+                    {
+                        variant: 'danger',
+                        description: tooLarge.map((each) => each.name).join(', '),
+                    },
+                );
+            }
+
+            const remainingSlots = MAX_NEWS_ATTACHMENTS - (value.attachments ?? []).length;
+            const accepted = withinSize.slice(0, Math.max(remainingSlots, 0));
+
+            if (withinSize.length > accepted.length) {
+                alert.show(
+                    `Only ${MAX_NEWS_ATTACHMENTS} attachments are allowed, so some files were skipped.`,
+                    { variant: 'danger' },
+                );
+            }
+
+            if (accepted.length === 0) {
+                return;
+            }
+
+            const newRows: PartialAttachmentForm[] = accepted.map((selectedFile) => ({
+                clientId: randomString(),
+                file: selectedFile,
+            }));
+            setFieldValue(
+                (oldValue: PartialAttachmentForm[] | undefined) => (
+                    [...(oldValue ?? []), ...newRows]
+                ),
+                'attachments',
+            );
+        },
+        [setFieldValue, alert, value.attachments],
+    );
+
+    const attachmentLimitReached = (value.attachments ?? []).length >= MAX_NEWS_ATTACHMENTS;
 
     const handleCancelClick = useCallback(() => {
         navigate('news');
@@ -457,18 +710,6 @@ function NewsForm() {
                         accept={ACCEPTED_IMAGE_TYPES}
                     />
                 </InputSection>
-                <InputSection
-                    title="File"
-                    description="Add a file, which will be displayed on the page"
-                >
-                    <FileUpload
-                        name="file"
-                        onChange={setFieldValue}
-                        value={value.file}
-                        error={getErrorString(error?.file)}
-                        accept={ACCEPTED_FILE_TYPES}
-                    />
-                </InputSection>
                 <Activity mode={value.slug ? 'visible' : 'hidden'}>
                     <InputSection
                         title="Slug"
@@ -518,6 +759,60 @@ function NewsForm() {
                         <Button name="add-link" onClick={handleCollectionAdd}>
                             Add Link
                         </Button>
+                    </ListView>
+                </InputSection>
+                <InputSection
+                    title="Key Stats"
+                    description={`Figures shown alongside this news. At most ${MAX_FEATURED_KEY_STATS} can be featured; they appear in the order listed here.`}
+                >
+                    <ListView layout="block" spacing="sm">
+                        <NonFieldError<PartialKeyStatForm[]> error={error?.keyStats} />
+                        {(value.keyStats || []).map((stat, index) => (
+                            <KeyStatInputComponent
+                                key={stat.clientId}
+                                index={index}
+                                value={stat}
+                                onChange={onKeyStatChange}
+                                onRemove={onKeyStatRemove}
+                                error={keyStatErrors?.[stat.clientId ?? 0]}
+                            />
+                        ))}
+                        <Button
+                            name="add-key-stat"
+                            onClick={handleKeyStatAdd}
+                        >
+                            Add Key Stat
+                        </Button>
+                    </ListView>
+                </InputSection>
+                <InputSection
+                    title="Attachments"
+                    description={`Files offered for download with this news. At most ${MAX_NEWS_ATTACHMENTS}; they appear in the order listed here.`}
+                >
+                    <ListView layout="block" spacing="sm">
+                        <NonFieldError<PartialAttachmentForm[]> error={error?.attachments} />
+                        <RawFileInput
+                            name={undefined}
+                            multiple
+                            onChange={handleAttachmentsSelect}
+                            accept={ACCEPTED_FILE_TYPES}
+                            disabled={attachmentLimitReached}
+                            colorVariant="primary"
+                            styleVariant="outline"
+                            before={<UploadFillIcon />}
+                        >
+                            Upload Files
+                        </RawFileInput>
+                        {(value.attachments || []).map((row, index) => (
+                            <AttachmentInputComponent
+                                key={row.clientId}
+                                index={index}
+                                value={row}
+                                onChange={onAttachmentChange}
+                                onRemove={onAttachmentRemove}
+                                error={attachmentErrors?.[row.clientId ?? 0]}
+                            />
+                        ))}
                     </ListView>
                 </InputSection>
             </ListView>

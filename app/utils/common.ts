@@ -99,3 +99,6 @@ export const BYTES_PER_MEGA_BYTE = 1024 * 1024;
 export const MAX_IMAGE_FILE_SIZE_IN_MB = 4;
 export const MAX_AUDIO_FILE_SIZE_IN_MB = 40;
 export const MAX_FILE_SIZE_IN_MB = 30;
+export const MAX_NEWS_ATTACHMENT_SIZE_IN_MB = 30;
+export const MAX_FEATURED_KEY_STATS = 4;
+export const MAX_NEWS_ATTACHMENTS = 50;

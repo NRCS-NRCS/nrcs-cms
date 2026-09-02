@@ -26,6 +26,7 @@ import {
     type NewsFilter,
     type NewsQuery,
     type NewsQueryVariables,
+    type NewsUpdateInput,
     StatusEnum,
     useNewsQuery,
     useUpdateNewsMutation,
@@ -125,7 +126,12 @@ function Home() {
         }))
     ), [highlightsResults]);
 
-    const handleToggleHighlight = useCallback((id: string, isHighlighted: boolean) => {
+    const handleChange = useCallback((
+        id: string,
+        patch: Pick<NewsUpdateInput, 'isHighlighted' | 'showInPopup'>,
+        successMessage: string,
+        errorField: 'isHighlighted' | 'showInPopup',
+    ) => {
         const item = [...tableData, ...highlightsTableData].find((news) => news.id === id);
         if (!item || !item.directiveId) {
             alert.show(errorMessage, { variant: 'danger' });
@@ -137,20 +143,17 @@ function Home() {
             data: {
                 content: item.content,
                 directive: item.directiveId,
-                isHighlighted,
+                ...patch,
             },
         }).then((resp) => {
             const result = resp.data?.updateNews;
             if (result?.ok) {
                 reExecuteMainQuery({ requestPolicy: 'network-only' });
                 reExecuteHighlightsQuery({ requestPolicy: 'network-only' });
-                alert.show(
-                    isHighlighted ? 'Added to highlights' : 'Removed from highlights',
-                    { variant: 'success' },
-                );
+                alert.show(successMessage, { variant: 'success' });
             } else if (isDefined(result) && isDefined(result.errors)) {
                 const formError = transformToFormError(result.errors);
-                const message = formError?.isHighlighted;
+                const message = formError?.[errorField];
                 alert.show(
                     typeof message === 'string' && message
                         ? message
@@ -171,12 +174,20 @@ function Home() {
     ]);
 
     const handleAddToHighlights = useCallback((id: string) => {
-        handleToggleHighlight(id, true);
-    }, [handleToggleHighlight]);
+        handleChange(id, { isHighlighted: true }, 'Added to highlights', 'isHighlighted');
+    }, [handleChange]);
 
     const handleRemoveFromHighlights = useCallback((id: string) => {
-        handleToggleHighlight(id, false);
-    }, [handleToggleHighlight]);
+        handleChange(id, { isHighlighted: false }, 'Removed from highlights', 'isHighlighted');
+    }, [handleChange]);
+
+    const handleSetPopup = useCallback((id: string) => {
+        handleChange(id, { showInPopup: true }, 'Set as the homepage popup', 'showInPopup');
+    }, [handleChange]);
+
+    const handleClearPopup = useCallback((id: string) => {
+        handleChange(id, { showInPopup: false }, 'Cleared the homepage popup', 'showInPopup');
+    }, [handleChange]);
 
     const handleAddNewsClick = useCallback(() => {
         navigate('addNews');
@@ -198,21 +209,47 @@ function Home() {
             'Published Date',
             (item) => item.publishedDate,
         ),
+        createStringColumn<NewsListItem, string | number>(
+            'showInPopup',
+            'Popup',
+            (item) => (item.showInPopup ? 'Shown' : '-'),
+        ),
         ...(canEditContent ? [createActionColumn<NewsListItem, string | number>(
             'action',
             (item) => ({
                 children: (
-                    <ConfirmButton
-                        name={item.id}
-                        onConfirm={handleRemoveFromHighlights}
-                        styleVariant="action"
-                    >
-                        Remove
-                    </ConfirmButton>
+                    <>
+                        {item.showInPopup ? (
+                            <Button
+                                name={item.id}
+                                onClick={handleClearPopup}
+                                styleVariant="action"
+                                title="Stop showing this news in the homepage popup"
+                            >
+                                Clear Popup
+                            </Button>
+                        ) : (
+                            <Button
+                                name={item.id}
+                                onClick={handleSetPopup}
+                                styleVariant="action"
+                                title="Show this news in the homepage popup. Only one news item can be the popup, so this replaces the current one."
+                            >
+                                Set as Popup
+                            </Button>
+                        )}
+                        <ConfirmButton
+                            name={item.id}
+                            onConfirm={handleRemoveFromHighlights}
+                            styleVariant="action"
+                        >
+                            Remove
+                        </ConfirmButton>
+                    </>
                 ),
             }),
         )] : []),
-    ], [canEditContent, handleRemoveFromHighlights]);
+    ], [canEditContent, handleRemoveFromHighlights, handleSetPopup, handleClearPopup]);
 
     const columns = useMemo(() => [
         createNumberColumn<NewsListItem, string | number>(

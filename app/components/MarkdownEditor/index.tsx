@@ -296,9 +296,6 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
                             placeholder={placeholder}
                             plugins={plugins}
                             contentEditableClassName={styles.content}
-                            // Keeps the link and image dialogs inside the shell
-                            // so they are not stranded behind the full screen
-                            // overlay; mdxeditor defaults to document.body.
                             overlayContainer={shellElement}
                         />
                     </div>

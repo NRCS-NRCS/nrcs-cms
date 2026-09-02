@@ -17,6 +17,7 @@ const NEWS_QUERY = gql`
                 content
                 directiveId
                 isHighlighted
+                showInPopup
                 directive {
                     title
                 }
@@ -39,21 +40,34 @@ const NEWS_DETAIL_QUERY = gql`
                 lastName
             }
             directiveId
-            file {
-                name
-                size
-                url
-            }
             id
             publishedDate
             slug
             status
             title
             isHighlighted
+            showInPopup
             actionLinks {
                 id
                 label
                 url
+            }
+            keyStats {
+                id
+                order
+                title
+                stat
+                featured
+            }
+            attachments {
+                id
+                order
+                label
+                file {
+                    name
+                    size
+                    url
+                }
             }
             modifiedBy {
                 firstName
