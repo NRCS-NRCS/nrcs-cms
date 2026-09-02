@@ -65,3 +65,95 @@
         color: var(--go-ui-color-dark-blue-30);
     }
 }
+
+.editor blockquote {
+    margin: var(--go-ui-spacing-md) 0;
+    border-left: var(--go-ui-spacing-3xs) solid var(--go-ui-color-primary-red);
+    border-radius: 0 var(--go-ui-border-radius-md) var(--go-ui-border-radius-md) 0;
+    background-color: var(--go-ui-color-gray-10);
+    padding: var(--go-ui-spacing-sm) var(--go-ui-spacing-md);
+    color: var(--go-ui-color-text);
+    font-style: italic;
+}
+
+.editor blockquote > :first-child {
+    margin-top: 0;
+}
+
+.editor blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+.editor blockquote blockquote {
+    border-left-color: var(--go-ui-color-red-40);
+    background-color: transparent;
+}
+
+.editor [class*="imageWrapper"] {
+    max-width: 100%;
+}
+
+.editor img {
+    max-width: 100%;
+    height: auto;
+}
+
+.embed-block {
+    display: flex;
+    flex-direction: column;
+    margin: var(--go-ui-spacing-sm) 0;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-md);
+    background-color: var(--go-ui-color-background);
+    padding: var(--go-ui-spacing-sm);
+    gap: var(--go-ui-spacing-2xs);
+}
+
+.embed-block-header {
+    align-items: center;
+
+    .embed-block-title {
+        flex-grow: 1;
+        font-weight: var(--go-ui-font-weight-medium);
+    }
+
+    .embed-block-meta {
+        text-transform: capitalize;
+        color: var(--go-ui-color-text-light);
+        font-size: var(--go-ui-font-size-sm);
+    }
+}
+
+.embed-block-url {
+    word-break: break-all;
+    color: var(--go-ui-color-text-light);
+    font-size: var(--go-ui-font-size-sm);
+}
+
+.editor-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.editor-shell.full-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background-color: var(--go-ui-color-foreground);
+    padding: var(--go-ui-spacing-sm);
+
+    .editor {
+        flex-grow: 1;
+        min-height: 0;
+
+        >* {
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    }
+}
+
+.dialog-overlay {
+    z-index: 20;
+}
