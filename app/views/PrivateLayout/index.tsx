@@ -19,6 +19,7 @@ import {
     DashboardLineIcon,
     LeadershipIcon,
     ShieldUserLineIcon,
+    UploadCloudLineIcon,
 } from '@ifrc-go/icons';
 
 import Breadcrumbs from '#components/Breadcrumbs';
@@ -28,6 +29,15 @@ import Page from '#components/Page';
 import UserContext from '#contexts/UserContext';
 
 const navigationItem : NavigationItem[] = [
+    {
+        groupTitle: 'Site',
+        routes: [
+            {
+                to: 'deployments',
+                icon: <UploadCloudLineIcon />,
+            },
+        ],
+    },
     {
         groupTitle: 'User Management',
         routes: [
