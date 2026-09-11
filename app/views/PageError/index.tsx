@@ -17,7 +17,7 @@ function PageError() {
                     <span>{error.statusText}</span>
                 </h1>
                 <div>
-                    {error.data?.message ?? 'Someting went wrong!'}
+                    {error.data?.message ?? 'Something went wrong!'}
                 </div>
             </div>
         );

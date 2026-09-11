@@ -7,6 +7,11 @@
     background-color: var(--go-ui-color-white);
     padding: var(--go-ui-spacing-xs) var(--go-ui-spacing-sm);
 
+    .menu-button {
+        display: none;
+        flex-shrink: 0;
+    }
+
     .logo {
         flex-shrink: 0;
 
@@ -35,5 +40,13 @@
         background-color: var(--go-ui-color-semantic-yellow);
         width: var(--go-ui-spacing-2xl);
         height: var(--go-ui-spacing-2xl);
+    }
+}
+
+@media (width <= 40rem) {
+    .navbar {
+        .menu-button {
+            display: block;
+        }
     }
 }

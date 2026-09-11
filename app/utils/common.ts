@@ -1,3 +1,7 @@
+import {
+    isNotDefined,
+    isTruthyString,
+} from '@togglecorp/fujs';
 import { nonFieldError } from '@togglecorp/toggle-form';
 
 import {
@@ -33,15 +37,29 @@ export const archivedFilterOptions = [
     { label: 'Archived', value: 'true' },
 ];
 
-export const typeFilterOptions = [
-    { label: 'Policy and Guidelines', value: ResourceTypeEnum.PolicyAndGuidelines },
-    { label: 'Report', value: ResourceTypeEnum.Report },
-];
+export const resourceTypeLabels: Record<ResourceTypeEnum, string> = {
+    [ResourceTypeEnum.PolicyAndGuidelines]: 'Policy and Guidelines',
+    [ResourceTypeEnum.Report]: 'Report',
+};
 
-export const typeRadioFilterOptions = [
-    { label: 'Radio Red Cross', value: RadioProgramTypeEnum.RadioRedCross },
-    { label: 'Together For Humanity', value: RadioProgramTypeEnum.TogetherForHumanity },
-];
+export const typeFilterOptions = (
+    Object.values(ResourceTypeEnum).map((type) => ({
+        label: resourceTypeLabels[type],
+        value: type,
+    }))
+);
+
+export const radioProgramTypeLabels: Record<RadioProgramTypeEnum, string> = {
+    [RadioProgramTypeEnum.RadioRedCross]: 'Radio Red Cross',
+    [RadioProgramTypeEnum.TogetherForHumanity]: 'Together For Humanity',
+};
+
+export const typeRadioFilterOptions = (
+    Object.values(RadioProgramTypeEnum).map((type) => ({
+        label: radioProgramTypeLabels[type],
+        value: type,
+    }))
+);
 
 export const scopeFilterOptions = [
     { label: 'Global', value: PartnerScopeEnum.Global },
@@ -89,6 +107,45 @@ export function transformToFormError(
         },
         {} as Record<string | symbol, unknown>,
     );
+}
+
+interface OperationInfoResult {
+    __typename: 'OperationInfo';
+    messages: { message: string }[];
+}
+
+interface MutationResponseResult {
+    ok: boolean;
+    errors?: unknown;
+}
+
+export function getMutationErrorMessage(
+    result: object | null | undefined,
+): string | undefined {
+    if (isNotDefined(result)) {
+        return errorMessage;
+    }
+
+    // eslint-disable-next-line no-underscore-dangle
+    if ('__typename' in result && result.__typename === 'OperationInfo') {
+        const { messages } = result as OperationInfoResult;
+        const joined = (messages ?? [])
+            .map((entry) => entry?.message)
+            .filter(isTruthyString)
+            .join(' ');
+        return joined || errorMessage;
+    }
+
+    if ('ok' in result && !(result as MutationResponseResult).ok) {
+        const { errors } = result as MutationResponseResult;
+        const formError = Array.isArray(errors)
+            ? transformToFormError(errors as ServerError[])
+            : undefined;
+        const nonField = formError?.[nonFieldError];
+        return typeof nonField === 'string' && nonField !== '' ? nonField : errorMessage;
+    }
+
+    return undefined;
 }
 
 export const ACCEPTED_FILE_TYPES = '.pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xlsm';

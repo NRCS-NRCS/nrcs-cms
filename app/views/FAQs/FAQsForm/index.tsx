@@ -68,7 +68,9 @@ function FAQsForm() {
     const alert = useAlert();
 
     const [{ data, fetching: faqDetailFetch }] = useFaqDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ fetching: createPending }, createFaqMutate] = useCreateFaqMutation();
     const [{ fetching: updatePending }, updateFaqMutate] = useUpdateFaqMutation();
@@ -181,6 +183,7 @@ function FAQsForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -188,6 +191,7 @@ function FAQsForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

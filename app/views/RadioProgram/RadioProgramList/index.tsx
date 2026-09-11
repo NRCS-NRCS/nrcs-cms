@@ -13,6 +13,7 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { isDefined } from '@togglecorp/fujs';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
 import {
@@ -24,7 +25,12 @@ import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
-import { idSelector } from '#utils/common';
+import {
+    errorMessage,
+    getMutationErrorMessage,
+    idSelector,
+    radioProgramTypeLabels,
+} from '#utils/common';
 
 import RadioProgramListFilter, { type RadioProgramFilterUIType } from '../RadioProgramListFilters';
 
@@ -73,18 +79,25 @@ function RadioProgramList() {
     const tableData = useMemo(
         () => (data?.radioProgram.results ?? []).map((item, index) => ({
             ...item,
-            no: (page - 1) * limit + index + 1,
+            no: offset + index + 1,
         })),
-        [data, page, limit],
+        [data, offset],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteRadioProgram({ id }).then((resp) => {
-                if (resp.data?.deleteRadioProgram) {
-                    reExecuteQuery();
-                    alert.show('Radio Program deleted successfully', { variant: 'success' });
+                const deleteError = resp.error
+                    ? errorMessage
+                    : getMutationErrorMessage(resp.data?.deleteRadioProgram);
+                if (isDefined(deleteError)) {
+                    alert.show(deleteError, { variant: 'danger' });
+                    return;
                 }
+                reExecuteQuery({ requestPolicy: 'network-only' });
+                alert.show('Radio Program deleted successfully', { variant: 'success' });
+            }).catch(() => {
+                alert.show(errorMessage, { variant: 'danger' });
             });
         },
         [deleteRadioProgram, reExecuteQuery, alert],
@@ -109,7 +122,7 @@ function RadioProgramList() {
         createStringColumn<RadioProgramListItem, string | number>(
             'type',
             'Type',
-            (dept) => dept?.type,
+            (dept) => radioProgramTypeLabels[dept.type],
         ),
         ...(canEditContent ? [createElementColumn<RadioProgramListItem, string | number,
          EditDeleteActionsProps>(

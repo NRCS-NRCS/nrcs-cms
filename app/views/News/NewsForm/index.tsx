@@ -53,7 +53,6 @@ import {
     type NewsCreateInput,
     type NewsDetailQuery,
     type NewsUpdateInput,
-    StatusEnum,
     type UpdateNewsMutation,
     useCreateNewsMutation,
     useDirectiveQuery,
@@ -70,12 +69,13 @@ import {
     BYTES_PER_MEGA_BYTE,
     errorMessage,
     idSelector,
-    keySelector,
     labelSelector,
     MAX_FEATURED_KEY_STATS,
     MAX_NEWS_ATTACHMENT_SIZE_IN_MB,
     MAX_NEWS_ATTACHMENTS,
     nameSelector,
+    statusOptions,
+    valueSelector,
 } from '#utils/common';
 
 import ActionLinkInputComponent from './actionLinkInput';
@@ -133,7 +133,7 @@ const EditNewsSchema: FormSchema = {
 
         },
         directive: {
-            required: true,
+            required: false,
             requiredValidation: requiredStringCondition,
         },
         status: {
@@ -333,7 +333,9 @@ function NewsForm() {
     const [{ data: directives }] = useDirectiveQuery();
 
     const [{ data, fetching: newsDetailFetch }] = useNewsDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ fetching: createPending }, createNewsMutate] = useCreateNewsMutation();
     const [{ fetching: updatePending }, updateNewsMutate] = useUpdateNewsMutation();
@@ -494,11 +496,6 @@ function NewsForm() {
         }),
     ) ?? [], [directives]);
 
-    const statusOptions = useMemo(() => Object.values(StatusEnum).map((status) => ({
-        key: status,
-        label: status,
-    })), []);
-
     const ContentEditor = (
         <MarkdownEditor
             heading="Write News"
@@ -531,7 +528,10 @@ function NewsForm() {
 
     const handleKeyStatAdd = useCallback(
         () => {
-            const newKeyStat: PartialKeyStatForm = { clientId: randomString() };
+            const newKeyStat: PartialKeyStatForm = {
+                clientId: randomString(),
+                featured: false,
+            };
             setFieldValue(
                 (oldValue: PartialKeyStatForm[] | undefined) => (
                     [...(oldValue ?? []), newKeyStat]
@@ -624,6 +624,7 @@ function NewsForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -631,6 +632,7 @@ function NewsForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
@@ -733,7 +735,7 @@ function NewsForm() {
                         name="status"
                         options={statusOptions}
                         value={value.status}
-                        keySelector={keySelector}
+                        keySelector={valueSelector}
                         labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Status"

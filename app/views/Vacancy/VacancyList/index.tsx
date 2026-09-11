@@ -14,6 +14,7 @@ import {
     createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { isDefined } from '@togglecorp/fujs';
 import { useQuery } from 'urql';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
@@ -26,7 +27,11 @@ import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
-import { idSelector } from '#utils/common';
+import {
+    errorMessage,
+    getMutationErrorMessage,
+    idSelector,
+} from '#utils/common';
 
 import { VACANCY_QUERY } from '../query';
 import VacancyListFilter, { type VacancyFilterUIType } from '../VacancyListFilters';
@@ -84,18 +89,25 @@ function VacancyList() {
     const tableData = useMemo(
         () => (data?.jobVacancies.results ?? []).map((item, index) => ({
             ...item,
-            no: (page - 1) * limit + index + 1,
+            no: offset + index + 1,
         })),
-        [data, page, limit],
+        [data, offset],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteVacancy({ id }).then((resp) => {
-                if (resp.data?.deleteJobVacancy) {
-                    reExecuteQuery({ requestPolicy: 'network-only' });
-                    alert.show('Vacancy deleted successfully', { variant: 'success' });
+                const deleteError = resp.error
+                    ? errorMessage
+                    : getMutationErrorMessage(resp.data?.deleteJobVacancy);
+                if (isDefined(deleteError)) {
+                    alert.show(deleteError, { variant: 'danger' });
+                    return;
                 }
+                reExecuteQuery({ requestPolicy: 'network-only' });
+                alert.show('Vacancy deleted successfully', { variant: 'success' });
+            }).catch(() => {
+                alert.show(errorMessage, { variant: 'danger' });
             });
         },
         [deleteVacancy, reExecuteQuery, alert],

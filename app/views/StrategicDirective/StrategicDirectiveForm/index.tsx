@@ -123,7 +123,9 @@ function StrategicDirectiveForm() {
     const alert = useAlert();
 
     const [{ data, fetching: directiveDetailFetch }] = useStrategicDirectiveDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ fetching: createPending },
         createStrategicDirectiveMutate] = useCreateStrategicDirectiveMutation();
@@ -310,6 +312,7 @@ function StrategicDirectiveForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -317,6 +320,7 @@ function StrategicDirectiveForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

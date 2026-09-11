@@ -13,6 +13,7 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { isDefined } from '@togglecorp/fujs';
 import { useQuery } from 'urql';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
@@ -25,7 +26,12 @@ import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
-import { idSelector } from '#utils/common';
+import {
+    errorMessage,
+    getMutationErrorMessage,
+    idSelector,
+    resourceTypeLabels,
+} from '#utils/common';
 
 import { RESOURCES_QUERY } from '../query';
 import ResourcesListFilter, { type ResourceFilterUIType } from '../ResourcesListFilters';
@@ -81,18 +87,27 @@ function ResourceList() {
     const tableData = useMemo(
         () => (data?.resources.results ?? []).map((item, index) => ({
             ...item,
-            no: (page - 1) * limit + index + 1,
+            no: offset + index + 1,
         })),
-        [data, page, limit],
+        [data, offset],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deleteResource({ id }).then((resp) => {
-                if (resp.data?.deleteResource) {
-                    reExecuteQuery({ requestPolicy: 'network-only' });
-                    alert.show('Resource deleted successfully', { variant: 'success' });
+                // NOTE: The mutation resolves to a union of the deleted node and
+                // OperationInfo. Both are truthy, so failures have to be matched.
+                const deleteError = resp.error
+                    ? errorMessage
+                    : getMutationErrorMessage(resp.data?.deleteResource);
+                if (isDefined(deleteError)) {
+                    alert.show(deleteError, { variant: 'danger' });
+                    return;
                 }
+                reExecuteQuery({ requestPolicy: 'network-only' });
+                alert.show('Resource deleted successfully', { variant: 'success' });
+            }).catch(() => {
+                alert.show(errorMessage, { variant: 'danger' });
             });
         },
         [deleteResource, reExecuteQuery, alert],
@@ -117,7 +132,7 @@ function ResourceList() {
         createStringColumn<ResourceListItem, string | number>(
             'type',
             'Type',
-            (dept) => dept?.type,
+            (dept) => resourceTypeLabels[dept.type],
         ),
         createStringColumn<ResourceListItem, string | number>(
             'publishedDate',

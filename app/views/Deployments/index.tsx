@@ -207,7 +207,7 @@ function Deployments() {
                     {' '}
                     {canTriggerDeployment
                         ? 'Deploy to publish content changes to the live site.'
-                        : 'Only admins can start a deployment.'}
+                        : 'Only admins and staff can start a deployment.'}
                 </>
             )}
             headerActions={(

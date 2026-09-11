@@ -36,7 +36,6 @@ import MarkdownEditor from '#components/MarkdownEditor';
 import NonFieldError from '#components/NonFieldError';
 import {
     type ResourceCreateInput,
-    ResourceTypeEnum,
     type ResourceUpdateInput,
     useCreateResourceMutation,
     useDirectiveQuery,
@@ -52,9 +51,10 @@ import {
     ACCEPTED_IMAGE_TYPES,
     errorMessage,
     idSelector,
-    keySelector,
     labelSelector,
     nameSelector,
+    typeFilterOptions,
+    valueSelector,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<ResourceCreateInput>
@@ -100,7 +100,9 @@ function ResourceForm() {
     const alert = useAlert();
 
     const [{ data, fetching: resourcesDetailFetch }] = useResourceDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ data: directive }] = useDirectiveQuery();
 
@@ -201,11 +203,6 @@ function ResourceForm() {
         }),
     ) ?? [], [directive]);
 
-    const resourcesOptions = useMemo(() => Object.values(ResourceTypeEnum).map((scope) => ({
-        key: scope,
-        label: scope,
-    })), []);
-
     const ContentEditor = (
         <MarkdownEditor
             heading="Content"
@@ -251,6 +248,7 @@ function ResourceForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -258,6 +256,7 @@ function ResourceForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
@@ -359,9 +358,9 @@ function ResourceForm() {
                 >
                     <SelectInput
                         name="type"
-                        options={resourcesOptions}
+                        options={typeFilterOptions}
                         value={value.type}
-                        keySelector={keySelector}
+                        keySelector={valueSelector}
                         labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Type"

@@ -23,8 +23,9 @@ export interface NavigationItem {
 }
 interface NavigationProps {
     navigationItem: NavigationItem[];
+    onNavigate?: () => void;
 }
-function Navigation({ navigationItem }: NavigationProps) {
+function Navigation({ navigationItem, onNavigate }: NavigationProps) {
     return (
         <nav
             className={styles.nav}
@@ -49,6 +50,7 @@ function Navigation({ navigationItem }: NavigationProps) {
                             <NavigationTab
                                 key={route.to}
                                 to={route.to}
+                                onClick={onNavigate}
                                 activeClassName={styles.activeRoute}
                                 className={styles.routeLink}
                             >

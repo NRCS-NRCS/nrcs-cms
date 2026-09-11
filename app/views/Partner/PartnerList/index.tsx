@@ -13,6 +13,7 @@ import {
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
+import { isDefined } from '@togglecorp/fujs';
 import { useQuery } from 'urql';
 
 import EditDeleteActions, { type EditDeleteActionsProps } from '#components/EditDeleteActions';
@@ -25,7 +26,11 @@ import useAlert from '#hooks/useAlert';
 import useFilterState from '#hooks/useFilterState';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
-import { idSelector } from '#utils/common';
+import {
+    errorMessage,
+    getMutationErrorMessage,
+    idSelector,
+} from '#utils/common';
 
 import PartnerListFilter, { type PartnerFilterUIType } from '../PartnerListFilters';
 import { PARTNER_QUERY } from '../query';
@@ -81,18 +86,27 @@ function PartnerList() {
     const tableData = useMemo(
         () => (data?.partners.results ?? []).map((item, index) => ({
             ...item,
-            no: (page - 1) * limit + index + 1,
+            no: offset + index + 1,
         })),
-        [data, page, limit],
+        [data, offset],
     );
 
     const onDelete = useCallback(
         (id: string) => {
             deletePartner({ id }).then((resp) => {
-                if (resp.data?.deletePartner) {
-                    reExecuteQuery({ requestPolicy: 'network-only' });
-                    alert.show('Partner deleted successfully', { variant: 'success' });
+                // NOTE: The mutation resolves to a union of the deleted node and
+                // OperationInfo. Both are truthy, so failures have to be matched.
+                const deleteError = resp.error
+                    ? errorMessage
+                    : getMutationErrorMessage(resp.data?.deletePartner);
+                if (isDefined(deleteError)) {
+                    alert.show(deleteError, { variant: 'danger' });
+                    return;
                 }
+                reExecuteQuery({ requestPolicy: 'network-only' });
+                alert.show('Partner deleted successfully', { variant: 'success' });
+            }).catch(() => {
+                alert.show(errorMessage, { variant: 'danger' });
             });
         },
         [deletePartner, reExecuteQuery, alert],

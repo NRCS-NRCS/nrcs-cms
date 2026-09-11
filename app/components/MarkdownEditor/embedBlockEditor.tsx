@@ -1,5 +1,12 @@
+import {
+    useCallback,
+    useState,
+} from 'react';
 import { IoVideocamOutline } from 'react-icons/io5';
-import { DeleteBinLineIcon } from '@ifrc-go/icons';
+import {
+    DeleteBinLineIcon,
+    PencilLineIcon,
+} from '@ifrc-go/icons';
 import {
     IconButton,
     ListView,
@@ -9,21 +16,41 @@ import {
     useCodeBlockEditorContext,
 } from '@mdxeditor/editor';
 
-import { parseEmbedBody } from '#utils/embed';
+import {
+    buildEmbedBody,
+    parseEmbedBody,
+} from '#utils/embed';
+
+import EmbedDialog, { type EmbedValue } from './embedDialog';
 
 import styles from './styles.module.css';
 
 function EmbedBlockEditor(props: CodeBlockEditorProps) {
     const { code } = props;
 
-    const { parentEditor, lexicalNode } = useCodeBlockEditorContext();
+    const { parentEditor, lexicalNode, setCode } = useCodeBlockEditorContext();
     const embed = parseEmbedBody(code);
 
-    const handleRemove = () => {
+    const [showEditModal, setShowEditModal] = useState(false);
+
+    const handleRemove = useCallback(() => {
         parentEditor.update(() => {
             lexicalNode.remove();
         });
-    };
+    }, [parentEditor, lexicalNode]);
+
+    const handleEditOpen = useCallback(() => {
+        setShowEditModal(true);
+    }, []);
+
+    const handleEditClose = useCallback(() => {
+        setShowEditModal(false);
+    }, []);
+
+    const handleEditSubmit = useCallback((value: EmbedValue) => {
+        setCode(buildEmbedBody(value));
+        setShowEditModal(false);
+    }, [setCode]);
 
     return (
         <div
@@ -42,6 +69,15 @@ function EmbedBlockEditor(props: CodeBlockEditorProps) {
                 )}
                 <IconButton
                     name={undefined}
+                    onClick={handleEditOpen}
+                    title="Edit video"
+                    ariaLabel="Edit video"
+                    spacing="none"
+                >
+                    <PencilLineIcon />
+                </IconButton>
+                <IconButton
+                    name={undefined}
                     onClick={handleRemove}
                     title="Remove video"
                     ariaLabel="Remove video"
@@ -53,6 +89,15 @@ function EmbedBlockEditor(props: CodeBlockEditorProps) {
             <div className={styles.embedBlockUrl}>
                 {embed.url ?? 'No video URL set'}
             </div>
+            {showEditModal && (
+                <EmbedDialog
+                    heading="Edit Video"
+                    submitLabel="Save"
+                    initialValue={embed}
+                    onSubmit={handleEditSubmit}
+                    onClose={handleEditClose}
+                />
+            )}
         </div>
     );
 }

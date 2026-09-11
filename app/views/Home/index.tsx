@@ -37,6 +37,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
     transformToFormError,
 } from '#utils/common';
@@ -133,7 +134,7 @@ function Home() {
         errorField: 'isHighlighted' | 'showInPopup',
     ) => {
         const item = [...tableData, ...highlightsTableData].find((news) => news.id === id);
-        if (!item || !item.directiveId) {
+        if (isNotDefined(item)) {
             alert.show(errorMessage, { variant: 'danger' });
             return;
         }
@@ -141,26 +142,37 @@ function Home() {
         updateNews({
             pk: id,
             data: {
+                // NOTE: The server patches partially, so only the toggled field is
+                // sent. `content` is the one exception: it is non-null on
+                // NewsUpdateInput and has to be echoed back. `directive` is
+                // deliberately left out - it is optional on news, so requiring it
+                // here would block the toggle for news filed under no directive.
                 content: item.content,
-                directive: item.directiveId,
                 ...patch,
             },
         }).then((resp) => {
             const result = resp.data?.updateNews;
-            if (result?.ok) {
-                reExecuteMainQuery({ requestPolicy: 'network-only' });
-                reExecuteHighlightsQuery({ requestPolicy: 'network-only' });
-                alert.show(successMessage, { variant: 'success' });
-            } else if (isDefined(result) && isDefined(result.errors)) {
-                const formError = transformToFormError(result.errors);
+            const updateError = resp.error
+                ? errorMessage
+                : getMutationErrorMessage(result);
+
+            if (isDefined(updateError)) {
+                const formError = isDefined(result) && isDefined(result.errors)
+                    ? transformToFormError(result.errors)
+                    : undefined;
                 const message = formError?.[errorField];
                 alert.show(
                     typeof message === 'string' && message
                         ? message
-                        : errorMessage,
+                        : updateError,
                     { variant: 'danger' },
                 );
+                return;
             }
+
+            reExecuteMainQuery({ requestPolicy: 'network-only' });
+            reExecuteHighlightsQuery({ requestPolicy: 'network-only' });
+            alert.show(successMessage, { variant: 'success' });
         }).catch(() => {
             alert.show(errorMessage, { variant: 'danger' });
         });

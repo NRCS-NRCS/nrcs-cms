@@ -33,7 +33,10 @@ interface Props {
     index: number;
 }
 
-const defaultKeyStatValue: PartialKeyStatForm = { clientId: randomString() };
+const defaultKeyStatValue: PartialKeyStatForm = {
+    clientId: randomString(),
+    featured: false,
+};
 
 function KeyStatInput(props: Props) {
     const {

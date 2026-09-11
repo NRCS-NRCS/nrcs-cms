@@ -22,10 +22,15 @@
 .toolbar {
     position: sticky;
     top: 0;
+    flex-wrap: wrap;
     z-index: 1;
     border-bottom: var(--go-ui-width-separator-sm) solid var(--go-ui-color-gray-20);
     border-radius: var(--go-ui-border-radius-lg) var(--go-ui-border-radius-lg) 0 0;
     background-color: var(--go-ui-color-foreground);
+
+    > * {
+        flex-shrink: 0;
+    }
 }
 
 .content {

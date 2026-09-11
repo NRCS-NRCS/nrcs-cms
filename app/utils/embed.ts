@@ -23,8 +23,8 @@ interface EmbedBlockOptions {
     caption?: string;
 }
 
-/** Build the fenced block the server parses. */
-export function buildEmbedBlock(options: EmbedBlockOptions) {
+/** Build the body of the fenced block, without the fences themselves. */
+export function buildEmbedBody(options: EmbedBlockOptions) {
     const { url, orientation, caption } = options;
 
     const lines = [`url: ${url}`];
@@ -35,7 +35,12 @@ export function buildEmbedBlock(options: EmbedBlockOptions) {
         lines.push(`caption: ${caption}`);
     }
 
-    return ['```embed', ...lines, '```'].join('\n');
+    return lines.join('\n');
+}
+
+/** Build the fenced block the server parses. */
+export function buildEmbedBlock(options: EmbedBlockOptions) {
+    return ['```embed', buildEmbedBody(options), '```'].join('\n');
 }
 
 export interface ParsedEmbed {
