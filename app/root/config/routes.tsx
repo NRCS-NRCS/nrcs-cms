@@ -304,6 +304,14 @@ const addResources: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const deployments: RouteConfig = {
+    index: true,
+    path: 'deployments',
+    label: 'Deployments',
+    load: () => import('#views/Deployments'),
+    visibility: 'is-authenticated',
+};
+
 const routes = {
     login,
     home,
@@ -343,6 +351,7 @@ const routes = {
     resources,
     addResources,
     editResources,
+    deployments,
 };
 
 export type RouteKeys = keyof typeof routes;

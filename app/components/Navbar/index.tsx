@@ -1,11 +1,17 @@
 import React, {
     use,
     useCallback,
+    useMemo,
 } from 'react';
+import {
+    CloseLineIcon,
+    MenuLineIcon,
+} from '@ifrc-go/icons';
 import {
     Button,
     DropdownMenu,
     Heading,
+    IconButton,
     Image,
 } from '@ifrc-go/ui';
 import { gql } from 'urql';
@@ -26,25 +32,65 @@ const LOGOUT = gql`
     }
 `;
 
-function Navbar() {
-    const { user, setUser } = use(UserContext);
+interface Props {
+    menuShown?: boolean;
+    onMenuButtonClick?: () => void;
+}
+
+function Navbar(props: Props) {
+    const {
+        menuShown,
+        onMenuButtonClick,
+    } = props;
+
+    const { user, setUser, resetClient } = use(UserContext);
     const alert = useAlert();
     const navigate = useRouting();
 
     const [{ fetching: pendingLogout }, triggerLogout] = useLogoutMutation();
 
+    const userInitials = useMemo(
+        () => {
+            const initials = [user?.firstName, user?.lastName]
+                .map((part) => part?.trim().charAt(0) ?? '')
+                .join('')
+                .toUpperCase();
+            return initials || '?';
+        },
+        [user?.firstName, user?.lastName],
+    );
+
     const handleLogout = useCallback(async () => {
         const res = await triggerLogout({});
-        const logoutResponse = res.data?.logout;
-        if (logoutResponse) {
-            setUser(undefined);
-            navigate('login');
-            alert.show('Logout Successful', { variant: 'success' });
+        if (res.error || !res.data?.logout) {
+            alert.show(
+                'Could not log you out. Please try again.',
+                { variant: 'danger' },
+            );
+            return;
         }
-    }, [navigate, triggerLogout, setUser, alert]);
+        setUser(undefined);
+        resetClient();
+        navigate('login');
+        alert.show('Logout Successful', { variant: 'success' });
+    }, [navigate, triggerLogout, setUser, resetClient, alert]);
 
     return (
         <nav className={styles.navbar}>
+            {onMenuButtonClick && (
+                <div className={styles.menuButton}>
+                    <IconButton
+                        name={undefined}
+                        onClick={onMenuButtonClick}
+                        title={menuShown ? 'Close menu' : 'Open menu'}
+                        ariaLabel={menuShown ? 'Close menu' : 'Open menu'}
+                        aria-expanded={menuShown}
+                        variant="tertiary"
+                    >
+                        {menuShown ? <CloseLineIcon /> : <MenuLineIcon />}
+                    </IconButton>
+                </div>
+            )}
             <Link
                 to="home"
             >
@@ -62,12 +108,7 @@ function Navbar() {
                 labelColorVariant="secondary"
                 labelBefore={(
                     <div className={styles.userInitial}>
-                        {user?.firstName || user?.lastName.charAt(0) ? (
-                            <>
-                                {user?.firstName.charAt(0)}
-                                {user?.lastName.charAt(0)}
-                            </>
-                        ) : 'Ad' }
+                        {userInitials}
                     </div>
                 )}
                 label={(

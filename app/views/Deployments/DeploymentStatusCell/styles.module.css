@@ -1,0 +1,48 @@
+.status-indicator {
+    display: inline-block;
+    border-radius: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.queued {
+    background-color: var(--color-gray-50, #808080);
+}
+
+.in-progress {
+    background-color: var(--color-primary-blue, #011e41);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+.success {
+    background-color: var(--color-success, #2e7d32);
+}
+
+.failed {
+    background-color: var(--color-danger, #c62828);
+}
+
+.cancelled {
+    background-color: var(--color-gray-50, #808080);
+}
+
+.unknown {
+    background-color: var(--color-gray-50, #808080);
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.25;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .in-progress {
+        animation: none;
+    }
+}

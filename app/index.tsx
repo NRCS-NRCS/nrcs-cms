@@ -67,6 +67,13 @@ const router = createBrowserRouter([{
                     return { Component };
                 },
                 children: publicRoutes.map(mapRoute),
+            },
+            {
+                path: '*',
+                lazy: async () => {
+                    const { default: Component } = await import('./views/NotFound/index.tsx');
+                    return { Component };
+                },
             }],
         },
     ],

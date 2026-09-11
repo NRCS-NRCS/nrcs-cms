@@ -67,14 +67,14 @@ const DepartmentSchema: FormSchema = {
             requiredValidation: requiredStringCondition,
         },
         description: {
-            required: false,
+            required: true,
             requiredValidation: requiredStringCondition,
         },
         contactPersonName: {
             required: false,
         },
         strategicDirective: {
-            required: false,
+            required: true,
             requiredValidation: requiredStringCondition,
         },
     }),
@@ -89,7 +89,9 @@ function DepartmentForm() {
     const alert = useAlert();
 
     const [{ data, fetching: departmentDetailFetch }] = useDepartmentDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ data: directive }] = useDirectiveQuery();
     const [{ fetching: createPending }, createDepartmentMutate] = useCreateDepartmentMutation();
@@ -127,7 +129,12 @@ function DepartmentForm() {
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
                 setError(result.errors);
-                alert.show(result.errors, { variant: 'danger' });
+                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            } else {
+                // A GraphQL-level failure (a non-null input violation, a network
+                // error) leaves res.data undefined, so there is no result to read
+                // errors off. Without this the Save button would fail silently.
+                alert.show(res.error?.message ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createDepartmentMutate({
@@ -141,6 +148,8 @@ function DepartmentForm() {
             } else if (result?.errors) {
                 setError(result?.errors);
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+            } else {
+                alert.show(res.error?.message ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [
@@ -215,6 +224,7 @@ function DepartmentForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -222,6 +232,7 @@ function DepartmentForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

@@ -35,6 +35,7 @@ import useReorder, {
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
 } from '#utils/common';
 
@@ -133,10 +134,19 @@ function FAQsList() {
     const onDelete = useCallback(
         (id: string) => {
             deleteFaq({ id }).then((resp) => {
-                if (resp.data?.deleteFaq) {
-                    refetch();
-                    alert.show('FAQ deleted successfully', { variant: 'success' });
+                // NOTE: The mutation resolves to a union of the deleted node and
+                // OperationInfo. Both are truthy, so failures have to be matched.
+                const deleteError = resp.error
+                    ? errorMessage
+                    : getMutationErrorMessage(resp.data?.deleteFaq);
+                if (isDefined(deleteError)) {
+                    alert.show(deleteError, { variant: 'danger' });
+                    return;
                 }
+                refetch();
+                alert.show('FAQ deleted successfully', { variant: 'success' });
+            }).catch(() => {
+                alert.show(errorMessage, { variant: 'danger' });
             });
         },
         [deleteFaq, refetch, alert],

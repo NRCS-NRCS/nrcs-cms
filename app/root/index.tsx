@@ -1,5 +1,6 @@
 import {
     Suspense,
+    useCallback,
     useMemo,
     useState,
 } from 'react';
@@ -29,57 +30,70 @@ const COOKIE_NAME = `NRCS-${environment}-CSRFTOKEN`;
 const GRAPHQL_ENDPOINT = `${api}/graphql/`;
 
 const cookies = new Cookies();
-const gqlClient = new Client({
-    url: GRAPHQL_ENDPOINT,
-    exchanges: [
-        cacheExchange({
-            keys: {
-                OffsetPaginationInfo: () => null,
-                BlogTypeOffsetPaginated: () => null,
-                DepartmentTypeOffsetPaginated: () => null,
-                FaqTypeOffsetPaginated: () => null,
-                StrategicDirectivesTypeOffsetPaginated: () => null,
-                HighlightTypeOffsetPaginated: () => null,
-                ProcurementTypeOffsetPaginated: () => null,
-                NewsTypeOffsetPaginated: () => null,
-                ProjectTypeOffsetPaginated: () => null,
-                PartnerTypeOffsetPaginated: () => null,
-                RadioProgramTypeOffsetPaginated: () => null,
-                VacancyTypeOffsetPaginated: () => null,
-                DjangoFileType: () => null,
-                ResourceTypeOffsetPaginated: () => null,
-                UserTypeOffsetPaginated: () => null,
-                JobVacancyTypeOffsetPaginated: () => null,
-                MajorResponsibilitiesTypeOffsetPaginated: () => null,
 
+function createGqlClient() {
+    return new Client({
+        url: GRAPHQL_ENDPOINT,
+        exchanges: [
+            cacheExchange({
+                keys: {
+                    OffsetPaginationInfo: () => null,
+                    BlogTypeOffsetPaginated: () => null,
+                    DepartmentTypeOffsetPaginated: () => null,
+                    FaqTypeOffsetPaginated: () => null,
+                    StrategicDirectivesTypeOffsetPaginated: () => null,
+                    HighlightTypeOffsetPaginated: () => null,
+                    ProcurementTypeOffsetPaginated: () => null,
+                    NewsTypeOffsetPaginated: () => null,
+                    ProjectTypeOffsetPaginated: () => null,
+                    PartnerTypeOffsetPaginated: () => null,
+                    RadioProgramTypeOffsetPaginated: () => null,
+                    VacancyTypeOffsetPaginated: () => null,
+                    DjangoFileType: () => null,
+                    ResourceTypeOffsetPaginated: () => null,
+                    UserTypeOffsetPaginated: () => null,
+                    JobVacancyTypeOffsetPaginated: () => null,
+                    MajorResponsibilitiesTypeOffsetPaginated: () => null,
+
+                },
+            }),
+            fetchExchange,
+        ],
+        fetchOptions: () => ({
+            headers: {
+                'X-CSRFToken': cookies.get(COOKIE_NAME),
             },
+            credentials: 'include',
         }),
-        fetchExchange,
-    ],
-    fetchOptions: () => ({
-        headers: {
-            'X-CSRFToken': cookies.get(COOKIE_NAME),
-        },
-        credentials: 'include',
-    }),
-    requestPolicy: 'cache-and-network',
-    suspense: false,
-});
+        requestPolicy: 'cache-and-network',
+        suspense: false,
+    });
+}
 
 function Root() {
     const [user, setUser] = useState<User | undefined>();
+    const [gqlClient, setGqlClient] = useState(createGqlClient);
     const authenticated = !!user;
+
+    const resetClient = useCallback(
+        () => {
+            setGqlClient(createGqlClient());
+        },
+        [],
+    );
+
     const userContext: UserContextInterface = useMemo(
         () => ({
             authenticated,
             user,
             setUser,
-
+            resetClient,
         }),
         [
             authenticated,
             user,
             setUser,
+            resetClient,
         ],
     );
     const alertContextValue = useAlertContextProviderValue();

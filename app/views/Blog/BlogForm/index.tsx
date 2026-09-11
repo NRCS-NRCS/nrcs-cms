@@ -41,7 +41,6 @@ import NonFieldError from '#components/NonFieldError';
 import {
     type BlogCreateInput,
     type BlogUpdateInput,
-    StatusEnum,
     useBlogDetailQueryQuery,
     useCreateBlogMutation,
     useDepartmentAndDirectiveQuery,
@@ -56,6 +55,8 @@ import {
     errorMessage,
     keySelector,
     labelSelector,
+    statusOptions,
+    valueSelector,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<BlogCreateInput>
@@ -102,7 +103,12 @@ const EditBlogSchema: FormSchema = {
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {};
+const defaultEditFormValue: PartialFormType = {
+    // NOTE: An unchecked box means false, not "unanswered". Left undefined, the
+    // required check on `featured` rejects the form until the box is toggled
+    // twice, and a create omits the field entirely.
+    featured: false,
+};
 
 function BlogForm() {
     const { id } = useParams();
@@ -111,7 +117,9 @@ function BlogForm() {
     const navigate = useRouting();
     const { canEditContent } = usePermissions();
     const [{ data, fetching: blogDetailFetch }] = useBlogDetailQueryQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ data: departmentAndDirective }] = useDepartmentAndDirectiveQuery();
     const [{ fetching: createPending }, createBlogMutate] = useCreateBlogMutation();
@@ -205,14 +213,6 @@ function BlogForm() {
         [departmentAndDirective?.strategicDirectives.results],
     );
 
-    const statusOptions = useMemo(
-        () => Object.values(StatusEnum).map((status) => ({
-            key: status,
-            label: status,
-        })),
-        [],
-    );
-
     useEffect(() => {
         if (isNotDefined(data?.blog)) {
             return;
@@ -261,6 +261,7 @@ function BlogForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -268,6 +269,7 @@ function BlogForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
@@ -355,7 +357,7 @@ function BlogForm() {
                         name="featured"
                         label="Feature"
                         onChange={setFieldValue}
-                        value={value.featured}
+                        value={value.featured ?? false}
                         error={error?.featured}
                     />
                 </InputSection>
@@ -368,7 +370,7 @@ function BlogForm() {
                         name="status"
                         options={statusOptions}
                         value={value.status}
-                        keySelector={keySelector}
+                        keySelector={valueSelector}
                         labelSelector={labelSelector}
                         onChange={setFieldValue}
                         placeholder="Select Status"

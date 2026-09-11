@@ -11,6 +11,7 @@ function usePermissions() {
     return {
         canEditContent: isAdmin || isStaff,
         canEditUsers: isAdmin,
+        canTriggerDeployment: isAdmin || isStaff,
     };
 }
 
