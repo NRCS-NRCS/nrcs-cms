@@ -14,6 +14,7 @@ import {
 } from '@ifrc-go/ui';
 import {
     createActionColumn,
+    createElementColumn,
     createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
@@ -22,6 +23,7 @@ import {
     isNotDefined,
 } from '@togglecorp/fujs';
 
+import Link, { type Props as LinkProps } from '#components/Link';
 import {
     type NewsFilter,
     type NewsQuery,
@@ -142,11 +144,6 @@ function Home() {
         updateNews({
             pk: id,
             data: {
-                // NOTE: The server patches partially, so only the toggled field is
-                // sent. `content` is the one exception: it is non-null on
-                // NewsUpdateInput and has to be echoed back. `directive` is
-                // deliberately left out - it is optional on news, so requiring it
-                // here would block the toggle for news filed under no directive.
                 content: item.content,
                 ...patch,
             },
@@ -205,17 +202,26 @@ function Home() {
         navigate('addNews');
     }, [navigate]);
 
+    const titleColumn = useMemo(() => (
+        createElementColumn<NewsListItem, string | number, LinkProps>(
+            'title',
+            'Title',
+            Link,
+            (_, item) => ({
+                to: 'editNews',
+                attrs: { id: item.id },
+                children: item.title,
+            }),
+        )
+    ), []);
+
     const highlightsColumns = useMemo(() => [
         createNumberColumn<NewsListItem, string | number>(
             'no',
             'No.',
             (item) => item.no,
         ),
-        createStringColumn<NewsListItem, string | number>(
-            'title',
-            'Title',
-            (item) => item.title,
-        ),
+        titleColumn,
         createStringColumn<NewsListItem, string | number>(
             'publishedDate',
             'Published Date',
@@ -232,23 +238,25 @@ function Home() {
                 children: (
                     <>
                         {item.showInPopup ? (
-                            <Button
+                            <ConfirmButton
                                 name={item.id}
-                                onClick={handleClearPopup}
+                                onConfirm={handleClearPopup}
                                 styleVariant="action"
                                 title="Stop showing this news in the homepage popup"
+                                confirmMessage={`Are you sure you want to stop showing "${item.title}" in the homepage popup?`}
                             >
                                 Clear Popup
-                            </Button>
+                            </ConfirmButton>
                         ) : (
-                            <Button
+                            <ConfirmButton
                                 name={item.id}
-                                onClick={handleSetPopup}
+                                onConfirm={handleSetPopup}
                                 styleVariant="action"
                                 title="Show this news in the homepage popup. Only one news item can be the popup, so this replaces the current one."
+                                confirmMessage={`Are you sure you want to show "${item.title}" in the homepage popup? Only one news item can be the popup, so this replaces the current one.`}
                             >
                                 Set as Popup
-                            </Button>
+                            </ConfirmButton>
                         )}
                         <ConfirmButton
                             name={item.id}
@@ -261,7 +269,7 @@ function Home() {
                 ),
             }),
         )] : []),
-    ], [canEditContent, handleRemoveFromHighlights, handleSetPopup, handleClearPopup]);
+    ], [canEditContent, titleColumn, handleRemoveFromHighlights, handleSetPopup, handleClearPopup]);
 
     const columns = useMemo(() => [
         createNumberColumn<NewsListItem, string | number>(
@@ -269,11 +277,7 @@ function Home() {
             'No.',
             (item) => item.no,
         ),
-        createStringColumn<NewsListItem, string | number>(
-            'title',
-            'Title',
-            (item) => item.title,
-        ),
+        titleColumn,
         createStringColumn<NewsListItem, string | number>(
             'publishedDate',
             'Published Date',
@@ -297,7 +301,7 @@ function Home() {
                 ),
             }),
         )] : []),
-    ], [canEditContent, handleAddToHighlights, highlightLimitReached]);
+    ], [canEditContent, titleColumn, handleAddToHighlights, highlightLimitReached]);
 
     return (
         <Container

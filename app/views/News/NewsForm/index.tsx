@@ -22,6 +22,7 @@ import {
     TextInput,
 } from '@ifrc-go/ui';
 import {
+    isDefined,
     isNotDefined,
     noOp,
     randomString,
@@ -48,10 +49,8 @@ import {
     type ActionLinkType,
     type CreateNewsMutation,
     type KeyStatInput,
-    type KeyStatType,
     type NewsAttachmentInput,
     type NewsCreateInput,
-    type NewsDetailQuery,
     type NewsUpdateInput,
     type UpdateNewsMutation,
     useCreateNewsMutation,
@@ -92,9 +91,6 @@ type PartialFormType = Omit<PartialForm<NewsCreateInput>, 'actionLinks' | 'keySt
      attachments?: PartialAttachmentForm[];
 };
 type PartialActionLinkForm = PartialForm<ActionLinkFormValue, 'clientId'>;
-
-type NewsDetail = NonNullable<NewsDetailQuery['newsItem']>;
-type AttachmentDetail = NonNullable<NewsDetail['attachments']>[number];
 
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
@@ -221,107 +217,98 @@ function getDataToSubmit(formValue: PartialFormType) {
     };
 }
 
-function getActionLinksToCreate(currentLinks: PartialActionLinkForm[]) {
-    return currentLinks.map((link) => ({
-        label: link.label ?? '',
-        url: link.url ?? '',
-    }));
+type NestedMutationInput<CREATE, UPDATE> = {
+    create: CREATE;
+} | {
+    update: UPDATE & { id: string };
+} | {
+    delete: { id: string };
+};
+
+function getItemsToCreate<ITEM, CREATE>(
+    items: ITEM[],
+    getCreatePayload: (item: ITEM, index: number) => CREATE | undefined,
+): CREATE[] {
+    return items
+        .map((item, index) => getCreatePayload(item, index))
+        .filter(isDefined);
 }
 
-function getKeyStatsToCreate(currentStats: PartialKeyStatForm[]) {
-    return currentStats.map((stat, index) => ({
+function getItemsToMutate<
+    ITEM extends { id?: string | null },
+    CREATE extends object,
+    UPDATE extends object,
+>(
+    currentItems: ITEM[],
+    savedItems: { id: string }[],
+    getCreatePayload: (item: ITEM, index: number) => CREATE | undefined,
+    getUpdatePayload: (item: ITEM, index: number) => UPDATE | undefined,
+): NestedMutationInput<CREATE, UPDATE>[] {
+    const mutations: NestedMutationInput<CREATE, UPDATE>[] = [];
+    const currentIds = new Set<string>();
+
+    currentItems.forEach((item, index) => {
+        const { id } = item;
+
+        if (isNotDefined(id)) {
+            const createPayload = getCreatePayload(item, index);
+            if (isDefined(createPayload)) {
+                mutations.push({ create: createPayload });
+            }
+            return;
+        }
+
+        currentIds.add(id);
+
+        const updatePayload = getUpdatePayload(item, index);
+        if (isDefined(updatePayload)) {
+            mutations.push({ update: { ...updatePayload, id } });
+        }
+    });
+
+    const deletions = savedItems
+        .filter((savedItem) => !currentIds.has(savedItem.id))
+        .map<NestedMutationInput<CREATE, UPDATE>>(
+            (savedItem) => ({ delete: { id: savedItem.id } }),
+        );
+
+    return [...mutations, ...deletions];
+}
+
+function getActionLinkPayload(link: PartialActionLinkForm) {
+    return {
+        label: link.label ?? '',
+        url: link.url ?? '',
+    };
+}
+
+function getKeyStatPayload(stat: PartialKeyStatForm, index: number) {
+    return {
         order: index + 1,
         title: stat.title ?? '',
         stat: stat.stat ?? 0,
         featured: stat.featured ?? false,
-    }));
+    };
 }
 
-function getKeyStatsToUpdate(
-    currentStats: PartialKeyStatForm[],
-    originalStats: KeyStatType[],
-): KeyStatInput[] {
-    const createdOrUpdated = currentStats.map<KeyStatInput>((stat, index) => {
-        const payload = {
-            order: index + 1,
-            title: stat.title ?? '',
-            stat: stat.stat ?? 0,
-            featured: stat.featured ?? false,
-        };
-        if (isNotDefined(stat.id)) {
-            return { create: payload };
-        }
-        return { update: { id: stat.id, ...payload } };
-    });
+function getAttachmentCreatePayload(attachment: PartialAttachmentForm, index: number) {
+    if (!(attachment.file instanceof File)) {
+        return undefined;
+    }
 
-    const removed = originalStats
-        .filter((orig) => !currentStats.some((curr) => curr.id === orig.id))
-        .map<KeyStatInput>((orig) => ({ delete: { id: orig.id } }));
-
-    return [...createdOrUpdated, ...removed];
+    return {
+        order: index + 1,
+        label: attachment.label ?? '',
+        file: attachment.file,
+    };
 }
 
-function getAttachmentsToCreate(current: PartialAttachmentForm[]) {
-    return current
-        .map((row, index) => ({ row, order: index + 1 }))
-        .filter(({ row }) => row.file instanceof File)
-        .map(({ row, order }) => ({
-            order,
-            label: row.label ?? '',
-            file: row.file as File,
-        }));
-}
-
-function getAttachmentsToUpdate(
-    current: PartialAttachmentForm[],
-    original: AttachmentDetail[],
-): NewsAttachmentInput[] {
-    const createdOrUpdated = current.flatMap<NewsAttachmentInput>((row, index) => {
-        const order = index + 1;
-        const label = row.label ?? '';
-
-        if (isNotDefined(row.id)) {
-            if (!(row.file instanceof File)) {
-                return [];
-            }
-            return [{ create: { order, label, file: row.file } }];
-        }
-
-        return [{
-            update: {
-                id: row.id,
-                order,
-                label,
-                ...(row.file instanceof File ? { file: row.file } : {}),
-            },
-        }];
-    });
-
-    const removed = original
-        .filter((orig) => !current.some((curr) => curr.id === orig.id))
-        .map<NewsAttachmentInput>((orig) => ({ delete: { id: orig.id } }));
-
-    return [...createdOrUpdated, ...removed];
-}
-
-function getActionLinksToUpdate(
-    currentLinks: PartialActionLinkForm[],
-    originalLinks: ActionLinkType[],
-): ActionLinkInput[] {
-    const createdOrUpdated = currentLinks.map((link) => {
-        const label = link.label ?? '';
-        const url = link.url ?? '';
-        if (isNotDefined(link.id)) {
-            return { create: { label, url } };
-        }
-        return { update: { id: link.id, label, url } };
-    });
-
-    const removed = originalLinks
-        .filter((orig) => !currentLinks.some((curr) => curr.id === orig.id))
-        .map((orig) => ({ delete: { id: orig.id } }));
-
-    return [...createdOrUpdated, ...removed];
+function getAttachmentUpdatePayload(attachment: PartialAttachmentForm, index: number) {
+    return {
+        order: index + 1,
+        label: attachment.label ?? '',
+        ...(attachment.file instanceof File ? { file: attachment.file } : {}),
+    };
 }
 
 function NewsForm() {
@@ -393,23 +380,29 @@ function NewsForm() {
         newsId: string,
         mutationData: PartialFormType,
     ) => {
-        const actionLinks = getActionLinksToUpdate(
+        const actionLinks: ActionLinkInput[] = getItemsToMutate(
             mutationData.actionLinks ?? [],
             data?.newsItem?.actionLinks ?? [],
+            getActionLinkPayload,
+            getActionLinkPayload,
         );
-        const keyStats = getKeyStatsToUpdate(
+        const keyStats: KeyStatInput[] = getItemsToMutate(
             mutationData.keyStats ?? [],
             data?.newsItem?.keyStats ?? [],
+            getKeyStatPayload,
+            getKeyStatPayload,
         );
-        const attachments = getAttachmentsToUpdate(
+        const attachments: NewsAttachmentInput[] = getItemsToMutate(
             mutationData.attachments ?? [],
             data?.newsItem?.attachments ?? [],
+            getAttachmentCreatePayload,
+            getAttachmentUpdatePayload,
         );
         const res = await updateNewsMutate({
             pk: newsId,
             data: {
                 ...getDataToSubmit(mutationData),
-                actionLinks: removeNull(actionLinks),
+                actionLinks,
                 keyStats,
                 attachments,
             } as NewsUpdateInput,
@@ -427,9 +420,18 @@ function NewsForm() {
         const res = await createNewsMutate({
             data: {
                 ...getDataToSubmit(mutationData),
-                actionLinks: getActionLinksToCreate(mutationData.actionLinks ?? []),
-                keyStats: getKeyStatsToCreate(mutationData.keyStats ?? []),
-                attachments: getAttachmentsToCreate(mutationData.attachments ?? []),
+                actionLinks: getItemsToCreate(
+                    mutationData.actionLinks ?? [],
+                    getActionLinkPayload,
+                ),
+                keyStats: getItemsToCreate(
+                    mutationData.keyStats ?? [],
+                    getKeyStatPayload,
+                ),
+                attachments: getItemsToCreate(
+                    mutationData.attachments ?? [],
+                    getAttachmentCreatePayload,
+                ),
             } as NewsCreateInput,
         });
         handleMutationResponse(res.data?.createNews);
@@ -755,7 +757,7 @@ function NewsForm() {
                                 value={link}
                                 onChange={onActionLinkChange}
                                 onRemove={onActionLinkRemove}
-                                error={actionLinkErrors?.[link.clientId ?? 0]}
+                                error={actionLinkErrors?.[link.clientId]}
                             />
                         ))}
                         <Button name="add-link" onClick={handleCollectionAdd}>
@@ -776,7 +778,7 @@ function NewsForm() {
                                 value={stat}
                                 onChange={onKeyStatChange}
                                 onRemove={onKeyStatRemove}
-                                error={keyStatErrors?.[stat.clientId ?? 0]}
+                                error={keyStatErrors?.[stat.clientId]}
                             />
                         ))}
                         <Button
@@ -812,7 +814,7 @@ function NewsForm() {
                                 value={row}
                                 onChange={onAttachmentChange}
                                 onRemove={onAttachmentRemove}
-                                error={attachmentErrors?.[row.clientId ?? 0]}
+                                error={attachmentErrors?.[row.clientId]}
                             />
                         ))}
                     </ListView>

@@ -104,9 +104,6 @@ const EditBlogSchema: FormSchema = {
 };
 
 const defaultEditFormValue: PartialFormType = {
-    // NOTE: An unchecked box means false, not "unanswered". Left undefined, the
-    // required check on `featured` rejects the form until the box is toggled
-    // twice, and a create omits the field entirely.
     featured: false,
 };
 

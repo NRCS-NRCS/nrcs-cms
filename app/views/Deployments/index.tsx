@@ -19,6 +19,7 @@ import {
     createStringColumn,
 } from '@ifrc-go/ui/utils';
 import {
+    _cs,
     isDefined,
     isNotDefined,
 } from '@togglecorp/fujs';
@@ -31,7 +32,10 @@ import {
 } from '#generated/types/graphql';
 import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
-import { errorMessage } from '#utils/common';
+import {
+    errorMessage,
+    getMutationErrorMessage,
+} from '#utils/common';
 
 import DeploymentStatusCell, { type Props as DeploymentStatusCellProps } from './DeploymentStatusCell';
 import { DEPLOYMENTS_QUERY } from './query';
@@ -58,14 +62,6 @@ function getTriggerLabel(event: string) {
         return 'Automatic (push)';
     }
     return event;
-}
-
-function getServerErrorMessage(errors: unknown) {
-    if (!Array.isArray(errors)) {
-        return undefined;
-    }
-    const [firstError] = errors as { messages?: string | null }[];
-    return firstError?.messages ?? undefined;
 }
 
 function Deployments() {
@@ -127,11 +123,10 @@ function Deployments() {
                 return;
             }
 
-            const serverMessage = result && 'messages' in result
-                ? result.messages[0]?.message
-                : getServerErrorMessage(result?.errors);
-
-            alert.show(serverMessage ?? errorMessage, { variant: 'danger' });
+            alert.show(
+                getMutationErrorMessage(result) ?? errorMessage,
+                { variant: 'danger' },
+            );
         },
         [triggerDeployment, refetch, alert, latestRunId],
     );
@@ -193,7 +188,7 @@ function Deployments() {
             onClick={handleTriggerClick}
             disabled={isDeploying || triggering || isNotDefined(deployments)}
         >
-            {isDeploying ? 'Deploying...' : 'Deploy site'}
+            {isDeploying ? 'Deploying...' : 'Trigger deployment'}
         </Button>
     ) : undefined;
 
@@ -215,7 +210,11 @@ function Deployments() {
                     <Button
                         name="refresh"
                         styleVariant="transparent"
-                        before={(<RefreshLineIcon />)}
+                        before={(
+                            <RefreshLineIcon
+                                className={_cs(fetching && styles.spinning)}
+                            />
+                        )}
                         onClick={refetch}
                         disabled={fetching}
                     >

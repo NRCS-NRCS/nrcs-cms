@@ -98,7 +98,6 @@ const VacancySchema: FormSchema = {
 };
 
 const defaultEditFormValue: PartialFormType = {
-    // NOTE: An unchecked box means false, not "unanswered".
     isArchived: false,
 };
 function VacancyForm() {

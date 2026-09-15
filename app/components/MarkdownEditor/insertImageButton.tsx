@@ -10,39 +10,26 @@ import {
     Modal,
     TextInput,
 } from '@ifrc-go/ui';
+import {
+    insertImage$,
+    usePublisher,
+} from '@mdxeditor/editor';
 import { isNotDefined } from '@togglecorp/fujs';
 
 import FileUpload from '#components/FileUpload';
-import { MAX_MARKDOWN_IMAGE_SIZE_IN_MB } from '#utils/markdownImage';
+import { MAX_MARKDOWN_IMAGE_SIZE_IN_MB } from '#utils/common';
 
 import { ACCEPTED_IMAGE_EXTENSIONS } from '../../hooks/useMdImageUpload';
 
 import styles from './styles.module.css';
 
-function toMarkdownTarget(url: string) {
-    return /[\s()]/.test(url) ? `<${url}>` : url;
-}
-
-function buildImageMarkdown(url: string, altText: string, caption: string) {
-    // Square brackets would close the alt text early.
-    const alt = altText.replace(/([[\]])/g, '\\$1');
-    const target = toMarkdownTarget(url);
-
-    if (!caption) {
-        return `![${alt}](${target})`;
-    }
-
-    const title = caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    return `![${alt}](${target} "${title}")`;
-}
-
 interface Props {
-    onInsert: (markdown: string) => void;
     onUpload: (image: File) => Promise<string>;
 }
 
 function InsertImageButton(props: Props) {
-    const { onInsert, onUpload } = props;
+    const { onUpload } = props;
+    const insertImage = usePublisher(insertImage$);
 
     const [showModal, setShowModal] = useState(false);
     const [image, setImage] = useState<File>();
@@ -82,13 +69,17 @@ function InsertImageButton(props: Props) {
         setPending(true);
 
         onUpload(image).then((url) => {
-            onInsert(buildImageMarkdown(url, altText?.trim() ?? '', caption?.trim() ?? ''));
+            insertImage({
+                src: url,
+                altText: altText?.trim() ?? '',
+                title: caption?.trim() ?? '',
+            });
             setPending(false);
             setShowModal(false);
         }).catch(() => {
             setPending(false);
         });
-    }, [image, altText, caption, onUpload, onInsert]);
+    }, [image, altText, caption, onUpload, insertImage]);
 
     return (
         <>

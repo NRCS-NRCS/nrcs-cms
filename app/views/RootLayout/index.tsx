@@ -43,9 +43,6 @@ function RootLayout() {
     const { setUser } = use(UserContext);
     const [ready, setReady] = useState(false);
     const [health, setHealth] = useState<HealthState>('pending');
-    // NOTE: Bumping this re-runs the health check. The check used to be a
-    // promise created at module scope, which meant a server that was down at
-    // load time could only be recovered from by reloading the whole page.
     const [healthAttempt, setHealthAttempt] = useState(0);
 
     useEffect(() => {

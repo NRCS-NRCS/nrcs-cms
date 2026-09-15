@@ -8,8 +8,10 @@ import {
     RouterProvider,
 } from 'react-router';
 
+import PreloadMessage from './components/PreloadMessage/index.tsx';
 import routes, { type RouteConfig } from './root/config/routes.tsx';
 import PageError from './views/PageError/index.tsx';
+import { appTitle } from './config.ts';
 
 const privateRoutes = Object.entries(routes).filter(
     ([, { visibility }]) => visibility === 'is-authenticated',
@@ -37,6 +39,13 @@ function mapRoute([routeKey, routeConfig]: [string, RouteConfig]) {
 
 const router = createBrowserRouter([{
     errorElement: <PageError />,
+    hydrateFallbackElement: (
+        <PreloadMessage>
+            {appTitle}
+            {' '}
+            loading...
+        </PreloadMessage>
+    ),
     lazy: async () => {
         const { default: Component } = await import('./root/index.tsx');
         return { Component };

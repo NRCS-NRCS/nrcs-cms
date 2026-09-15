@@ -7,7 +7,10 @@ import {
 import { Cookies } from 'react-cookie';
 import { Outlet } from 'react-router';
 import { AlertContainer } from '@ifrc-go/ui';
-import { AlertContext } from '@ifrc-go/ui/contexts';
+import {
+    AlertContext,
+    LanguageContext,
+} from '@ifrc-go/ui/contexts';
 import { cacheExchange } from '@urql/exchange-graphcache';
 import {
     api,
@@ -23,6 +26,7 @@ import {
 import PreloadMessage from '#components/PreloadMessage';
 import UserContext, { type UserContextInterface } from '#contexts/UserContext';
 import useAlertContextProviderValue from '#hooks/useAlertContextProviderValue';
+import useLanguageContextProviderValue from '#hooks/useLanguageContextProviderValue';
 
 import type { User } from './types/user';
 
@@ -97,25 +101,28 @@ function Root() {
         ],
     );
     const alertContextValue = useAlertContextProviderValue();
+    const languageContextValue = useLanguageContextProviderValue();
 
     return (
         <UrqlProvider value={gqlClient}>
-            <UserContext.Provider value={userContext}>
-                <AlertContext.Provider value={alertContextValue}>
-                    <AlertContainer />
-                    <Suspense
-                        fallback={(
-                            <PreloadMessage>
-                                {appTitle}
-                                {' '}
-                                loading...
-                            </PreloadMessage>
-                        )}
-                    >
-                        <Outlet />
-                    </Suspense>
-                </AlertContext.Provider>
-            </UserContext.Provider>
+            <LanguageContext.Provider value={languageContextValue}>
+                <UserContext.Provider value={userContext}>
+                    <AlertContext.Provider value={alertContextValue}>
+                        <AlertContainer />
+                        <Suspense
+                            fallback={(
+                                <PreloadMessage>
+                                    {appTitle}
+                                    {' '}
+                                    loading...
+                                </PreloadMessage>
+                            )}
+                        >
+                            <Outlet />
+                        </Suspense>
+                    </AlertContext.Provider>
+                </UserContext.Provider>
+            </LanguageContext.Provider>
         </UrqlProvider>
     );
 }

@@ -3,6 +3,7 @@ import {
     isTruthyString,
 } from '@togglecorp/fujs';
 import { nonFieldError } from '@togglecorp/toggle-form';
+import { api } from 'app/config';
 
 import {
     PartnerScopeEnum,
@@ -148,6 +149,13 @@ export function getMutationErrorMessage(
     return undefined;
 }
 
+export function resolveImageSrc(source: string) {
+    if (source.startsWith('/')) {
+        return `${api}${source}`;
+    }
+    return source;
+}
+
 export const ACCEPTED_FILE_TYPES = '.pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xlsm';
 export const ACCEPTED_IMAGE_TYPES = 'image/*';
 export const BYTES_PER_MEGA_BYTE = 1024 * 1024;
@@ -159,3 +167,5 @@ export const MAX_FILE_SIZE_IN_MB = 30;
 export const MAX_NEWS_ATTACHMENT_SIZE_IN_MB = 30;
 export const MAX_FEATURED_KEY_STATS = 4;
 export const MAX_NEWS_ATTACHMENTS = 50;
+export const MAX_MARKDOWN_IMAGE_SIZE_IN_MB = 2;
+export const ACCEPTED_MARKDOWN_IMAGE_FORMATS = ['jpg', 'jpeg', 'gif', 'png', 'bmp', 'webp', 'svg'];

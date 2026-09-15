@@ -1,3 +1,4 @@
+import 'prismjs';
 import '@mdxeditor/editor/style.css';
 
 import {
@@ -47,11 +48,12 @@ import {
 import useAlert from '#hooks/useAlert';
 import useDebounce from '#hooks/useDebounce';
 import useMdImageUpload from '#hooks/useMdImageUpload';
-import { resolveMarkdownImageSrc } from '#utils/markdownImage';
+import { resolveImageSrc } from '#utils/common';
 
 import EditImageDialog from './editImageDialog';
 import EmbedBlockEditor from './embedBlockEditor';
 import FullScreenToggle from './fullScreenToggle';
+import ImageToolbar from './imageToolbar';
 import InsertEmbedButton from './insertEmbedButton';
 import InsertImageButton from './insertImageButton';
 
@@ -145,7 +147,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
 
     const handleImageUpload = useMdImageUpload();
     const handleImagePreview = useCallback(
-        (source: string) => Promise.resolve(resolveMarkdownImageSrc(source)),
+        (source: string) => Promise.resolve(resolveImageSrc(source)),
         [],
     );
 
@@ -158,8 +160,6 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
             { defaultSelection: 'rootEnd' },
         );
     }, []);
-
-    const handleInsertImage = insertAtCursor;
 
     const handleInsertEmbed = useCallback((markdown: string) => {
         insertAtCursor(`\n\n${markdown}\n\n`);
@@ -227,10 +227,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
             <BlockTypeSelect />
             <ListsToggle />
             <CreateLink />
-            <InsertImageButton
-                onInsert={handleInsertImage}
-                onUpload={handleImageUpload}
-            />
+            <InsertImageButton onUpload={handleImageUpload} />
             <InsertTable />
             <InsertCodeBlock />
             <InsertEmbedButton onInsert={handleInsertEmbed} />
@@ -239,7 +236,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
                 onChange={setFullScreen}
             />
         </>
-    ), [handleInsertEmbed, handleInsertImage, handleImageUpload, fullScreen]);
+    ), [handleInsertEmbed, handleImageUpload, fullScreen]);
 
     const plugins = useMemo(() => [
         headingsPlugin(),
@@ -253,6 +250,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
             imageUploadHandler: handleImageUpload,
             imagePreviewHandler: handleImagePreview,
             ImageDialog: EditImageDialog,
+            EditImageToolbar: ImageToolbar,
         }),
         linkPlugin(),
         linkDialogPlugin(),

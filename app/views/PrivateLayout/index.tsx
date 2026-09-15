@@ -118,8 +118,6 @@ function PrivateLayout() {
 
     const [navShown, setNavShown] = useState(false);
 
-    // NOTE: The route guards already turn people away, but an entry that only
-    // ever bounces you is worse than no entry, so the nav is filtered too.
     const visibleNavigationItems = useMemo(
         () => {
             const permissionByRoute: Partial<Record<RouteKeys, boolean>> = {
@@ -142,7 +140,6 @@ function PrivateLayout() {
         setNavShown((oldValue) => !oldValue);
     }, []);
 
-    // The drawer overlays the content, so close it once a route is selected
     const handleNavigate = useCallback(() => {
         setNavShown(false);
     }, []);

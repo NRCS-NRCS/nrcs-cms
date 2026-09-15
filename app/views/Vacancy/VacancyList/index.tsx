@@ -2,6 +2,7 @@ import {
     useCallback,
     useMemo,
 } from 'react';
+import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
     Container,
@@ -179,8 +180,9 @@ function VacancyList() {
             heading="Vacancy"
             headerActions={canEditContent ? (
                 <Button
-                    name={undefined}
-                    disabled={false}
+                    name="addVacancy"
+                    styleVariant="filled"
+                    before={(<AddFillIcon />)}
                     onClick={handleAddClick}
                 >
                     Add Vacancy

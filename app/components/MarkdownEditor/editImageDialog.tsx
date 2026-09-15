@@ -22,8 +22,8 @@ import { isDefined } from '@togglecorp/fujs';
 import FileUpload from '#components/FileUpload';
 import {
     MAX_MARKDOWN_IMAGE_SIZE_IN_MB,
-    resolveMarkdownImageSrc,
-} from '#utils/markdownImage';
+    resolveImageSrc,
+} from '#utils/common';
 
 import useImageUpload, { ACCEPTED_IMAGE_EXTENSIONS } from '../../hooks/useMdImageUpload';
 
@@ -43,7 +43,6 @@ function EditImageForm(props: Props) {
     const currentSrc = state.initialValues.src;
 
     const [replacement, setReplacement] = useState<File>();
-    // Undefined-able because TextInput clears to undefined, not ''.
     const [altText, setAltText] = useState<string | undefined>(state.initialValues.altText ?? '');
     const [caption, setCaption] = useState<string | undefined>(state.initialValues.title ?? '');
     const [error, setError] = useState<string>();
@@ -118,7 +117,7 @@ function EditImageForm(props: Props) {
             <ListView layout="block" spacing="sm">
                 {isDefined(currentSrc) && (
                     <Image
-                        src={resolveMarkdownImageSrc(currentSrc)}
+                        src={resolveImageSrc(currentSrc)}
                         alt={altText || 'Current image'}
                         withContainedFit
                         size="lg"
@@ -152,15 +151,6 @@ function EditImageForm(props: Props) {
     );
 }
 
-/**
- * Replaces mdxeditor's built-in image dialog (the settings button on a selected
- * image) so editing an image looks like inserting one. The built-in asks for a
- * raw URL; this uploads instead, and keeps the existing URL unless a
- * replacement is chosen.
- *
- * The form is keyed on the node so opening the dialog on a different image
- * remounts it with that image's values, rather than syncing them in an effect.
- */
 function EditImageDialog() {
     const [state] = useCellValues(imageDialogState$);
 
