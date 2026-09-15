@@ -94,8 +94,6 @@ function PartnerList() {
     const onDelete = useCallback(
         (id: string) => {
             deletePartner({ id }).then((resp) => {
-                // NOTE: The mutation resolves to a union of the deleted node and
-                // OperationInfo. Both are truthy, so failures have to be matched.
                 const deleteError = resp.error
                     ? errorMessage
                     : getMutationErrorMessage(resp.data?.deletePartner);

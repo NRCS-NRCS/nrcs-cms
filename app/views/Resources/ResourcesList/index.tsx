@@ -95,8 +95,6 @@ function ResourceList() {
     const onDelete = useCallback(
         (id: string) => {
             deleteResource({ id }).then((resp) => {
-                // NOTE: The mutation resolves to a union of the deleted node and
-                // OperationInfo. Both are truthy, so failures have to be matched.
                 const deleteError = resp.error
                     ? errorMessage
                     : getMutationErrorMessage(resp.data?.deleteResource);

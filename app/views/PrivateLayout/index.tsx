@@ -118,8 +118,6 @@ function PrivateLayout() {
 
     const [navShown, setNavShown] = useState(false);
 
-    // NOTE: The route guards already turn people away, but an entry that only
-    // ever bounces you is worse than no entry, so the nav is filtered too.
     const visibleNavigationItems = useMemo(
         () => {
             const permissionByRoute: Partial<Record<RouteKeys, boolean>> = {

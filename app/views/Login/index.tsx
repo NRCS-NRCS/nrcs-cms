@@ -97,8 +97,6 @@ function Login() {
             });
 
             if (apiError) {
-                // NOTE: A server that is down or unreachable is not a credential
-                // problem, and saying so sends people off debugging the wrong thing.
                 const message = apiError.networkError
                     ? 'Could not reach the server. Check your connection and try again.'
                     : apiError.graphQLErrors[0]?.message || 'Incorrect username/password';

@@ -54,11 +54,6 @@ interface Props {
     onClose: () => void;
 }
 
-/**
- * The insert and edit flows ask for exactly the same three fields, so they share
- * this dialog. Mount it keyed on whatever it is editing: the initial values are
- * read once, on mount, rather than synced in an effect.
- */
 function EmbedDialog(props: Props) {
     const {
         heading,

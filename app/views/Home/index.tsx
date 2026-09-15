@@ -142,11 +142,6 @@ function Home() {
         updateNews({
             pk: id,
             data: {
-                // NOTE: The server patches partially, so only the toggled field is
-                // sent. `content` is the one exception: it is non-null on
-                // NewsUpdateInput and has to be echoed back. `directive` is
-                // deliberately left out - it is optional on news, so requiring it
-                // here would block the toggle for news filed under no directive.
                 content: item.content,
                 ...patch,
             },

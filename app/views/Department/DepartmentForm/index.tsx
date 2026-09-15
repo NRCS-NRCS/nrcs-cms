@@ -131,9 +131,6 @@ function DepartmentForm() {
                 setError(result.errors);
                 alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
             } else {
-                // A GraphQL-level failure (a non-null input violation, a network
-                // error) leaves res.data undefined, so there is no result to read
-                // errors off. Without this the Save button would fail silently.
                 alert.show(res.error?.message ?? errorMessage, { variant: 'danger' });
             }
         } else {

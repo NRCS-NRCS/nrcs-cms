@@ -152,15 +152,6 @@ function EditImageForm(props: Props) {
     );
 }
 
-/**
- * Replaces mdxeditor's built-in image dialog (the settings button on a selected
- * image) so editing an image looks like inserting one. The built-in asks for a
- * raw URL; this uploads instead, and keeps the existing URL unless a
- * replacement is chosen.
- *
- * The form is keyed on the node so opening the dialog on a different image
- * remounts it with that image's values, rather than syncing them in an effect.
- */
 function EditImageDialog() {
     const [state] = useCellValues(imageDialogState$);
 
