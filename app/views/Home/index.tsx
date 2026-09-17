@@ -14,6 +14,7 @@ import {
 } from '@ifrc-go/ui';
 import {
     createActionColumn,
+    createElementColumn,
     createNumberColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
@@ -22,10 +23,12 @@ import {
     isNotDefined,
 } from '@togglecorp/fujs';
 
+import Link, { type Props as LinkProps } from '#components/Link';
 import {
     type NewsFilter,
     type NewsQuery,
     type NewsQueryVariables,
+    type NewsUpdateInput,
     StatusEnum,
     useNewsQuery,
     useUpdateNewsMutation,
@@ -36,6 +39,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
     transformToFormError,
 } from '#utils/common';
@@ -125,9 +129,14 @@ function Home() {
         }))
     ), [highlightsResults]);
 
-    const handleToggleHighlight = useCallback((id: string, isHighlighted: boolean) => {
+    const handleChange = useCallback((
+        id: string,
+        patch: Pick<NewsUpdateInput, 'isHighlighted' | 'showInPopup'>,
+        successMessage: string,
+        errorField: 'isHighlighted' | 'showInPopup',
+    ) => {
         const item = [...tableData, ...highlightsTableData].find((news) => news.id === id);
-        if (!item || !item.directiveId) {
+        if (isNotDefined(item)) {
             alert.show(errorMessage, { variant: 'danger' });
             return;
         }
@@ -136,28 +145,31 @@ function Home() {
             pk: id,
             data: {
                 content: item.content,
-                directive: item.directiveId,
-                isHighlighted,
+                ...patch,
             },
         }).then((resp) => {
             const result = resp.data?.updateNews;
-            if (result?.ok) {
-                reExecuteMainQuery({ requestPolicy: 'network-only' });
-                reExecuteHighlightsQuery({ requestPolicy: 'network-only' });
-                alert.show(
-                    isHighlighted ? 'Added to highlights' : 'Removed from highlights',
-                    { variant: 'success' },
-                );
-            } else if (isDefined(result) && isDefined(result.errors)) {
-                const formError = transformToFormError(result.errors);
-                const message = formError?.isHighlighted;
+            const updateError = resp.error
+                ? errorMessage
+                : getMutationErrorMessage(result);
+
+            if (isDefined(updateError)) {
+                const formError = isDefined(result) && isDefined(result.errors)
+                    ? transformToFormError(result.errors)
+                    : undefined;
+                const message = formError?.[errorField];
                 alert.show(
                     typeof message === 'string' && message
                         ? message
-                        : errorMessage,
+                        : updateError,
                     { variant: 'danger' },
                 );
+                return;
             }
+
+            reExecuteMainQuery({ requestPolicy: 'network-only' });
+            reExecuteHighlightsQuery({ requestPolicy: 'network-only' });
+            alert.show(successMessage, { variant: 'success' });
         }).catch(() => {
             alert.show(errorMessage, { variant: 'danger' });
         });
@@ -171,16 +183,37 @@ function Home() {
     ]);
 
     const handleAddToHighlights = useCallback((id: string) => {
-        handleToggleHighlight(id, true);
-    }, [handleToggleHighlight]);
+        handleChange(id, { isHighlighted: true }, 'Added to highlights', 'isHighlighted');
+    }, [handleChange]);
 
     const handleRemoveFromHighlights = useCallback((id: string) => {
-        handleToggleHighlight(id, false);
-    }, [handleToggleHighlight]);
+        handleChange(id, { isHighlighted: false }, 'Removed from highlights', 'isHighlighted');
+    }, [handleChange]);
+
+    const handleSetPopup = useCallback((id: string) => {
+        handleChange(id, { showInPopup: true }, 'Set as the homepage popup', 'showInPopup');
+    }, [handleChange]);
+
+    const handleClearPopup = useCallback((id: string) => {
+        handleChange(id, { showInPopup: false }, 'Cleared the homepage popup', 'showInPopup');
+    }, [handleChange]);
 
     const handleAddNewsClick = useCallback(() => {
         navigate('addNews');
     }, [navigate]);
+
+    const titleColumn = useMemo(() => (
+        createElementColumn<NewsListItem, string | number, LinkProps>(
+            'title',
+            'Title',
+            Link,
+            (_, item) => ({
+                to: 'editNews',
+                attrs: { id: item.id },
+                children: item.title,
+            }),
+        )
+    ), []);
 
     const highlightsColumns = useMemo(() => [
         createNumberColumn<NewsListItem, string | number>(
@@ -188,31 +221,55 @@ function Home() {
             'No.',
             (item) => item.no,
         ),
-        createStringColumn<NewsListItem, string | number>(
-            'title',
-            'Title',
-            (item) => item.title,
-        ),
+        titleColumn,
         createStringColumn<NewsListItem, string | number>(
             'publishedDate',
             'Published Date',
             (item) => item.publishedDate,
         ),
+        createStringColumn<NewsListItem, string | number>(
+            'showInPopup',
+            'Popup',
+            (item) => (item.showInPopup ? 'Shown' : '-'),
+        ),
         ...(canEditContent ? [createActionColumn<NewsListItem, string | number>(
             'action',
             (item) => ({
                 children: (
-                    <ConfirmButton
-                        name={item.id}
-                        onConfirm={handleRemoveFromHighlights}
-                        styleVariant="action"
-                    >
-                        Remove
-                    </ConfirmButton>
+                    <>
+                        {item.showInPopup ? (
+                            <ConfirmButton
+                                name={item.id}
+                                onConfirm={handleClearPopup}
+                                styleVariant="action"
+                                title="Stop showing this news in the homepage popup"
+                                confirmMessage={`Are you sure you want to stop showing "${item.title}" in the homepage popup?`}
+                            >
+                                Clear Popup
+                            </ConfirmButton>
+                        ) : (
+                            <ConfirmButton
+                                name={item.id}
+                                onConfirm={handleSetPopup}
+                                styleVariant="action"
+                                title="Show this news in the homepage popup. Only one news item can be the popup, so this replaces the current one."
+                                confirmMessage={`Are you sure you want to show "${item.title}" in the homepage popup? Only one news item can be the popup, so this replaces the current one.`}
+                            >
+                                Set as Popup
+                            </ConfirmButton>
+                        )}
+                        <ConfirmButton
+                            name={item.id}
+                            onConfirm={handleRemoveFromHighlights}
+                            styleVariant="action"
+                        >
+                            Remove
+                        </ConfirmButton>
+                    </>
                 ),
             }),
         )] : []),
-    ], [canEditContent, handleRemoveFromHighlights]);
+    ], [canEditContent, titleColumn, handleRemoveFromHighlights, handleSetPopup, handleClearPopup]);
 
     const columns = useMemo(() => [
         createNumberColumn<NewsListItem, string | number>(
@@ -220,11 +277,7 @@ function Home() {
             'No.',
             (item) => item.no,
         ),
-        createStringColumn<NewsListItem, string | number>(
-            'title',
-            'Title',
-            (item) => item.title,
-        ),
+        titleColumn,
         createStringColumn<NewsListItem, string | number>(
             'publishedDate',
             'Published Date',
@@ -248,7 +301,7 @@ function Home() {
                 ),
             }),
         )] : []),
-    ], [canEditContent, handleAddToHighlights, highlightLimitReached]);
+    ], [canEditContent, titleColumn, handleAddToHighlights, highlightLimitReached]);
 
     return (
         <Container

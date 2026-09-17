@@ -81,7 +81,9 @@ function PartnerForm() {
     const alert = useAlert();
 
     const [{ data, fetching: partnerDetailFetch }] = usePartnerDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ fetching: createPending }, createPartnerMutate] = useCreatePartnerMutation();
     const [{ fetching: updatePending }, updatePartnerMutate] = useUpdatePartnerMutation();
@@ -202,6 +204,7 @@ function PartnerForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -209,6 +212,7 @@ function PartnerForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

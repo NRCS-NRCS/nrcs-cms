@@ -84,7 +84,9 @@ function ProjectForm() {
     const alert = useAlert();
 
     const [{ data, fetching: projectDetailFetch }] = useProjectDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ data: departments }] = useDepartmentsQuery();
 
@@ -217,6 +219,7 @@ function ProjectForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -224,6 +227,7 @@ function ProjectForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

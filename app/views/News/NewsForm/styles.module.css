@@ -3,3 +3,34 @@
         flex-grow: 1;
     }
 }
+
+.key-stat-row {
+    >* {
+        flex-grow: 1;
+    }
+}
+
+.attachment-card {
+    display: flex;
+    flex-direction: column;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-md);
+    padding: var(--go-ui-spacing-sm);
+    gap: var(--go-ui-spacing-xs);
+}
+
+.attachment-card-header {
+    align-items: center;
+
+    .attachment-file-name {
+        flex-grow: 1;
+        word-break: break-all;
+        font-weight: var(--go-ui-font-weight-medium);
+    }
+
+    .attachment-file-size {
+        white-space: nowrap;
+        color: var(--go-ui-color-text-light);
+        font-size: var(--go-ui-font-size-sm);
+    }
+}

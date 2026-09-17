@@ -97,7 +97,9 @@ const VacancySchema: FormSchema = {
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {};
+const defaultEditFormValue: PartialFormType = {
+    isArchived: false,
+};
 function VacancyForm() {
     const { id } = useParams();
     const navigate = useRouting();
@@ -105,7 +107,9 @@ function VacancyForm() {
     const alert = useAlert();
 
     const [{ data, fetching: vacancyDetailFetch }] = useVacancyDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ data: departments }] = useDepartmentsQuery();
 
@@ -238,6 +242,7 @@ function VacancyForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -245,6 +250,7 @@ function VacancyForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
@@ -384,7 +390,7 @@ function VacancyForm() {
                 >
                     <Checkbox
                         name="isArchived"
-                        value={value.isArchived}
+                        value={value.isArchived ?? false}
                         onChange={setFieldValue}
                         error={error?.isArchived}
                         label="Is Archived"

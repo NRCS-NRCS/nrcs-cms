@@ -1,0 +1,23 @@
+@media (width <= 40rem) {
+    .nav-container {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        transition: transform var(--go-ui-duration-transition-medium) ease-in-out;
+        z-index: 5;
+        box-shadow: var(--go-ui-box-shadow-lg);
+        width: min(80%, 16rem);
+
+        &.nav-shown {
+            transform: translateX(0);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-container {
+        transition: none;
+    }
+}

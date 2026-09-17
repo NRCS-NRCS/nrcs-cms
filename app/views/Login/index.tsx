@@ -97,9 +97,10 @@ function Login() {
             });
 
             if (apiError) {
-                alert.show('Incorrect username/password', {
-                    variant: 'danger',
-                });
+                const message = apiError.networkError
+                    ? 'Could not reach the server. Check your connection and try again.'
+                    : apiError.graphQLErrors[0]?.message || 'Incorrect username/password';
+                alert.show(message, { variant: 'danger' });
                 return;
             }
 

@@ -104,6 +104,7 @@ function UserForm() {
     const [{ data, fetching: userDetailFetching }] = useUserQuery({
         variables: { id: (id ?? '') },
         pause: !isEditMode,
+        requestPolicy: 'network-only',
     });
     const [{ fetching: createPending }, createUserMutate] = useCreateUserMutation();
     const [{ fetching: updatePending }, updateUserMutate] = useUpdateUserMutation();
@@ -249,6 +250,7 @@ function UserForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -256,6 +258,7 @@ function UserForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

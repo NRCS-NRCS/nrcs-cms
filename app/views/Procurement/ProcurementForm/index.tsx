@@ -86,7 +86,9 @@ function ProcurementForm() {
     const alert = useAlert();
 
     const [{ data, fetching: procurementDetailFetch }] = useProcurementDetailQuery({
-        variables: { id: (id ?? '') }, pause: !id,
+        variables: { id: (id ?? '') },
+        pause: !id,
+        requestPolicy: 'network-only',
     });
     const [{ fetching: createPending }, createProcurementMutate] = useCreateProcurementMutation();
     const [{ fetching: updatePending }, updateProcurementMutate] = useUpdateProcurementMutation();
@@ -202,6 +204,7 @@ function ProcurementForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -209,6 +212,7 @@ function ProcurementForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>

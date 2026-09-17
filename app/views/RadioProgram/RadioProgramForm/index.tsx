@@ -2,7 +2,6 @@ import {
     Activity,
     useCallback,
     useEffect,
-    useMemo,
 } from 'react';
 import {
     Navigate,
@@ -35,7 +34,6 @@ import FileUpload from '#components/FileUpload';
 import NonFieldError from '#components/NonFieldError';
 import {
     type RadioProgramCreateInput,
-    RadioProgramTypeEnum,
     type RadioProgramUpdateInput,
     useCreateRadioProgramMutation,
     useRadioProgramQuery,
@@ -47,8 +45,9 @@ import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
-    keySelector,
     labelSelector,
+    typeRadioFilterOptions,
+    valueSelector,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<RadioProgramCreateInput>
@@ -87,6 +86,7 @@ function RadioProgramForm() {
             filter: { id },
         },
         pause: !id,
+        requestPolicy: 'network-only',
     });
 
     const [{ fetching: createPending }, createRadioProgramMutate] = useCreateRadioProgramMutation();
@@ -172,11 +172,6 @@ function RadioProgramForm() {
         setValue(removeNull(radioProgramData));
     }, [radioProgramData, setValue]);
 
-    const radioType = useMemo(() => Object.values(RadioProgramTypeEnum).map((status) => ({
-        key: status,
-        label: status,
-    })), []);
-
     const handleCancelClick = useCallback(() => {
         navigate('radioProgram');
     }, [navigate]);
@@ -210,6 +205,7 @@ function RadioProgramForm() {
                     <Button
                         name={undefined}
                         onClick={handleCancelClick}
+                        disabled={createPending || updatePending}
                     >
                         Cancel
                     </Button>
@@ -217,6 +213,7 @@ function RadioProgramForm() {
                         name="save"
                         onClick={handleFormSubmit}
                         styleVariant="filled"
+                        disabled={createPending || updatePending}
                     >
                         {createPending || updatePending ? 'Saving' : 'Save'}
                     </Button>
@@ -288,12 +285,12 @@ function RadioProgramForm() {
                 >
                     <SelectInput
                         name="type"
-                        options={radioType}
+                        options={typeRadioFilterOptions}
                         value={value.type}
-                        keySelector={keySelector}
+                        keySelector={valueSelector}
                         labelSelector={labelSelector}
                         onChange={setFieldValue}
-                        placeholder="Select Status"
+                        placeholder="Select Type"
                         error={error?.type}
                     />
                 </InputSection>

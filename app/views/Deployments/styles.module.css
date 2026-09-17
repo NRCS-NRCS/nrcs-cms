@@ -1,0 +1,25 @@
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--go-ui-spacing-sm, 0.5rem);
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinning {
+        animation: none;
+    }
+}

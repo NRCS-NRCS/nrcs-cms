@@ -47,7 +47,7 @@ function EditDeleteActions(props: EditDeleteActionsProps) {
                 styleVariant="action"
                 colorVariant="secondary"
                 onConfirm={onDelete}
-                confirmMessage={`Are you sure you want to delete ${`"${itemTitle}"` || 'this item'}? This action cannot be undone.`}
+                confirmMessage={`Are you sure you want to delete ${itemTitle ? `"${itemTitle}"` : 'this item'}? This action cannot be undone.`}
             >
                 <DeleteBinLineIcon />
             </ConfirmButton>

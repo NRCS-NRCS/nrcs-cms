@@ -31,6 +31,7 @@ import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import {
     errorMessage,
+    getMutationErrorMessage,
     userTypeLabels,
 } from '#utils/common';
 
@@ -87,13 +88,17 @@ function UsersList() {
     const onDelete = useCallback(
         (id: string) => {
             deleteUser({ data: { id } }).then((resp) => {
-                if (resp.data?.deleteUser) {
-                    reExecuteQuery();
-                    alert.show('User has been deleted successfully', { variant: 'success' });
+                const deleteError = resp.error
+                    ? errorMessage
+                    : getMutationErrorMessage(resp.data?.deleteUser);
+                if (isDefined(deleteError)) {
+                    alert.show(deleteError, { variant: 'danger' });
+                    return;
                 }
-                if (resp.error) {
-                    alert.show(errorMessage, { variant: 'danger' });
-                }
+                reExecuteQuery({ requestPolicy: 'network-only' });
+                alert.show('User has been deleted successfully', { variant: 'success' });
+            }).catch(() => {
+                alert.show(errorMessage, { variant: 'danger' });
             });
         },
         [alert, deleteUser, reExecuteQuery],
