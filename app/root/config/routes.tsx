@@ -114,6 +114,29 @@ const addPartner: RouteConfig = {
     visibility: 'is-authenticated',
 };
 
+const cecMember: RouteConfig = {
+    index: true,
+    path: 'cec-members',
+    label: 'CEC Members',
+    load: () => import('#views/CecMember/CecMemberList'),
+    visibility: 'is-authenticated',
+};
+const editCecMember: RouteConfig = {
+    index: true,
+    path: 'cec-members/:id/edit',
+    label: 'Edit CEC Member',
+    load: () => import('#views/CecMember/CecMemberForm'),
+    visibility: 'is-authenticated',
+};
+
+const addCecMember: RouteConfig = {
+    index: true,
+    path: 'cec-members/add',
+    label: 'Add CEC Member',
+    load: () => import('#views/CecMember/CecMemberForm'),
+    visibility: 'is-authenticated',
+};
+
 const news: RouteConfig = {
     index: true,
     path: 'news',
@@ -327,6 +350,9 @@ const routes = {
     partner,
     editPartner,
     addPartner,
+    cecMember,
+    editCecMember,
+    addCecMember,
     news,
     addNews,
     editNews,

@@ -6,6 +6,7 @@ import { nonFieldError } from '@togglecorp/toggle-form';
 import { api } from 'app/config';
 
 import {
+    CecMemberTypeEnum,
     PartnerScopeEnum,
     RadioProgramTypeEnum,
     ResourceTypeEnum,
@@ -66,6 +67,17 @@ export const scopeFilterOptions = [
     { label: 'Global', value: PartnerScopeEnum.Global },
     { label: 'Local', value: PartnerScopeEnum.Local },
 ];
+
+export const cecMemberTypeLabels: Record<CecMemberTypeEnum, string> = {
+    [CecMemberTypeEnum.OfficeBearer]: 'Office Bearer',
+    [CecMemberTypeEnum.Member]: 'Member',
+    [CecMemberTypeEnum.Staff]: 'Staff',
+};
+
+export const cecMemberTypeOptions = Object.values(CecMemberTypeEnum).map((memberType) => ({
+    label: cecMemberTypeLabels[memberType],
+    value: memberType,
+}));
 
 export const statusOptions = [
     { label: 'Published', value: StatusEnum.Published },
