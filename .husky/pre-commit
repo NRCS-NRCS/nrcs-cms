@@ -1,0 +1,4 @@
+pnpm lint
+pnpm lint:css
+pnpm generate:type
+pnpm typecheck

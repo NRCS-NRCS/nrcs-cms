@@ -162,6 +162,18 @@ const jsonConfig = {
 
 export default [
     {
+        ignores: [
+            'node_modules/',
+            'backend/',
+            'build/',
+            'build-stale.local/',
+            'generated-stale.local/',
+            'web-app-serve/',
+            'coverage/',
+            'generated/types/',
+        ],
+    },
+    {
         plugins: {
             json,
         },

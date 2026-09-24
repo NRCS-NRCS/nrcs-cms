@@ -9,8 +9,10 @@
         "lint": "eslint .",
         "lint:css": "stylelint \"./app/**/*.css\"",
         "preview": "vite preview",
-        "generate:type": "graphql-codegen --require dotenv/config --config codegen.ts",
-        "knip": "knip"
+        "generate:type": "dotenv -- graphql-codegen --config codegen.ts",
+        "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+        "knip": "knip",
+        "prepare": "husky"
     },
     "dependencies": {
         "@ifrc-go/icons": "^2.0.1",
@@ -29,6 +31,8 @@
         "urql": "^5.0.1"
     },
     "devDependencies": {
+        "@commitlint/cli": "^21.2.3",
+        "@commitlint/config-conventional": "^21.2.3",
         "@eslint/eslintrc": "latest",
         "@eslint/js": "latest",
         "@eslint/json": "^0.14.0",
@@ -43,8 +47,8 @@
         "@types/node": "^24.10.1",
         "@types/react": "^19.2.5",
         "@types/react-dom": "^19.2.3",
-        "@typescript-eslint/eslint-plugin": "^8.49.0",
-        "@typescript-eslint/parser": "^8.54.0",
+        "@typescript-eslint/eslint-plugin": "^8.70.1",
+        "@typescript-eslint/parser": "^8.70.1",
         "@vitejs/plugin-react-swc": "^4.2.2",
         "autoprefixer": "^10.4.22",
         "dotenv-cli": "^11.0.0",
@@ -60,6 +64,7 @@
         "eslint-plugin-react-refresh": "^0.4.24",
         "eslint-plugin-simple-import-sort": "^12.1.1",
         "globals": "^16.5.0",
+        "husky": "^9.1.7",
         "knip": "^5.72.0",
         "postcss": "^8.5.6",
         "postcss-nested": "^7.0.2",
@@ -72,7 +77,7 @@
         "stylelint-no-unused-selectors": "^1.0.40",
         "stylelint-value-no-unknown-custom-properties": "^6.1.1",
         "typescript": "~6.0.3",
-        "typescript-eslint": "^8.46.4",
+        "typescript-eslint": "^8.70.1",
         "vite": "npm:rolldown-vite@7.2.5",
         "vite-plugin-checker": "^0.11.0",
         "vite-plugin-compression2": "^2.4.0",
