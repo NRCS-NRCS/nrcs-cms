@@ -14,6 +14,7 @@ import {
     FaRegWindowMaximize,
     FaSuitcase,
     FaThinkPeaks,
+    FaUsers,
     FaWarehouse,
 } from 'react-icons/fa';
 import {
@@ -67,6 +68,10 @@ const navigationItem : NavigationItem[] = [
             {
                 to: 'blog',
                 icon: <FaRegFileAlt />,
+            },
+            {
+                to: 'cecMember',
+                icon: <FaUsers />,
             },
             {
                 to: 'department',
