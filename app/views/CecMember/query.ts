@@ -3,7 +3,7 @@ import { gql } from 'urql';
 
 export const CEC_MEMBER_QUERY = gql`
     query CecMember($filters: CecMemberFilter) {
-        cecMembers(pagination: { limit: 100 }, filters: $filters, order: { orderIndex: ASC }) {
+        cecMembers(pagination: { limit: 100 }, filters: $filters, ordering: [{ orderIndex: ASC }]) {
             totalCount
             results {
                 id
