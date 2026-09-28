@@ -51,6 +51,7 @@ function createGqlClient() {
                     NewsTypeOffsetPaginated: () => null,
                     ProjectTypeOffsetPaginated: () => null,
                     PartnerTypeOffsetPaginated: () => null,
+                    CecMemberTypeOffsetPaginated: () => null,
                     RadioProgramTypeOffsetPaginated: () => null,
                     VacancyTypeOffsetPaginated: () => null,
                     DjangoFileType: () => null,

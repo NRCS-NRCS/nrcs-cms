@@ -3,7 +3,7 @@ import { gql } from 'urql';
 
 export const FAQ_QUERY = gql`
     query FAQ( $filters: FaqFilter) {
-        faqs(pagination: {limit: 100} filters: $filters, order: { orderIndex: ASC }) {
+        faqs(pagination: {limit: 100} filters: $filters, ordering: [{ orderIndex: ASC }]) {
             totalCount
             results {
                 question
