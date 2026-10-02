@@ -56,6 +56,7 @@ import FullScreenToggle from './fullScreenToggle';
 import ImageToolbar from './imageToolbar';
 import InsertEmbedButton from './insertEmbedButton';
 import InsertImageButton from './insertImageButton';
+import LinkDialog from './linkDialog';
 
 import styles from './styles.module.css';
 
@@ -253,7 +254,7 @@ function MarkdownEditor<const NAME>(props: Props<NAME>) {
             EditImageToolbar: ImageToolbar,
         }),
         linkPlugin(),
-        linkDialogPlugin(),
+        linkDialogPlugin({ LinkDialog }),
         quotePlugin(),
         thematicBreakPlugin(),
         tablePlugin(),

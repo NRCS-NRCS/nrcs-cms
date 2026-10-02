@@ -27,6 +27,7 @@ import {
     createSubmitHandler,
     getErrorObject,
     getErrorString,
+    greaterThanOrEqualToCondition,
     integerCondition,
     type ObjectSchema,
     type PartialForm,
@@ -52,8 +53,10 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_FILE_TYPES,
     errorMessage,
+    getMutationErrorMessage,
     keySelector,
     labelSelector,
+    transformToFormError,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<JobVacancyCreateInput>
@@ -90,8 +93,7 @@ const VacancySchema: FormSchema = {
         },
         numberOfVacancies: {
             required: true,
-            requiredValidation: integerCondition,
-
+            validations: [integerCondition, greaterThanOrEqualToCondition(0)],
         },
         isArchived: {},
     }),
@@ -151,8 +153,8 @@ function VacancyForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createVacancyMutate({
@@ -164,8 +166,8 @@ function VacancyForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [
@@ -339,7 +341,7 @@ function VacancyForm() {
                         error={error?.numberOfVacancies}
                         onChange={setFieldValue}
                         placeholder="numberOfVacancies"
-                        min={1}
+                        min={0}
                     />
                 </InputSection>
                 <InputSection

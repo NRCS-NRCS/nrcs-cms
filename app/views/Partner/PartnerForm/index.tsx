@@ -47,8 +47,10 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_IMAGE_TYPES,
     errorMessage,
+    getMutationErrorMessage,
     keySelector,
     labelSelector,
+    transformToFormError,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<PartnerCreateInput>
@@ -123,8 +125,8 @@ function PartnerForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createPartnerMutate({
@@ -136,8 +138,8 @@ function PartnerForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [

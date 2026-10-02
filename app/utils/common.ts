@@ -132,6 +132,13 @@ interface MutationResponseResult {
     errors?: unknown;
 }
 
+function collectFieldMessages(serverErrors: ServerError[]): string[] {
+    return serverErrors.flatMap(({ messages, objectErrors }) => [
+        ...(isTruthyString(messages) ? [messages] : []),
+        ...(objectErrors?.length ? collectFieldMessages(objectErrors) : []),
+    ]);
+}
+
 export function getMutationErrorMessage(
     result: object | null | undefined,
 ): string | undefined {
@@ -155,7 +162,13 @@ export function getMutationErrorMessage(
             ? transformToFormError(errors as ServerError[])
             : undefined;
         const nonField = formError?.[nonFieldError];
-        return typeof nonField === 'string' && nonField !== '' ? nonField : errorMessage;
+        if (typeof nonField === 'string' && nonField !== '') {
+            return nonField;
+        }
+        const fieldMessages = Array.isArray(errors)
+            ? collectFieldMessages(errors as ServerError[])
+            : [];
+        return fieldMessages.length > 0 ? fieldMessages.join(' ') : errorMessage;
     }
 
     return undefined;

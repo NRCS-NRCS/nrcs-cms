@@ -24,6 +24,7 @@ import {
 } from '@togglecorp/fujs';
 import {
     createSubmitHandler,
+    emailCondition,
     getErrorObject,
     type ObjectSchema,
     type PartialForm,
@@ -47,8 +48,10 @@ import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
     nameSelector,
+    transformToFormError,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<DepartmentCreateInput>
@@ -65,17 +68,18 @@ const DepartmentSchema: FormSchema = {
         contactPersonEmail: {
             required: true,
             requiredValidation: requiredStringCondition,
+            validations: [emailCondition],
         },
         description: {
             required: true,
             requiredValidation: requiredStringCondition,
         },
         contactPersonName: {
-            required: false,
+            required: true,
+            requiredValidation: requiredStringCondition,
         },
         strategicDirective: {
             required: true,
-            requiredValidation: requiredStringCondition,
         },
     }),
 };
@@ -128,8 +132,8 @@ function DepartmentForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             } else {
                 alert.show(res.error?.message ?? errorMessage, { variant: 'danger' });
             }
@@ -143,8 +147,8 @@ function DepartmentForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             } else {
                 alert.show(res.error?.message ?? errorMessage, { variant: 'danger' });
             }
@@ -303,9 +307,12 @@ function DepartmentForm() {
                         value={value.contactPersonEmail ?? ''}
                         onChange={setFieldValue}
                         error={error?.contactPersonEmail}
+                        inputMode="email"
+                        autoComplete="email"
                     />
                 </InputSection>
                 <InputSection
+                    withAsteriskOnTitle
                     title="Strategic Directive (NS)"
                     description="Select under which strategic directive it belongs"
                 >

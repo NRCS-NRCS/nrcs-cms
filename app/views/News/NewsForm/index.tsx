@@ -32,6 +32,7 @@ import {
     createSubmitHandler,
     getErrorObject,
     getErrorString,
+    greaterThanOrEqualToCondition,
     type ObjectSchema,
     type PartialForm,
     removeNull,
@@ -67,6 +68,7 @@ import {
     ACCEPTED_IMAGE_TYPES,
     BYTES_PER_MEGA_BYTE,
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
     labelSelector,
     MAX_FEATURED_KEY_STATS,
@@ -74,6 +76,7 @@ import {
     MAX_NEWS_ATTACHMENTS,
     nameSelector,
     statusOptions,
+    transformToFormError,
     valueSelector,
 } from '#utils/common';
 
@@ -175,6 +178,7 @@ const EditNewsSchema: FormSchema = {
                     },
                     stat: {
                         required: true,
+                        validations: [greaterThanOrEqualToCondition(0)],
                     },
                 }),
             }),
@@ -371,8 +375,8 @@ function NewsForm() {
                 { variant: 'success' },
             );
         } else if (result?.errors) {
-            setError(result.errors);
-            alert.show(result.errors.message ?? errorMessage, { variant: 'danger' });
+            setError(transformToFormError(result.errors));
+            alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
         }
     }, [id, navigate, alert, setError, bypassUnsavedModal]);
 

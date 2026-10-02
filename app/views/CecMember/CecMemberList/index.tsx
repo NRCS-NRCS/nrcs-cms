@@ -111,7 +111,10 @@ function CecMemberList() {
                 alert.show('Member order updated successfully', { variant: 'success' });
                 return true;
             }
-            alert.show(errorMessage, { variant: 'danger' });
+            alert.show(
+                getMutationErrorMessage(resp.data?.reorderCecMember) ?? errorMessage,
+                { variant: 'danger' },
+            );
             return false;
         },
         [reorderCecMember, alert],

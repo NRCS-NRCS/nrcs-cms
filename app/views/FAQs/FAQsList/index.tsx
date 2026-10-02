@@ -106,7 +106,10 @@ function FAQsList() {
                 alert.show('FAQ order updated successfully', { variant: 'success' });
                 return true;
             }
-            alert.show(errorMessage, { variant: 'danger' });
+            alert.show(
+                getMutationErrorMessage(result) ?? errorMessage,
+                { variant: 'danger' },
+            );
             return false;
         },
         [reorderFaq, alert],

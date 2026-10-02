@@ -175,3 +175,23 @@
     color: var(--go-ui-color-text-light);
     font-size: var(--go-ui-font-size-sm);
 }
+
+.link-preview {
+    position: fixed;
+    z-index: 2;
+    border: var(--go-ui-width-separator-sm) solid var(--go-ui-color-separator);
+    border-radius: var(--go-ui-border-radius-md);
+    box-shadow: var(--go-ui-box-shadow-md);
+    background-color: var(--go-ui-color-foreground);
+    padding: var(--go-ui-spacing-2xs) var(--go-ui-spacing-xs);
+    max-width: 24rem;
+
+    .link-preview-url {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--go-ui-color-dark-blue-20);
+        font-size: var(--go-ui-font-size-sm);
+    }
+}
