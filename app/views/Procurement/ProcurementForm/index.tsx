@@ -46,6 +46,8 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_FILE_TYPES,
     errorMessage,
+    getMutationErrorMessage,
+    transformToFormError,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<ProcurementCreateInput>
@@ -128,8 +130,8 @@ function ProcurementForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createProcurementMutate({
@@ -141,8 +143,8 @@ function ProcurementForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [
@@ -265,7 +267,7 @@ function ProcurementForm() {
                 </InputSection>
                 <InputSection
                     title="Procurement File"
-                    description="Add a cover photo, which will be attached and displayed on top of your application"
+                    description="Add a File, which will be attached and shown on Procurement Page"
                     withAsteriskOnTitle
                 >
                     <FileUpload

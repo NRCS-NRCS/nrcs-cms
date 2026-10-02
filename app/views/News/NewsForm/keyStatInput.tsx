@@ -64,6 +64,7 @@ function KeyStatInput(props: Props) {
                 name="stat"
                 value={value.stat}
                 placeholder="Value"
+                min={0}
                 error={error?.stat}
                 onChange={onFieldChange}
             />

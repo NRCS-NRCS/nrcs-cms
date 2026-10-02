@@ -111,14 +111,11 @@ function UsersList() {
                 (member) => String(member.no),
             ),
             createStringColumn<UsersListItem, string | number>(
-                'firstName',
-                'First Name',
-                (user) => user.firstName,
-            ),
-            createStringColumn<UsersListItem, string | number>(
-                'lastName',
-                'Last Name',
-                (user) => user.lastName,
+                'name',
+                'Name',
+                (user) => [user.firstName, user.lastName]
+                    .filter(Boolean)
+                    .join(' ') || undefined,
             ),
             createStringColumn<UsersListItem, string | number>(
                 'username',

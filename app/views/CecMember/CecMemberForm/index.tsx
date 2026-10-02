@@ -49,7 +49,9 @@ import {
     ACCEPTED_IMAGE_TYPES,
     cecMemberTypeOptions,
     errorMessage,
+    getMutationErrorMessage,
     labelSelector,
+    transformToFormError,
     valueSelector,
 } from '#utils/common';
 
@@ -142,8 +144,8 @@ function CecMemberForm() {
             navigate(redirectPath);
             alert.show(alertMessage, { variant: 'success' });
         } else if (result?.errors) {
-            setError(result.errors);
-            alert.show(result.errors?.message ?? errorMessage, { variant: 'danger' });
+            setError(transformToFormError(result.errors));
+            alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }

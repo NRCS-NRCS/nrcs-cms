@@ -50,6 +50,7 @@ import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     errorMessage,
+    getMutationErrorMessage,
     keySelector,
     labelSelector,
     transformToFormError,
@@ -151,9 +152,9 @@ function UserForm() {
             bypassUnsavedModal();
             navigate('users');
             alert.show('User created successfully', { variant: 'success' });
-        } else if (isDefined(result) && isDefined(result)) {
+        } else if (isDefined(result) && isDefined(result.errors)) {
             setError(transformToFormError(result.errors));
-            alert.show(errorMessage, { variant: 'danger' });
+            alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }
@@ -176,7 +177,7 @@ function UserForm() {
             alert.show('User updated successfully', { variant: 'success' });
         } else if (isDefined(result) && isDefined(result.errors)) {
             setError(transformToFormError(result.errors));
-            alert.show(errorMessage, { variant: 'danger' });
+            alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
         } else {
             alert.show(errorMessage, { variant: 'danger' });
         }

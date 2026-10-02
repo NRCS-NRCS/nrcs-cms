@@ -47,8 +47,10 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_IMAGE_TYPES,
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
     nameSelector,
+    transformToFormError,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<ProjectCreateInput>
@@ -128,8 +130,8 @@ function ProjectForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createProjectMutate({
@@ -141,8 +143,8 @@ function ProjectForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [
@@ -280,8 +282,8 @@ function ProjectForm() {
                     />
                 </InputSection>
                 <InputSection
-                    title="Type"
-                    description="Add type to either Tuesday Program or Radio Red Cross"
+                    title="Department"
+                    description="Select the department responsible for this project"
                     withAsteriskOnTitle
                 >
                     <SelectInput
@@ -291,7 +293,7 @@ function ProjectForm() {
                         keySelector={idSelector}
                         labelSelector={nameSelector}
                         onChange={setFieldValue}
-                        placeholder="Select Status"
+                        placeholder="Select Department"
                         error={error?.department}
                     />
                 </InputSection>

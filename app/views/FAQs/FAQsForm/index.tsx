@@ -39,7 +39,11 @@ import useAlert from '#hooks/useAlert';
 import usePermissions from '#hooks/usePermissions';
 import useRouting from '#hooks/useRouting';
 import useUnsavedModal from '#hooks/useUnsavedModal';
-import { errorMessage } from '#utils/common';
+import {
+    errorMessage,
+    getMutationErrorMessage,
+    transformToFormError,
+} from '#utils/common';
 
 type PartialFormType = PartialForm<FaqCreateInput>
 
@@ -106,8 +110,8 @@ function FAQsForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createFaqMutate({
@@ -119,8 +123,8 @@ function FAQsForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [

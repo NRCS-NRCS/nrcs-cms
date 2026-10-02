@@ -50,9 +50,11 @@ import {
     ACCEPTED_FILE_TYPES,
     ACCEPTED_IMAGE_TYPES,
     errorMessage,
+    getMutationErrorMessage,
     idSelector,
     labelSelector,
     nameSelector,
+    transformToFormError,
     typeFilterOptions,
     valueSelector,
 } from '#utils/common';
@@ -145,8 +147,8 @@ function ResourceForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         } else {
             const res = await createResourceMutate({
@@ -158,8 +160,8 @@ function ResourceForm() {
                 navigate(redirectPath);
                 alert.show(alertMessage, { variant: 'success' });
             } else if (result?.errors) {
-                setError(result?.errors);
-                alert.show(result?.errors?.message ?? errorMessage, { variant: 'danger' });
+                setError(transformToFormError(result.errors));
+                alert.show(getMutationErrorMessage(result) ?? errorMessage, { variant: 'danger' });
             }
         }
     }, [
@@ -212,6 +214,7 @@ function ResourceForm() {
             onChange={setFieldValue}
             error={error?.content}
             placeholder="Start writing content here..."
+            withAsteriskOnHeading
         />
     );
 
@@ -353,7 +356,7 @@ function ResourceForm() {
                 </InputSection>
                 <InputSection
                     title="Type"
-                    description="Add type to either global or local"
+                    description="Choose whether this resource is a Policy and Guidelines document or a Report"
                     withAsteriskOnTitle
                 >
                     <SelectInput
