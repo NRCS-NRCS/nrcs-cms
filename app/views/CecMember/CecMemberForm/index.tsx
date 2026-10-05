@@ -75,13 +75,21 @@ const CecMemberSchema: FormSchema = {
             requiredValidation: requiredStringCondition,
         },
         email: {
+            required: true,
+            requiredValidation: requiredStringCondition,
             validations: [emailCondition],
         },
         secondaryEmail: {
             validations: [emailCondition],
         },
-        address: {},
-        contactNumber: {},
+        address: {
+            required: true,
+            requiredValidation: requiredStringCondition,
+        },
+        contactNumber: {
+            required: true,
+            requiredValidation: requiredStringCondition,
+        },
         photo: {},
         isActive: {},
     }),
@@ -288,6 +296,7 @@ function CecMemberForm() {
                 </InputSection>
                 <InputSection
                     title="Email"
+                    withAsteriskOnTitle
                     description="Primary and optional secondary email address"
                 >
                     <TextInput
@@ -307,6 +316,7 @@ function CecMemberForm() {
                 </InputSection>
                 <InputSection
                     title="Address"
+                    withAsteriskOnTitle
                     description="District or address of the member"
                 >
                     <TextInput
@@ -319,6 +329,7 @@ function CecMemberForm() {
                 </InputSection>
                 <InputSection
                     title="Contact Number"
+                    withAsteriskOnTitle
                 >
                     <TextInput
                         name="contactNumber"
