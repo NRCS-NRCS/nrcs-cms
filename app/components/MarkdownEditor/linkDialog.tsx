@@ -231,8 +231,13 @@ function LinkDialog() {
     const [state, activeEditor] = useCellValues(linkDialogState$, activeEditor$);
     const publishWindowChange = usePublisher(onWindowChange$);
 
+    const isPreview = state.type === 'preview';
+
     // NOTE: recompute the preview position when the page moves
     useEffect(() => {
+        if (!isPreview) {
+            return undefined;
+        }
         const update = () => {
             activeEditor?.getEditorState().read(() => {
                 publishWindowChange(true);
@@ -244,7 +249,7 @@ function LinkDialog() {
             window.removeEventListener('resize', update);
             window.removeEventListener('scroll', update, true);
         };
-    }, [activeEditor, publishWindowChange]);
+    }, [isPreview, activeEditor, publishWindowChange]);
 
     return (
         <>
