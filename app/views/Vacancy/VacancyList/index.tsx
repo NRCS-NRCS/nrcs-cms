@@ -32,6 +32,7 @@ import {
     errorMessage,
     getMutationErrorMessage,
     idSelector,
+    isDateExpired,
 } from '#utils/common';
 
 import { VACANCY_QUERY } from '../query';
@@ -141,9 +142,14 @@ function VacancyList() {
             (dept) => dept?.publishedAt,
         ),
         createStringColumn<VacancyListItem, string | number>(
-            'expireDate',
-            'Expire Date',
+            'expiryDate',
+            'Expiry Date',
             (dept) => dept?.expiryDate,
+        ),
+        createBooleanColumn<VacancyListItem, string | number>(
+            'expired',
+            'Expired',
+            (dept) => isDateExpired(dept?.expiryDate),
         ),
         createBooleanColumn<VacancyListItem, string | number>(
             'archive',

@@ -20,6 +20,7 @@ import {
 } from '@ifrc-go/ui';
 import { isNotDefined } from '@togglecorp/fujs';
 import {
+    addCondition,
     createSubmitHandler,
     getErrorObject,
     getErrorString,
@@ -46,7 +47,10 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_FILE_TYPES,
     errorMessage,
+    getExpiryDateValidations,
+    getExpiryMinDate,
     getMutationErrorMessage,
+    getTodayDateString,
     transformToFormError,
 } from '#utils/common';
 
@@ -55,30 +59,52 @@ type PartialFormType = PartialForm<ProcurementCreateInput>
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const ProcurementSchema: FormSchema = {
-    fields: (): FormSchemaFields => ({
-        title: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        publishedDate: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        expiryDate: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        description: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        file: {
-            required: true,
-        },
+function getProcurementSchema(isEdit: boolean): FormSchema {
+    return {
+        fields: (value): FormSchemaFields => {
+            let schema: FormSchemaFields = {
+                title: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                publishedDate: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                expiryDate: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                description: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                file: {
+                    required: true,
+                },
+            };
 
-    }),
-};
+            schema = addCondition(
+                schema,
+                value,
+                ['publishedDate'] as const,
+                ['expiryDate'] as const,
+                (props): Pick<FormSchemaFields, 'expiryDate'> => ({
+                    expiryDate: {
+                        required: true,
+                        requiredValidation: requiredStringCondition,
+                        validations: getExpiryDateValidations(props?.publishedDate, isEdit),
+                    },
+                }),
+            );
+
+            return schema;
+        },
+    };
+}
+
+const createProcurementSchema = getProcurementSchema(false);
+const editProcurementSchema = getProcurementSchema(true);
 
 const defaultEditFormValue: PartialFormType = {};
 function ProcurementForm() {
@@ -94,6 +120,7 @@ function ProcurementForm() {
     });
     const [{ fetching: createPending }, createProcurementMutate] = useCreateProcurementMutation();
     const [{ fetching: updatePending }, updateProcurementMutate] = useUpdateProcurementMutation();
+
     const {
         setFieldValue,
         error: formError,
@@ -102,7 +129,14 @@ function ProcurementForm() {
         setError,
         setValue,
         pristine,
-    } = useForm(ProcurementSchema, { value: defaultEditFormValue });
+    } = useForm(
+        id ? editProcurementSchema : createProcurementSchema,
+        {
+            value: id
+                ? defaultEditFormValue
+                : { ...defaultEditFormValue, publishedDate: getTodayDateString() },
+        },
+    );
 
     const {
         unsavedModal,
@@ -292,7 +326,7 @@ function ProcurementForm() {
                     />
                 </InputSection>
                 <InputSection
-                    title="Expire Date"
+                    title="Expiry Date"
                     description="After this date, the Procurement will no longer be visible on the website"
                     withAsteriskOnTitle
                 >
@@ -300,6 +334,7 @@ function ProcurementForm() {
                         name="expiryDate"
                         value={value.expiryDate}
                         onChange={setFieldValue}
+                        min={getExpiryMinDate(value.publishedDate, !!id)}
                         placeholder="Select Date"
                         error={getErrorString(error?.expiryDate)}
                     />

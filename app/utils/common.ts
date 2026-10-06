@@ -1,4 +1,5 @@
 import {
+    encodeDate,
     isNotDefined,
     isTruthyString,
 } from '@togglecorp/fujs';
@@ -179,6 +180,56 @@ export function resolveImageSrc(source: string) {
         return `${api}${source}`;
     }
     return source;
+}
+
+export function getTodayDateString() {
+    return encodeDate(new Date());
+}
+
+export function isDateExpired(expiryDate: string | null | undefined) {
+    return isTruthyString(expiryDate) && expiryDate < getTodayDateString();
+}
+
+export function dateGreaterThanOrEqualCondition(x: string, message?: string) {
+    return (value: string | null | undefined) => (
+        isTruthyString(value) && value < x
+            ? (message ?? `Select a date on or after ${x}.`)
+            : undefined
+    );
+}
+
+export function getExpiryMinDate(
+    publishedDate: string | null | undefined,
+    isEdit: boolean,
+) {
+    const today = isEdit ? undefined : getTodayDateString();
+    if (!isTruthyString(publishedDate)) {
+        return today;
+    }
+    if (isNotDefined(today) || publishedDate > today) {
+        return publishedDate;
+    }
+    return today;
+}
+
+export function getExpiryDateValidations(
+    publishedDate: string | null | undefined,
+    isEdit: boolean,
+) {
+    return [
+        ...(isTruthyString(publishedDate)
+            ? [dateGreaterThanOrEqualCondition(
+                publishedDate,
+                'Expiry date must be on or after the published date.',
+            )]
+            : []),
+        ...(isEdit
+            ? []
+            : [dateGreaterThanOrEqualCondition(
+                getTodayDateString(),
+                'Expiry date cannot be in the past.',
+            )]),
+    ];
 }
 
 export const ACCEPTED_FILE_TYPES = '.pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xlsm';
