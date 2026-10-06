@@ -71,7 +71,6 @@ function AttachmentInput(props: Props) {
             <ListView
                 className={styles.attachmentCardHeader}
                 spacing="xs"
-                withWrap
             >
                 <div className={styles.attachmentFileName}>
                     {getFileName(value.file)}

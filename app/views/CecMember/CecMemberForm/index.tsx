@@ -54,6 +54,10 @@ import {
     transformToFormError,
     valueSelector,
 } from '#utils/common';
+import {
+    contactNumberCondition,
+    sanitizeContactNumber,
+} from '#utils/contactNumber';
 
 type PartialFormType = PartialForm<CecMemberCreateInput>
 
@@ -89,6 +93,7 @@ const CecMemberSchema: FormSchema = {
         contactNumber: {
             required: true,
             requiredValidation: requiredStringCondition,
+            validations: [contactNumberCondition],
         },
         photo: {},
         isActive: {},
@@ -182,6 +187,10 @@ function CecMemberForm() {
         }
         setValue(removeNull(data.cecMember));
     }, [data, setValue]);
+
+    const handleContactNumberChange = useCallback((val: string | undefined) => {
+        setFieldValue(sanitizeContactNumber(val), 'contactNumber');
+    }, [setFieldValue]);
 
     const handleCancelClick = useCallback(() => {
         navigate('cecMember');
@@ -335,8 +344,9 @@ function CecMemberForm() {
                         name="contactNumber"
                         value={value.contactNumber}
                         error={error?.contactNumber}
-                        onChange={setFieldValue}
+                        onChange={handleContactNumberChange}
                         placeholder="Contact number"
+                        inputMode="tel"
                     />
                 </InputSection>
                 <InputSection

@@ -11,7 +11,6 @@ import {
 import {
     BlockLoading,
     Button,
-    Checkbox,
     Container,
     DateInput,
     Heading,
@@ -91,9 +90,6 @@ const EditBlogSchema: FormSchema = {
             required: false,
             requiredValidation: requiredStringCondition,
         },
-        featured: {
-            required: true,
-        },
         publishedDate: {
             required: true,
             requiredValidation: requiredStringCondition,
@@ -105,9 +101,7 @@ const EditBlogSchema: FormSchema = {
     }),
 };
 
-const defaultEditFormValue: PartialFormType = {
-    featured: false,
-};
+const defaultEditFormValue: PartialFormType = {};
 
 function BlogForm() {
     const { id } = useParams();
@@ -345,19 +339,6 @@ function BlogForm() {
                         value={value.coverImage}
                         error={getErrorString(error?.coverImage)}
                         accept={ACCEPTED_IMAGE_TYPES}
-                    />
-                </InputSection>
-                <InputSection
-                    title="Featured"
-                    description="Click on the checkbox if the blog is to be featured"
-                    withAsteriskOnTitle
-                >
-                    <Checkbox
-                        name="featured"
-                        label="Feature"
-                        onChange={setFieldValue}
-                        value={value.featured ?? false}
-                        error={error?.featured}
                     />
                 </InputSection>
                 <InputSection
