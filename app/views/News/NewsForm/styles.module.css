@@ -24,11 +24,13 @@
 
     .attachment-file-name {
         flex-grow: 1;
+        min-width: 0;
         word-break: break-all;
         font-weight: var(--go-ui-font-weight-medium);
     }
 
     .attachment-file-size {
+        flex-shrink: 0;
         white-space: nowrap;
         color: var(--go-ui-color-text-light);
         font-size: var(--go-ui-font-size-sm);

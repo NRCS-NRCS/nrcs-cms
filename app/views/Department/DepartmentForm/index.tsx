@@ -285,7 +285,7 @@ function DepartmentForm() {
                 </InputSection>
                 <InputSection
                     title="Contact Person Name"
-                    description="Add contact number of the person for the department"
+                    description="Add name of the contact person for the department"
                     withAsteriskOnTitle
                 >
                     <TextInput

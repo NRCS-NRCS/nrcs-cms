@@ -43,6 +43,16 @@ const defaultFilter: UserFilterType = {
     search: undefined,
 };
 
+// NOTE: every word in the search must match (first name, last name or email)
+function getSearchFilter(search: string | null | undefined) {
+    const words = search?.split(/\s+/).filter(Boolean) ?? [];
+
+    return words.reduceRight<UserFilterType | undefined>(
+        (andFilter, word) => ({ search: word, AND: andFilter }),
+        undefined,
+    );
+}
+
 function UsersList() {
     const navigate = useRouting();
     const alert = useAlert();
@@ -64,7 +74,7 @@ function UsersList() {
     const queryVariables = useMemo(() => ({
         filters: {
             isActive: true,
-            search: filter.search || undefined,
+            ...getSearchFilter(filter.search),
         },
         pagination: {
             limit,

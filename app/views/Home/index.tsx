@@ -6,7 +6,6 @@ import {
 import { AddFillIcon } from '@ifrc-go/icons';
 import {
     Button,
-    ConfirmButton,
     Container,
     Pager,
     Table,
@@ -23,6 +22,7 @@ import {
     isNotDefined,
 } from '@togglecorp/fujs';
 
+import ConfirmButton from '#components/ConfirmButton';
 import Link, { type Props as LinkProps } from '#components/Link';
 import {
     type NewsFilter,

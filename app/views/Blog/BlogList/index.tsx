@@ -10,7 +10,6 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import {
-    createBooleanColumn,
     createDateColumn,
     createElementColumn,
     createStringColumn,
@@ -133,11 +132,6 @@ function BlogList() {
                 'author',
                 'Author',
                 (blog) => blog.author,
-            ),
-            createBooleanColumn<BlogListType, string | number>(
-                'featured',
-                'Featured',
-                (blog) => blog.featured,
             ),
             createStringColumn<BlogListType, string | number>(
                 'status',

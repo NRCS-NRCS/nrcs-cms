@@ -5,10 +5,10 @@ import {
 } from '@ifrc-go/icons';
 import {
     Button,
-    ConfirmButton,
     TableActions,
 } from '@ifrc-go/ui';
 
+import ConfirmButton from '#components/ConfirmButton';
 import useRouting, { type RoutesMap } from '#hooks/useRouting';
 
 export interface EditDeleteActionsProps {
