@@ -24,6 +24,7 @@ import {
 } from '@ifrc-go/ui';
 import { isNotDefined } from '@togglecorp/fujs';
 import {
+    addCondition,
     createSubmitHandler,
     getErrorObject,
     getErrorString,
@@ -53,51 +54,78 @@ import useUnsavedModal from '#hooks/useUnsavedModal';
 import {
     ACCEPTED_FILE_TYPES,
     errorMessage,
+    getExpiryDateValidations,
+    getExpiryMinDate,
     getMutationErrorMessage,
+    getTodayDateString,
     keySelector,
     labelSelector,
     transformToFormError,
 } from '#utils/common';
 
 type PartialFormType = PartialForm<JobVacancyCreateInput>
+
 type FormSchema = ObjectSchema<PartialFormType>;
 type FormSchemaFields = ReturnType<FormSchema['fields']>;
 
-const VacancySchema: FormSchema = {
-    fields: (): FormSchemaFields => ({
-        title: {
-            required: true,
-            requiredValidation: requiredStringCondition,
+function getVacancySchema(isEdit: boolean): FormSchema {
+    return {
+        fields: (value): FormSchemaFields => {
+            let schema: FormSchemaFields = {
+                title: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                description: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                position: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                publishedAt: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                expiryDate: {
+                    required: true,
+                    requiredValidation: requiredStringCondition,
+                },
+                department: {
+                    required: true,
+                },
+                file: {
+                    required: true,
+                },
+                numberOfVacancies: {
+                    required: true,
+                    validations: [integerCondition, greaterThanOrEqualToCondition(0)],
+                },
+                isArchived: {},
+            };
+
+            schema = addCondition(
+                schema,
+                value,
+                ['publishedAt'] as const,
+                ['expiryDate'] as const,
+                (props): Pick<FormSchemaFields, 'expiryDate'> => ({
+                    expiryDate: {
+                        required: true,
+                        requiredValidation: requiredStringCondition,
+                        validations: getExpiryDateValidations(props?.publishedAt, isEdit),
+                    },
+                }),
+            );
+
+            return schema;
         },
-        description: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        position: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        publishedAt: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        expiryDate: {
-            required: true,
-            requiredValidation: requiredStringCondition,
-        },
-        department: {
-            required: true,
-        },
-        file: {
-            required: true,
-        },
-        numberOfVacancies: {
-            required: true,
-            validations: [integerCondition, greaterThanOrEqualToCondition(0)],
-        },
-        isArchived: {},
-    }),
-};
+    };
+}
+
+const createVacancySchema = getVacancySchema(false);
+const editVacancySchema = getVacancySchema(true);
 
 const defaultEditFormValue: PartialFormType = {
     isArchived: false,
@@ -117,6 +145,7 @@ function VacancyForm() {
 
     const [{ fetching: createPending }, createVacancyMutate] = useCreateVacancyMutation();
     const [{ fetching: updatePending }, updateVacancyMutate] = useUpdateVacancyMutation();
+
     const {
         setFieldValue,
         error: formError,
@@ -125,7 +154,14 @@ function VacancyForm() {
         setError,
         setValue,
         pristine,
-    } = useForm(VacancySchema, { value: defaultEditFormValue });
+    } = useForm(
+        id ? editVacancySchema : createVacancySchema,
+        {
+            value: id
+                ? defaultEditFormValue
+                : { ...defaultEditFormValue, publishedAt: getTodayDateString() },
+        },
+    );
 
     const {
         unsavedModal,
@@ -358,7 +394,7 @@ function VacancyForm() {
                     />
                 </InputSection>
                 <InputSection
-                    title="Expire Date"
+                    title="Expiry Date"
                     description="After this date, the Vacancy will no longer be visible on the website"
                     withAsteriskOnTitle
                 >
@@ -366,6 +402,7 @@ function VacancyForm() {
                         name="expiryDate"
                         value={value.expiryDate}
                         onChange={setFieldValue}
+                        min={getExpiryMinDate(value.publishedAt, !!id)}
                         placeholder="Select Date"
                         error={getErrorString(error?.expiryDate)}
                     />

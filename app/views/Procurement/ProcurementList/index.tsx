@@ -10,6 +10,7 @@ import {
     Table,
 } from '@ifrc-go/ui';
 import {
+    createBooleanColumn,
     createElementColumn,
     createStringColumn,
 } from '@ifrc-go/ui/utils';
@@ -29,6 +30,7 @@ import {
     errorMessage,
     getMutationErrorMessage,
     idSelector,
+    isDateExpired,
 } from '#utils/common';
 
 import ProcurementListFilter, { type ProcurementFilterUIType } from '../ProcurementListFilters';
@@ -126,9 +128,14 @@ function ProcurementList() {
             (item) => item?.publishedDate,
         ),
         createStringColumn<ProcurementListItem, string | number>(
-            'expireDate',
-            'Expire Date',
+            'expiryDate',
+            'Expiry Date',
             (item) => item?.expiryDate,
+        ),
+        createBooleanColumn<ProcurementListItem, string | number>(
+            'expired',
+            'Expired',
+            (item) => isDateExpired(item?.expiryDate),
         ),
         ...(canEditContent
             ? [createElementColumn<ProcurementListItem, string | number, EditDeleteActionsProps>(
