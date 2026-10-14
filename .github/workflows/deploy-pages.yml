@@ -54,13 +54,13 @@ jobs:
       # NOTE: GitHub Pages has no SPA fallback; serve index.html for unknown paths
       - name: Add SPA fallback and custom domain
         run: |
-          cp dist/index.html dist/404.html
-          echo "$PAGES_CNAME" > dist/CNAME
+          cp build/index.html build/404.html
+          echo "$PAGES_CNAME" > build/CNAME
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: build
 
   deploy:
     name: Deploy
