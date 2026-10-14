@@ -1,0 +1,74 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - "deploy/pages"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  APP_GRAPHQL_CODEGEN_ENDPOINT: "./backend/schema.graphql"
+  APP_GRAPHQL_ENDPOINT: ${{ vars.APP_GRAPHQL_ENDPOINT }}
+  APP_TITLE: "Nrcs CMS"
+  APP_ENVIRONMENT: "production"
+  APP_COMMIT_HASH: ${{ github.sha }}
+  PAGES_CNAME: "website-cms.nrcs.org"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Type
+        run: pnpm generate:type
+
+      - name: Build
+        run: pnpm build
+
+      # NOTE: GitHub Pages has no SPA fallback; serve index.html for unknown paths
+      - name: Add SPA fallback and custom domain
+        run: |
+          cp dist/index.html dist/404.html
+          echo "$PAGES_CNAME" > dist/CNAME
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
