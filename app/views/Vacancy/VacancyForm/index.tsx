@@ -34,6 +34,7 @@ import {
     type PartialForm,
     removeNull,
     requiredStringCondition,
+    urlCondition,
     useForm,
 } from '@togglecorp/toggle-form';
 
@@ -103,6 +104,9 @@ function getVacancySchema(isEdit: boolean): FormSchema {
                     validations: [integerCondition, greaterThanOrEqualToCondition(0)],
                 },
                 isArchived: {},
+                formUrl: {
+                    validations: [urlCondition],
+                },
             };
 
             schema = addCondition(
@@ -338,6 +342,18 @@ function VacancyForm() {
                         value={value.file}
                         error={getErrorString(error?.file)}
                         accept={ACCEPTED_FILE_TYPES}
+                    />
+                </InputSection>
+                <InputSection
+                    title="Application Form URL"
+                    description="Link to the application form (e.g. Google Form), shown on the Vacancy Page"
+                >
+                    <TextInput
+                        name="formUrl"
+                        value={value.formUrl}
+                        error={error?.formUrl}
+                        onChange={setFieldValue}
+                        placeholder="https://forms.gle/..."
                     />
                 </InputSection>
                 <InputSection
