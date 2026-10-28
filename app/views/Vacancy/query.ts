@@ -50,6 +50,7 @@ const VACANCY_DETAIL_QUERY = gql`
             position
             publishedAt
             title
+            formUrl
         }
     }
 `;
